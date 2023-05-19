@@ -20,6 +20,7 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: stable
+        targets: i686-unknown-linux-musl,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
         components: clippy, rustfmt
     - name: Build
       run: |
@@ -46,11 +47,15 @@ jobs:
       run: |
         make -j2 doc
     - name: Build Docs Asciidoctor
+      env:
+        USE_ASCIIDOCTOR: "1"
       run: |
-        make -j2 USE_ASCIIDOCTOR=1 doc
+        make -j2 doc
     - name: Install HTML Docs
+      env:
+        USE_ASCIIDOCTOR: "1"
       run: |
-        make -j2 USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+        make -j2 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
     - name: Upload HTML Docs
       uses: actions/upload-artifact@v3
       with:
@@ -64,19 +69,34 @@ jobs:
       uses: baptiste0928/cargo-install@v2
       with:
         crate: cargo-generate-rpm
-    - name: Build Packages
+        args: "--git https://github.com/jpgrayson/cargo-generate-rpm --branch profile-option"
+    - name: Install aarch64 Dependencies
       run: |
-        make USE_ASCIIDOCTOR=1 deb rpm
-    - name: Upload deb
+        sudo apt-get install gcc-aarch64-linux-gnu
+    - name: Static Build x86_64
+      run: |
+        make build-static-x86_64
+    - name: Static Build i686
+      run: |
+        make build-static-i686
+    - name: Build  Build aarch64
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
+      run: |
+        make build-static-aarch64
+    - name: Build Packages
+      env:
+        USE_ASCIIDOCTOR: "1"
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
+      run: |
+        make packages
+    - name: Upload Packages
       uses: actions/upload-artifact@v3
       with:
-        name: stgit-deb
-        path: target/debian/stgit_*.deb
-    - name: Upload rpm
-      uses: actions/upload-artifact@v3
-      with:
-        name: stgit-rpm
-        path: target/generate-rpm/stgit-*.rpm
+        name: stgit-packages
+        path: target/pkg/*
 
   build-and-test:
     name: Build and Test

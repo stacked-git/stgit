@@ -21,9 +21,6 @@ TEST_PATCHES ?= ..
 build:
 	$(CARGO) build --profile=$(STG_PROFILE)
 
-build-for-pkg:
-	$(CARGO) build --profile=for-pkg --no-default-features
-
 all: build doc completion contrib
 
 completion: build
@@ -35,7 +32,7 @@ contrib:
 doc: build
 	$(MAKE) -C Documentation all
 
-.PHONY: all build build-for-pkg completion contrib doc
+.PHONY: all build completion contrib doc
 
 
 install: install-bin
@@ -60,13 +57,46 @@ install-contrib:
 .PHONY: install install-all install-bin install-completion install-contrib install-man install-html
 
 
-deb: completion doc build-for-pkg
-	$(CARGO_OFFLINE) deb
+build-static-i686:
+	$(CARGO) build --profile=for-pkg --target i686-unknown-linux-musl --no-default-features
 
-rpm: completion doc build-for-pkg
-	$(CARGO_OFFLINE) generate-rpm
+build-static-x86_64:
+	$(CARGO) build --profile=for-pkg --target x86_64-unknown-linux-musl --no-default-features
 
-.PHONY: deb rpm
+build-static-aarch64:
+	$(CARGO) build --profile=for-pkg --target aarch64-unknown-linux-musl --no-default-features
+
+target/pkg:
+	mkdir -p $@
+
+deb-i686: completion doc target/pkg build-static-i686
+	$(CARGO_OFFLINE) deb --no-build --no-strip --output target/pkg/ --profile=for-pkg --target=i686-unknown-linux-musl
+
+deb-x86_64: completion doc target/pkg build-static-x86_64
+	$(CARGO_OFFLINE) deb --no-build --no-strip --output target/pkg/ --profile=for-pkg --target=x86_64-unknown-linux-musl
+
+deb-aarch64: completion doc target/pkg build-static-aarch64
+	$(CARGO_OFFLINE) deb --no-build --no-strip --output target/pkg/ --profile=for-pkg --target=aarch64-unknown-linux-musl
+
+debs: deb-i686 deb-x86_64 deb-aarch64
+
+rpm-i686: completion doc target/pkg build-static-i686
+	$(CARGO_OFFLINE) generate-rpm --output target/pkg/ --profile=for-pkg --target=i686-unknown-linux-musl
+
+rpm-x86_64: completion doc target/pkg build-static-x86_64
+	$(CARGO_OFFLINE) generate-rpm --output target/pkg/ --profile=for-pkg --target=x86_64-unknown-linux-musl
+
+rpm-aarch64: completion doc target/pkg build-static-aarch64
+	$(CARGO_OFFLINE) generate-rpm --output target/pkg/ --profile=for-pkg --target=aarch64-unknown-linux-musl
+
+rpms: rpm-i686 rpm-x86_64 rpm-aarch64
+
+packages: debs rpms
+
+.PHONY: packages
+.PHONY: debs deb-i686 deb-x86_64 deb-aarch64
+.PHONY: rpms rpm-i686 rpm-x86_64 rpm-aarch64
+.PHONY: build-static-i686 build-static-x86_64 build-static-aarch64
 
 
 lint: lint-format lint-clippy lint-api-doc lint-t unit-test
