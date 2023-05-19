@@ -312,7 +312,6 @@ fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
     }
 }
 
-#[cfg(feature = "import-compressed")]
 fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
     let source_file = std::fs::File::open(source_path)?;
     let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(source_file));
@@ -322,7 +321,6 @@ fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pat
     return import_series(stack, matches, Some(series_path.as_path()));
 }
 
-#[cfg(feature = "import-compressed")]
 fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
     let source_file = std::fs::File::open(source_path)?;
     let mut archive = tar::Archive::new(bzip2_rs::DecoderReader::new(source_file));
@@ -332,7 +330,6 @@ fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pa
     return import_series(stack, matches, Some(series_path.as_path()));
 }
 
-#[cfg(feature = "import-compressed")]
 fn import_tar_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
     let source_file = std::fs::File::open(source_path)?;
     let mut archive = tar::Archive::new(source_file);
@@ -340,27 +337,6 @@ fn import_tar_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pat
     archive.unpack(temp_dir.path())?;
     let series_path = find_series_path(temp_dir.path())?;
     return import_series(stack, matches, Some(series_path.as_path()));
-}
-
-#[cfg(not(feature = "import-compressed"))]
-fn import_tgz_series(_: Stack, _: &clap::ArgMatches, _: &Path) -> Result<()> {
-    Err(anyhow!(
-        "StGit not built with support for compressed series"
-    ))
-}
-
-#[cfg(not(feature = "import-compressed"))]
-fn import_tbz2_series(_: Stack, _: &clap::ArgMatches, _: &Path) -> Result<()> {
-    Err(anyhow!(
-        "StGit not built with support for compressed series"
-    ))
-}
-
-#[cfg(not(feature = "import-compressed"))]
-fn import_tar_series(_: Stack, _: &clap::ArgMatches, _: &Path) -> Result<()> {
-    Err(anyhow!(
-        "StGit not built with support for compressed series"
-    ))
 }
 
 fn import_series(
@@ -433,7 +409,6 @@ fn import_series(
     Ok(())
 }
 
-#[cfg(feature = "import-compressed")]
 fn find_series_path(base: &Path) -> Result<PathBuf> {
     for entry in base.read_dir()? {
         let entry = entry?;
@@ -479,30 +454,14 @@ fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Pa
     Ok(())
 }
 
-#[cfg(feature = "import-compressed")]
 fn read_gz(source_file: std::fs::File, content: &mut Vec<u8>) -> Result<()> {
     flate2::read::GzDecoder::new(source_file).read_to_end(content)?;
     Ok(())
 }
 
-#[cfg(not(feature = "import-compressed"))]
-fn read_gz(_source_file: std::fs::File, _content: &mut Vec<u8>) -> Result<()> {
-    Err(anyhow!(
-        "StGit not built with support for compressed patches"
-    ))
-}
-
-#[cfg(feature = "import-compressed")]
 fn read_bz2(source_file: std::fs::File, content: &mut Vec<u8>) -> Result<()> {
     bzip2_rs::DecoderReader::new(source_file).read_to_end(content)?;
     Ok(())
-}
-
-#[cfg(not(feature = "import-compressed"))]
-fn read_bz2(_source_file: std::fs::File, _content: &mut Vec<u8>) -> Result<()> {
-    Err(anyhow!(
-        "StGit not built with support for compressed patches"
-    ))
 }
 
 fn import_file<'repo>(
