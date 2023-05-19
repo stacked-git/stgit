@@ -163,7 +163,7 @@ test_expect_success 'Apply a patch and edit message' '
     stg delete ..
 '
 
-test_expect_success STG_IMPORT_URL 'Apply a patch from a URL' '
+test_expect_success !MINGW,STG_IMPORT_URL 'Apply a patch from a URL' '
     stg import -u "file://$TEST_DIRECTORY/t1800/git-diff" &&
     [ $(git cat-file -p $(stg id) \
       | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
@@ -255,21 +255,23 @@ test_expect_success 'Apply a series from a tarball' '
     stg delete ..
 '
 
-test_expect_success STG_IMPORT_URL 'Apply a series from a tarball url' '
+test_expect_success !MINGW,STG_IMPORT_URL 'Apply a series from a tarball url' '
     stg import --url --series "file://$(pwd)/jabberwocky.tar.bz2" &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ]
+        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ] &&
+    stg show | grep -e "Author: Clark Williams <williams@redhat.com>" &&
+    stg delete ..
 '
 
-test_expect_success !STG_IMPORT_URL 'Apply a series from a abs tarball path' '
+test_expect_success 'Apply a series from a abs tarball path' '
     stg import --series "$(pwd)/jabberwocky.tar.bz2" &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ]
+        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ] &&
+    stg show | grep -e "Author: Clark Williams <williams@redhat.com>" &&
+    stg delete --top --spill
 '
 
 test_expect_success 'Import with author options' '
-    stg show | grep -e "Author: Clark Williams <williams@redhat.com>" &&
-    stg delete --top --spill &&
     stg diff >some.patch &&
     git reset jabberwocky.txt &&
     git checkout jabberwocky.txt &&

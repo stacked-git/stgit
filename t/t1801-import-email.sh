@@ -21,7 +21,7 @@ test_expect_success 'Apply a patch from an 8bit-encoded e-mail' '
     stg delete ..
 '
 
-test_expect_success STG_IMPORT_URL 'Apply a patch from an 8bit-encoded e-mail url' '
+test_expect_success !MINGW,STG_IMPORT_URL 'Apply a patch from an 8bit-encoded e-mail url' '
     stg import -u -m "file://$TEST_DIRECTORY"/t1801/email-8bit &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
@@ -118,7 +118,7 @@ test_expect_success 'Apply several patches from an mbox file' '
     stg delete ..
 '
 
-test_expect_success STG_IMPORT_URL 'Apply several patches from an mbox url' '
+test_expect_success !MINGW,STG_IMPORT_URL 'Apply several patches from an mbox url' '
     test_config stgit.import.message-id "yes" &&
     stg import -u -M "file://$TEST_DIRECTORY"/t1801/email-mbox &&
     [ $(git cat-file -p $(stg id change-1) \
