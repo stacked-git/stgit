@@ -6,4 +6,9 @@ then
 else
     profile_dir="$STG_PROFILE"
 fi
-exec "$STG_ROOT/target/$profile_dir/stg" "$@"
+if [ -n "$STG_TARGET" ]
+then
+    exec "$STG_ROOT/target/$STG_TARGET/$profile_dir/stg" "$@"
+else
+    exec "$STG_ROOT/target/$profile_dir/stg" "$@"
+fi
