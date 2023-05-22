@@ -20,7 +20,7 @@ name = "stg"
 [dependencies]
 anyhow = "1.0"
 anstyle = { version = "1.0", features = ["std"] }
-bstr = { version = "1.0", default-features = false, features = ["std"] }
+bstr = { version = "1.5", default-features = false, features = ["std"] }
 bzip2-rs = "0.1"
 clap = { version = "~4.2", default-features = false, features = [
   "color",
