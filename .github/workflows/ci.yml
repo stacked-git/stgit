@@ -241,3 +241,18 @@ jobs:
       shell: msys2 {0}
       run: |
         make -C t show-failure-results
+    - name: Install Wix Toolset v4
+      run: |
+        dotnet tool install --global wix --version 4.0.0
+    - name: Install Wix UI Extension
+      run: |
+        wix extension add -g WixToolset.UI.wixext
+    - name: Build MSI Installer
+      shell: msys2 {0}
+      run: |
+        make -C contrib/wix
+    - name: Upload MSI Package
+      uses: actions/upload-artifact@v3
+      with:
+        name: stgit-msi-package
+        path: contrib/wix/stgit-*.msi
