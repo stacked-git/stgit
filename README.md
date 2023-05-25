@@ -46,19 +46,34 @@ operations by running subordinate `git` commands.
 
 ### Package Repositories
 
-Recent versions of StGit are available via many package repositories
-such as [HomeBrew](https://formulae.brew.sh/formula/stgit) and for many
-Linux distributions including:
-[Alpine](https://pkgs.alpinelinux.org/packages?name=stgit),
-[Arch](https://aur.archlinux.org/packages/stgit),
-[Fedora](https://src.fedoraproject.org/rpms/stgit),
-[Nix](https://nixos.org/nixos/packages.html?attr=gitAndTools.stgit) and
-[Ubuntu](https://packages.ubuntu.com/source/focal/stgit).
+Recent versions of StGit are available in several package repositories
+such as [HomeBrew][pkg-homebrew] and [MacPorts][pkg-macports] for MacOS
+and for the [Arch][pkg-arch] and [Gentoo][pkg-gentoo] Linux
+distributions.
 
 More details about StGit packages availability for various operating
 systems can be [found on repology][repology].
 
+[pkg-homebrew]: https://formulae.brew.sh/formula/stgit
+[pkg-macports]: https://ports.macports.org/port/stgit/
+[pkg-arch]: https://aur.archlinux.org/packages/stgit
+[pkg-gentoo]: //https://packages.gentoo.org/packages/dev-vcs/stgit
 [repology]: https://repology.org/project/stgit/versions
+
+### Prebuilt Packages
+
+Prebuilt deb, rpm, and msi packages are provided by the StGit project.
+Packages for the latest release may be found [here][latest].
+
+Note that the Linux deb and rpm packages are unofficial. The upstream
+Debian and RedHat/Fedora projects currently only publish outdated
+versions of StGit (see [repology][repology]). These unofficial packages
+are meant to be a stop-gap until official StGit packages are provided by
+downstream distributions.
+
+The Linux deb and rpm packages are statically linked use musl libc to
+maximize compatibility. They should hopefully work on a wide range of
+deb and rpm based distributions.
 
 ### Source Installation
 
