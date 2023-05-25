@@ -47,6 +47,8 @@ StGit Release Checklist
    - Write a sentence or two description of release.
    - Paste this version's changes from CHANGELOG.md.
    - Upload source archive file (`stgit-X.Y.Z.tar.gz`) from step 4.
+   - Upload prebuilt packages from Actions build for this tag.
+     https://github.com/stacked-git/stgit/actions
 
 8. Send notifications
 
