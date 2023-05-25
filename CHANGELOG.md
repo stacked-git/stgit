@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.3.0] 2023-05-25
+
+### Removed
+- import-compressed is always enabled, no longer a feature
+
+### Added
+- unofficial deb and rpm packages
+- msi package for Windows
+
+### Fixed
+- fix(import): would panic without import-url feature
+- fix(import): patch numbers not stripped from name
+
+### Changed
+- use bzip2-rs instead of bzip2 crate
+- update dependencies
+
+
 ## [2.2.4] 2023-05-15
 
 ### Added
