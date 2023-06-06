@@ -188,7 +188,7 @@ _stg-commit() {
     subcmd_args+=(
         '--allow-empty[allow committing empty patches]'
         - group-all
-        '(-a --all)'{-a,--all}'[commit all unapplied patches]'
+        '(-a --all)'{-a,--all}'[commit all applied patches]'
         - group-number
         '(-n --number)'{-n+,--number=}'[commit specified number of patches]:number'
         - group-patches
