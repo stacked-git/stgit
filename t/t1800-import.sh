@@ -43,7 +43,7 @@ test_expect_success 'Import patch with email headers' '
     cat >expected <<-\EOF &&
 	body
 
-	Message-Id: abc123
+	Message-ID: abc123
 
 	EOF
     test_cmp expected body &&

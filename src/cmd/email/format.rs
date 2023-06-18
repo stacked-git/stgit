@@ -323,7 +323,7 @@ fn message_options() -> Vec<Arg> {
             .long_help(
                 "Controls addition of `In-Reply-To` and `References` headers to make \
                  the second and subsequent mails appear as replies to the first. Also \
-                 controls generation of the `Message-Id` header to reference.\n\
+                 controls generation of the `Message-ID` header to reference.\n\
                  \n\
                  The optional <style> argument can be either `shallow` or `deep`. \
                  `shallow` threading makes every mail a reply to the head of the \

@@ -210,9 +210,9 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("message-id")
                 .long("message-id")
-                .help("Create Message-Id trailer from Message-ID header")
+                .help("Create Message-ID trailer from Message-ID header")
                 .long_help(
-                    "Create Message-Id trailer in patch description based on the \
+                    "Create Message-ID trailer in patch description based on the \
                     Message-ID email header. This option is applicable when importing \
                     with '--mail' or '--mbox'. This behavior may also be enabled via \
                     the \"stgit.import.message-id\" configuration option.",
@@ -500,7 +500,7 @@ fn import_file<'repo>(
         if message.len() > 1 && &message[message.len() - 2..] != b"\n\n" {
             message.push(b'\n');
         }
-        message.push_str("Message-Id: ");
+        message.push_str("Message-ID: ");
         message.push_str(message_id);
         message.push(b'\n');
     }

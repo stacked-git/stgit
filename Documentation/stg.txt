@@ -302,7 +302,7 @@ N.B. Set 'commit.gpgsign' to determine whether patch commits themselves are GPG 
 See linkgit:git-config[1] for more information about 'commit.gpgsign'.
 
 stgit.import.message-id::
-  When set to 'true', create 'Message-Id:' trailer in the patch description of patches
+  When set to 'true', create 'Message-ID:' trailer in the patch description of patches
   imported from email using linkstg:import[].
 
 stgit.keepoptimized::

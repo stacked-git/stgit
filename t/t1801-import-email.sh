@@ -17,7 +17,7 @@ test_expect_success 'Apply a patch from an 8bit-encoded e-mail' '
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
 '
 
@@ -28,7 +28,7 @@ test_expect_success !MINGW,STG_IMPORT_URL 'Apply a patch from an 8bit-encoded e-
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 
@@ -40,7 +40,7 @@ test_expect_success 'Apply a patch from an 8bit-encoded e-mail with CRLF endings
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 
@@ -56,7 +56,7 @@ test_expect_success 'Apply e-mail with CRLF endings and --keep-cr' '
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 
@@ -68,7 +68,7 @@ test_expect_success 'Apply a patch from latin1-encoded email specifying utf-8 ch
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 
@@ -79,7 +79,7 @@ test_expect_success 'Apply a patch from email with quoted "From" header' '
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 
@@ -90,7 +90,7 @@ test_expect_success 'Apply a patch from a QP-encoded e-mail' '
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111105814.23209.46952.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 
@@ -102,19 +102,19 @@ test_expect_success 'Apply several patches from an mbox file' '
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
-        | grep -c "Message-Id: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
-        | grep -c "Message-Id: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
-        | grep -c "Message-Id: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
     stg delete ..
 '
 
@@ -126,19 +126,19 @@ test_expect_success !MINGW,STG_IMPORT_URL 'Apply several patches from an mbox ur
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
-        | grep -c "Message-Id: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
-        | grep -c "Message-Id: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
-        | grep -c "Message-Id: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
     stg delete ..
 '
 
@@ -156,19 +156,19 @@ test_expect_success 'Apply several patches from an mbox file from stdin' '
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
-        | grep -c "Message-Id: <20061111114527.31778.12942.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.12942.stgit@localhost>") = 0 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
-        | grep -c "Message-Id: <20061111114527.31778.92851.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.92851.stgit@localhost>") = 0 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
-        | grep -c "Message-Id: <20061111114527.31778.45876.stgit@localhost>") = 0 ] &&
+        | grep -c "Message-I[Dd]: <20061111114527.31778.45876.stgit@localhost>") = 0 ] &&
     stg delete ..
 '
 

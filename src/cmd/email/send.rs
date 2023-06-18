@@ -194,7 +194,7 @@ fn compose_options() -> Vec<Arg> {
             .help("Specify the \"In-Reply-To:\" identifier")
             .long_help(
                 "Make the first mail (or all the mails with '--no-thread') appear as a \
-                 reply to the given Message-Id, which avoids breaking threads to \
+                 reply to the given Message-ID, which avoids breaking threads to \
                  provide a new patch series. The second and subsequent emails will be \
                  sent as replies according to the '--[no-]chain-reply-to' setting.\n\
                  \n\
