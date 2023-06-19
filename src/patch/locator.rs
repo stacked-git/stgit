@@ -357,7 +357,8 @@ impl PatchLocator {
 
             let n = index.unsigned_abs().checked_sub(1).unwrap();
 
-            if let Some(Ok(id)) = walk.nth(n) {
+            if let Some(Ok(info)) = walk.nth(n) {
+                let id = info.id();
                 let object = id.object().map_err(|_| {
                     Error::Ancestors(format!("id `{id}` does not point to an object"))
                 })?;
