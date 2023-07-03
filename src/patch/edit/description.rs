@@ -326,11 +326,8 @@ mod tests {
                 let author1 = editable.author.as_ref().expect("should also be some");
                 assert_eq!(author0.name, author1.name);
                 assert_eq!(author0.email, author1.email);
-                assert_eq!(author0.time.seconds(), author1.time.seconds());
-                assert_eq!(
-                    author0.time.offset_in_seconds,
-                    author1.time.offset_in_seconds,
-                );
+                assert_eq!(author0.time.seconds, author1.time.seconds);
+                assert_eq!(author0.time.offset, author1.time.offset,);
             } else {
                 assert!(editable.author.is_none());
             }
@@ -371,11 +368,8 @@ mod tests {
         ) {
             assert_eq!(author0.name, author1.name);
             assert_eq!(author0.email, author1.email);
-            assert_eq!(author0.time.seconds(), author1.time.seconds());
-            assert_eq!(
-                author0.time.offset_in_seconds,
-                author1.time.offset_in_seconds,
-            );
+            assert_eq!(author0.time.seconds, author1.time.seconds);
+            assert_eq!(author0.time.offset, author1.time.offset);
         } else if let Some(None) = desc0.author.as_ref() {
             assert!(desc1.author.as_ref().unwrap().is_none());
         } else {

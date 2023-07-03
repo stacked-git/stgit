@@ -57,11 +57,11 @@ pub(crate) trait TimeExtended {
         ] {
             if let Ok(primitive_dt) = time::PrimitiveDateTime::parse(time_str, format_desc) {
                 let offset = time::UtcOffset::from_whole_seconds(
-                    gix::date::Time::now_local_or_utc().offset_in_seconds,
+                    gix::date::Time::now_local_or_utc().offset,
                 )?;
                 let offset_dt = primitive_dt.assume_offset(offset);
                 return Ok(gix::date::Time::new(
-                    offset_dt.unix_timestamp().try_into()?,
+                    offset_dt.unix_timestamp(),
                     offset_dt.offset().whole_seconds(),
                 ));
             }
@@ -70,7 +70,7 @@ pub(crate) trait TimeExtended {
         if let Ok(seconds) = time_str.parse::<u32>() {
             let offset_dt = time::OffsetDateTime::from_unix_timestamp(seconds.into())?;
             return Ok(gix::date::Time::new(
-                offset_dt.unix_timestamp().try_into()?,
+                offset_dt.unix_timestamp(),
                 offset_dt.offset().whole_seconds(),
             ));
         }
@@ -90,16 +90,16 @@ mod tests {
     #[test]
     fn test_parse_raw() {
         let time = Time::parse_time("123456 +0600").unwrap();
-        assert_eq!(time.seconds(), 123456);
-        assert_eq!(time.offset_in_seconds, 6 * 60 * 60);
+        assert_eq!(time.seconds, 123456);
+        assert_eq!(time.offset, 6 * 60 * 60);
         assert!(matches!(time.sign, gix::date::time::Sign::Plus));
     }
 
     #[test]
     fn test_parse_raw_notz() {
         let time = Time::parse_time("123456").unwrap();
-        assert_eq!(time.seconds(), 123456);
-        assert_eq!(time.offset_in_seconds, 0);
+        assert_eq!(time.seconds, 123456);
+        assert_eq!(time.offset, 0);
         assert!(matches!(time.sign, gix::date::time::Sign::Plus));
     }
 
@@ -136,8 +136,8 @@ mod tests {
     #[test]
     fn test_parse_time_negative_offset() {
         let time = Time::parse_time("123456 -0230").unwrap();
-        assert_eq!(time.seconds(), 123456);
-        assert_eq!(time.offset_in_seconds, -150 * 60);
+        assert_eq!(time.seconds, 123456);
+        assert_eq!(time.offset, -150 * 60);
         assert!(matches!(time.sign, gix::date::time::Sign::Minus));
     }
 
