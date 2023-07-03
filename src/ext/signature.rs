@@ -19,7 +19,7 @@ pub(crate) trait SignatureExtended {
 impl SignatureExtended for gix::actor::Signature {
     fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature {
         let time = matches
-            .get_one::<gix::actor::Time>("authdate")
+            .get_one::<gix::date::Time>("authdate")
             .copied()
             .unwrap_or(self.time);
 
@@ -44,7 +44,7 @@ impl SignatureExtended for gix::actor::Signature {
 impl SignatureExtended for gix::actor::SignatureRef<'_> {
     fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature {
         let time = matches
-            .get_one::<gix::actor::Time>("authdate")
+            .get_one::<gix::date::Time>("authdate")
             .copied()
             .unwrap_or(self.time);
 

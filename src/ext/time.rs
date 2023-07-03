@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Extension trait for [`gix::actor::Time`].
+//! Extension trait for [`gix::date::Time`].
 
 use anyhow::{anyhow, Result};
 
-/// Extend [`gix::actor::Time`] with additional methods.
+/// Extend [`gix::date::Time`] with additional methods.
 pub(crate) trait TimeExtended {
     /// Attempt to parse a time string of one of several well-known formats.
     ///
@@ -17,11 +17,11 @@ pub(crate) trait TimeExtended {
     /// | `raw`             | `1641479527 -0500`               |
     /// | `now`             | `now`                            |
     /// | `gitoxide default`| `Thu Jan 6 2022 09:32:07 -0500`  |
-    fn parse_time(time_str: &str) -> Result<gix::actor::Time> {
+    fn parse_time(time_str: &str) -> Result<gix::date::Time> {
         let time_str = time_str.trim();
 
         if time_str == "now" {
-            return Ok(gix::actor::Time::now_local_or_utc());
+            return Ok(gix::date::Time::now_local_or_utc());
         }
 
         if let Ok(time) = gix::date::parse(time_str, Some(std::time::SystemTime::now())) {
@@ -57,10 +57,10 @@ pub(crate) trait TimeExtended {
         ] {
             if let Ok(primitive_dt) = time::PrimitiveDateTime::parse(time_str, format_desc) {
                 let offset = time::UtcOffset::from_whole_seconds(
-                    gix::actor::Time::now_local_or_utc().offset_in_seconds,
+                    gix::date::Time::now_local_or_utc().offset_in_seconds,
                 )?;
                 let offset_dt = primitive_dt.assume_offset(offset);
-                return Ok(gix::actor::Time::new(
+                return Ok(gix::date::Time::new(
                     offset_dt.unix_timestamp().try_into()?,
                     offset_dt.offset().whole_seconds(),
                 ));
@@ -69,7 +69,7 @@ pub(crate) trait TimeExtended {
 
         if let Ok(seconds) = time_str.parse::<u32>() {
             let offset_dt = time::OffsetDateTime::from_unix_timestamp(seconds.into())?;
-            return Ok(gix::actor::Time::new(
+            return Ok(gix::date::Time::new(
                 offset_dt.unix_timestamp().try_into()?,
                 offset_dt.offset().whole_seconds(),
             ));
@@ -79,11 +79,11 @@ pub(crate) trait TimeExtended {
     }
 }
 
-impl TimeExtended for gix::actor::Time {}
+impl TimeExtended for gix::date::Time {}
 
 #[cfg(test)]
 mod tests {
-    use gix::actor::Time;
+    use gix::date::Time;
 
     use super::TimeExtended;
 
@@ -92,7 +92,7 @@ mod tests {
         let time = Time::parse_time("123456 +0600").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_in_seconds, 6 * 60 * 60);
-        assert!(matches!(time.sign, gix::actor::Sign::Plus));
+        assert!(matches!(time.sign, gix::date::time::Sign::Plus));
     }
 
     #[test]
@@ -100,7 +100,7 @@ mod tests {
         let time = Time::parse_time("123456").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_in_seconds, 0);
-        assert!(matches!(time.sign, gix::actor::Sign::Plus));
+        assert!(matches!(time.sign, gix::date::time::Sign::Plus));
     }
 
     #[test]
@@ -138,7 +138,7 @@ mod tests {
         let time = Time::parse_time("123456 -0230").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_in_seconds, -150 * 60);
-        assert!(matches!(time.sign, gix::actor::Sign::Minus));
+        assert!(matches!(time.sign, gix::date::time::Sign::Minus));
     }
 
     #[test]

@@ -581,7 +581,7 @@ fn create_patch<'repo>(
         patchname
     };
 
-    let author_date = author_date.and_then(|date| gix::actor::Time::parse_time(&date).ok());
+    let author_date = author_date.and_then(|date| gix::date::Time::parse_time(&date).ok());
     let author = if let (Some(name), Some(email), Some(time)) =
         (author_name.as_deref(), author_email.as_deref(), author_date)
     {

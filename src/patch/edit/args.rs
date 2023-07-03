@@ -220,7 +220,7 @@ pub(crate) fn add_args(
                 )
                 .value_name("date")
                 .num_args(1)
-                .value_parser(ValueParser::new(gix::actor::Time::parse_time))
+                .value_parser(ValueParser::new(gix::date::Time::parse_time))
                 .value_hint(ValueHint::Other),
         )
         .arg(argset::committer_date_is_author_date_arg());

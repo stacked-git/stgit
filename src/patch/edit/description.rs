@@ -255,9 +255,9 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             Some(if let Some(name_email) = maybe_author {
                 let (name, email) = super::parse::parse_name_email(&name_email)?;
                 let time = if let Some(Some(date_str)) = raw_authdate {
-                    gix::actor::Time::parse_time(&date_str).context("patch description date")?
+                    gix::date::Time::parse_time(&date_str).context("patch description date")?
                 } else {
-                    gix::actor::Time::now_local_or_utc()
+                    gix::date::Time::now_local_or_utc()
                 };
                 Some(gix::actor::Signature {
                     name: BString::from(name),
@@ -402,7 +402,7 @@ mod tests {
             author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: gix::actor::Time::new(987654321, -3600),
+                time: gix::date::Time::new(987654321, -3600),
             }),
             message: "".to_string(),
             instruction: Some("# Instruction\n"),
@@ -436,7 +436,7 @@ mod tests {
             author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: gix::actor::Time::new(987654321, 21600),
+                time: gix::date::Time::new(987654321, 21600),
             }),
             message: "Subject\n".to_string(),
             instruction: Some("# Instruction\n"),
@@ -470,7 +470,7 @@ mod tests {
             author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: gix::actor::Time::new(987654321, 21600),
+                time: gix::date::Time::new(987654321, 21600),
             }),
             message: "Subject\n\
                       \n\
@@ -516,7 +516,7 @@ mod tests {
             author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: gix::actor::Time::new(987654321, 21600),
+                time: gix::date::Time::new(987654321, 21600),
             }),
             message: "Subject\n".to_string(),
             instruction: Some("# Instruction\n"),
@@ -576,7 +576,7 @@ mod tests {
             author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: gix::actor::Time::new(987654321, 21600),
+                time: gix::date::Time::new(987654321, 21600),
             }),
             message: "Subject\n\
                       \n\
@@ -647,7 +647,7 @@ mod tests {
             author: Some(Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: gix::actor::Time::new(987654321, 21600),
+                time: gix::date::Time::new(987654321, 21600),
             })),
             message: "Subject\n".to_string(),
             diff: None,
@@ -669,7 +669,7 @@ mod tests {
 
         let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
 
-        let commented_time = gix::actor::Time::new(987654321, 21600);
+        let commented_time = gix::date::Time::new(987654321, 21600);
         assert!(edited_desc.author.is_some());
         assert!(edited_desc.author.as_ref().unwrap().is_some());
         // Author date should be "now" if Author is present and Date is missing.

@@ -592,11 +592,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 /// Returns `None` if author information was not provided the command line.
 fn author_from_args(
     matches: &clap::ArgMatches,
-    time: Option<gix::actor::Time>,
+    time: Option<gix::date::Time>,
 ) -> Result<Option<gix::actor::Signature>> {
     let time = if let Some(time) = time {
         time
-    } else if let Some(authdate) = matches.get_one::<gix::actor::Time>("authdate").copied() {
+    } else if let Some(authdate) = matches.get_one::<gix::date::Time>("authdate").copied() {
         authdate
     } else {
         return Ok(None);
