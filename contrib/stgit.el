@@ -726,7 +726,7 @@ using (make-hash-table :test 'equal)."
                             (match-string 0))))
             (while (not (eobp))
               (unless (looking-at
-                       "\\([0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
+                       "\\([*0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
                 (error "Syntax error in output from stg series"))
               (let* ((state-str (match-string 2))
                      (state (cond ((string= state-str ">") 'top)
