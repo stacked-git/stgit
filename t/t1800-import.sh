@@ -19,7 +19,8 @@ test_expect_success 'Import patch with email headers' '
 	Subject: Hey: the subject
 	Message-ID: abc123
 
-	body
+	body1
+	body2
 
 	---
 
@@ -41,7 +42,8 @@ test_expect_success 'Import patch with email headers' '
     test_when_finished "rm subject body expected" &&
     test_cmp expected subject &&
     cat >expected <<-\EOF &&
-	body
+	body1
+	body2
 
 	Message-ID: abc123
 
@@ -58,7 +60,8 @@ test_expect_success 'Import patch without email headers' '
     cat >patch <<-\EOF &&
 	test subject
 
-	body
+	body1
+	body2
 
 	---
 
@@ -80,7 +83,9 @@ test_expect_success 'Import patch without email headers' '
     test_when_finished "rm subject body expected" &&
     test_cmp expected subject &&
     cat >expected <<-\EOF &&
-	body
+	body1
+	body2
+
 
 	EOF
     test_cmp expected body &&
@@ -95,7 +100,8 @@ test_expect_success 'Patch subject resemebles header' '
     cat >patch <<-\EOF &&
 	test: subject
 
-	body
+	body1
+	body2
 
 	---
 
@@ -117,7 +123,9 @@ test_expect_success 'Patch subject resemebles header' '
     test_when_finished "rm subject body expected" &&
     test_cmp expected subject &&
     cat >expected <<-\EOF &&
-	body
+	body1
+	body2
+
 
 	EOF
     test_cmp expected body &&
