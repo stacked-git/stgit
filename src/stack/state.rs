@@ -116,7 +116,8 @@ impl<'repo> StackState<'repo> {
 
     /// Read and parse stack state from given stack state tree.
     pub(super) fn from_tree(repo: &'repo gix::Repository, tree: gix::Tree<'repo>) -> Result<Self> {
-        let stack_json = tree.lookup_entry_by_path("stack.json")?;
+        let mut tree = tree;
+        let stack_json = tree.peel_to_entry_by_path("stack.json")?;
         if let Some(stack_json) = stack_json {
             let stack_json_blob = stack_json.object()?.peel_to_kind(gix::objs::Kind::Blob)?;
             let raw_state = RawStackState::from_stack_json(&stack_json_blob.data)?;
@@ -323,9 +324,9 @@ impl<'repo> StackState<'repo> {
         let patches_tree_name = "patches";
 
         let (prev_state, prev_patches_tree) =
-            if let Some((prev_state, prev_tree)) = prev_state_and_tree {
+            if let Some((prev_state, mut prev_tree)) = prev_state_and_tree {
                 let prev_patches_tree = prev_tree
-                    .lookup_entry_by_path(patches_tree_name)?
+                    .peel_to_entry_by_path(patches_tree_name)?
                     .and_then(|entry| entry.object().ok().map(|object| object.into_tree()));
                 (Some(prev_state), prev_patches_tree)
             } else {
@@ -397,7 +398,7 @@ impl<'repo> StackState<'repo> {
                             .find(|entry_ref| entry_ref.filename() == patchname_str.as_bytes())
                         {
                             if matches!(prev_patch_entry.mode(), gix::objs::tree::EntryMode::Blob) {
-                                return Ok(prev_patch_entry.oid());
+                                return Ok(prev_patch_entry.object_id());
                             }
                         }
                     }

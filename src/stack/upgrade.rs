@@ -52,10 +52,10 @@ fn get_format_version(repo: &gix::Repository, branch_name: &str) -> Result<i64> 
             .context("finding version 4 state commit")?
             .object()?
             .try_into_commit()?;
-        let state_tree = state_commit
+        let mut state_tree = state_commit
             .tree()
             .context("finding version 4 state tree")?;
-        if let Some(meta_entry) = state_tree.lookup_entry_by_path("meta")? {
+        if let Some(meta_entry) = state_tree.peel_to_entry_by_path("meta")? {
             let meta_blob = meta_entry
                 .object()
                 .context("finding old stack `meta` blob")
@@ -99,10 +99,10 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
             .context("finding version 4 state commit")?
             .object()?
             .try_into_commit()?;
-        let state_tree = state_commit
+        let mut state_tree = state_commit
             .tree()
             .context("finding version 4 state tree")?;
-        if let Some(meta_entry) = state_tree.lookup_entry_by_path("meta")? {
+        if let Some(meta_entry) = state_tree.peel_to_entry_by_path("meta")? {
             let meta_blob = meta_entry
                 .object()
                 .context("finding old stack `meta` blob")
