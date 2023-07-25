@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.3.1] 2023-07-25
+
+### Fixed
+- fix(zsh): typo in completion help for stg commit --all
+- fix: use canonical Message-ID spelling
+- fix(stgit.el): recognize new empty patch marker
+- fix(import): Keep first line break in body
+
+### Changed
+- update dependencies
+
+
 ## [2.3.0] 2023-05-25
 
 ### Removed
