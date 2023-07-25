@@ -3,7 +3,7 @@ name = "stgit"
 version = "2.3.0"
 description = "Stack-based patch management for Git"
 edition = "2021"
-rust-version = "1.64"
+rust-version = "1.66.1"
 authors = [
   "Catalin Marinas <catalin.marinas@gmail.com>",
   "Peter Grayson <pete@jpgrayson.net>",
