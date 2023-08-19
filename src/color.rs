@@ -91,7 +91,7 @@ pub(crate) fn use_color(matches: &ArgMatches) -> bool {
     }
 }
 
-/// Parse argv for `--color` option.
+/// Parse `argv` for `--color` option.
 ///
 /// This is done outside of [`clap`] in order to be able to setup the [`clap::Command`]
 /// to use or not use color based on the option.

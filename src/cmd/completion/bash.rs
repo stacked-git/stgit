@@ -192,7 +192,7 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
     }
 }
 
-/// Insert COMPREPLY line into script for given arg.
+/// Insert `COMPREPLY` line into script for given arg.
 fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
     assert!(arg.get_num_args().unwrap().takes_values());
 

@@ -2,7 +2,7 @@
 
 //! Implementations for patch-aware revision specifications.
 //!
-//! A StGit revspec is like a git revspec (see gitrevisions(7)), but with a coupld of
+//! A StGit revspec is like a git revspec (see `gitrevisions(7)`), but with a couple of
 //! stack and patch aware features:
 //!
 //! - The special `{base}` specification may be used to refer to the base commit of the

@@ -173,7 +173,7 @@ impl<'repo> StackState<'repo> {
         }
     }
 
-    /// Create updated state with new head and prev commits.
+    /// Create updated state with new `head` and `prev` commits.
     pub(crate) fn advance_head(
         self,
         new_head: Rc<gix::Commit<'repo>>,

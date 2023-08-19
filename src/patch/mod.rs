@@ -120,7 +120,7 @@ pub(crate) enum PatchOffsetAtom {
 ///
 /// A valid patch name must meet all the rules of a git reference name, plus the
 /// additional restriction of not containing '/' as well as not being one of the
-/// reserved strings "@" or "{base}".
+/// reserved strings `@` or `{base}`.
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub(crate) struct PatchName(pub(self) String);
 
@@ -144,7 +144,7 @@ pub(crate) enum LocationConstraint {
 ///
 /// The [`RangeConstraint::AllWithAppliedBoundary`] and
 /// [`RangeConstraint::VisibleWithAppliedBoundary`] variants allow all and visible
-/// (applied + unapplied), respectively, but constrain open-ended patch ranges to the
+/// (applied `+` unapplied), respectively, but constrain open-ended patch ranges to the
 /// last applied patch when the beginning of the open range is an applied patch.
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum RangeConstraint {
@@ -180,7 +180,7 @@ pub(crate) enum LocationGroup {
 /// Specification for a multiple StGit revisions.
 ///
 /// A StGit revision specification resolves to a commit that may or may not have an
-/// associated patch name. Thus StGit revision specifactions may be a patch locator, but
+/// associated patch name. Thus StGit revision specifications may be a patch locator, but
 /// may also be a git revision specifier which resolves to a commit that may be outside
 /// the stack.
 ///
@@ -210,7 +210,7 @@ pub(crate) enum RangeRevisionSpec {
 ///
 /// Any StGit offsets in the specification, i.e. `~[<n>]` or `+[<n>]`, *may* resolve to
 /// commits below the stack. Furthermore, git revision suffixes may be supplied after
-/// any patch locator offsets. For example, "{base}~^2" would refer to the second
+/// any patch locator offsets. For example, `{base}~^2` would refer to the second
 /// parent of the parent of the current stack's base commit.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum SingleRevisionSpec {

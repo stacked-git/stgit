@@ -534,7 +534,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(output.stdout)
     }
 
-    /// Diff tree with index returning a bool indicating whether they differ.
+    /// Diff tree with index returning a `bool` indicating whether they differ.
     pub(crate) fn diff_index_quiet(&self, tree_id: gix::ObjectId) -> Result<bool> {
         let no_diff = self
             .git()
@@ -659,7 +659,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(())
     }
 
-    /// Show log in gitk
+    /// Show log in `gitk`
     pub(crate) fn gitk<SpecIter, SpecArg>(
         &self,
         commit_id: gix::ObjectId,
@@ -994,7 +994,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(oids)
     }
 
-    /// Get cdup for current directory from `git rev-parse --show-cdup`.
+    /// Get `cdup` for current directory from `git rev-parse --show-cdup`.
     pub(crate) fn rev_parse_cdup(&self) -> Result<OsString> {
         let output = self
             .git()
@@ -1114,7 +1114,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     /// Pop stashed changes back into working tree and index.
     ///
-    /// Returns Ok(true) if stash application is successful, Ok(false) if stash
+    /// Returns `Ok(true)` if stash application is successful, `Ok(false)` if stash
     /// application results in conflicts, or Err otherwise.
     pub(crate) fn stash_pop(&self) -> Result<bool> {
         let output = self

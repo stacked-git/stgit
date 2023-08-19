@@ -726,7 +726,7 @@ impl<'repo> StackTransaction<'repo> {
 
     /// Transform regular git commits from the base of the stack into StGit patches.
     ///
-    /// The (patchname, commit_id) pairs must be in application order. I.e. the furthest
+    /// The `(patchname, commit_id)` pairs must be in application order. I.e. the furthest
     /// ancestor of the current base first and the current base last.
     pub(crate) fn uncommit_patches<'a>(
         &mut self,

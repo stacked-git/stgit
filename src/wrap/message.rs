@@ -42,7 +42,7 @@ impl<'a> Message<'a> {
     /// Determine whether the commit message has any content.
     ///
     /// For the [`Message::Raw`] variant, emptiness is determined simply by the presence
-    /// or absensce of bytes, independent of the nominal encoding.
+    /// or absence of bytes, independent of the nominal encoding.
     pub(crate) fn is_empty(&self) -> bool {
         match self {
             Message::Str(s) => s.is_empty(),

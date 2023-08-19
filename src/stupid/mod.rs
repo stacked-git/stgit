@@ -3,8 +3,8 @@
 //! Execute commands with git, the stupid content tracker.
 //!
 //! Each function in this module calls-out to a specific git command that is useful to
-//! StGit. This module originally existed to overcome limitations of libgit2, but
-//! remains until gitoxide can replace its behaviors.
+//! StGit. This module originally existed to overcome limitations of `libgit2`, but
+//! remains until `gitoxide` can replace its behaviors.
 
 mod command;
 mod context;
@@ -22,7 +22,7 @@ pub(crate) use self::{
 };
 
 pub(crate) trait Stupid<'repo, 'index> {
-    /// Get StupidContext for running stupid commands.
+    /// Get `StupidContext` for running stupid commands.
     fn stupid(&'repo self) -> StupidContext<'repo, 'index>;
 }
 

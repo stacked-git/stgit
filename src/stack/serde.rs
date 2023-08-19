@@ -10,7 +10,7 @@ use crate::patch::PatchName;
 
 /// Raw state deserialization representation.
 ///
-/// PatchNames and Oids are checked, but Oids are not converted to Commits.
+/// `PatchNames` and `Oids` are checked, but `Oids` are not converted to `Commits`.
 pub(crate) struct RawStackState {
     pub prev: Option<gix::ObjectId>,
     pub head: gix::ObjectId,

@@ -31,7 +31,7 @@ pub(crate) struct Alias {
 impl Alias {
     /// Create new command alias.
     ///
-    /// If the command string begins with '!', it will be treated as a shell alias,
+    /// If the command string begins with `!`, it will be treated as a shell alias,
     /// otherwise it will be an alias for a StGit command.
     pub(crate) fn new(name: &str, command: &str) -> Self {
         let (kind, command) = if let Some(command) = command.strip_prefix('!') {

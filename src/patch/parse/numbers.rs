@@ -11,7 +11,7 @@ use nom::{
 
 use super::Sign;
 
-/// Parse a sign character, i.e. '-' or '+'.
+/// Parse a sign character, i.e. `-` or `+`.
 pub(super) fn sign(input: &str) -> nom::IResult<&str, Sign> {
     alt((
         map(the_char('-'), |_| Sign::Minus),
@@ -27,21 +27,21 @@ pub(super) fn unsigned_int(input: &str) -> nom::IResult<&str, usize> {
     map_res(digit1, |s: &str| s.parse::<isize>().map(|n| n as usize))(input)
 }
 
-/// Parse a negative int. I.e. an int with a leading '-' sign.
+/// Parse a negative int. I.e. an int with a leading `-` sign.
 pub(super) fn negative_int(input: &str) -> nom::IResult<&str, isize> {
     map_res(recognize(tuple((the_char('-'), digit1))), |s: &str| {
         s.parse::<isize>()
     })(input)
 }
 
-/// Parse a positive int with a leading '+' sign.
+/// Parse a positive int with a leading `+` sign.
 pub(super) fn plusative_int(input: &str) -> nom::IResult<&str, isize> {
     map_res(recognize(tuple((the_char('+'), digit1))), |s: &str| {
         s.parse::<isize>()
     })(input)
 }
 
-/// Parse a signed int, but disallow an explicit '+' sign.
+/// Parse a signed int, but disallow an explicit `+` sign.
 pub(super) fn nonplussed_int(input: &str) -> nom::IResult<&str, isize> {
     map_res(recognize(tuple((opt(the_char('-')), digit1))), |s: &str| {
         s.parse::<isize>()

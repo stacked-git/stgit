@@ -10,15 +10,15 @@ pub(crate) trait CommitExtended<'a> {
     /// Get author signature, strictly.
     ///
     /// The author signature, in an arbitrary git commit object, may (should? must?) be
-    /// encoded with the commit encoding. However, gitoxide does not perform any
+    /// encoded with the commit encoding. However, `gitoxide` does not perform any
     /// decoding when it parses commit objects, thus a [`gix::actor::Signature`] from a
     /// [`gix::Commit`] is not decoded in the general case, and thus
     /// [`gix::actor::Signature.name`] and [`gix::actor::Signature.email` ] may only be
-    /// decoded UTF-8 strs iff the commit happens to be using the UTF-8 encoding.
+    /// decoded UTF-8 strings iff the commit happens to be using the UTF-8 encoding.
     ///
     /// This method takes into account the commit's encoding and attempts to decode the
     /// author name and email into UTF-8. The signature returned by this method is
-    /// guaranteed to have valid UTF-8 name and email strs.
+    /// guaranteed to have valid UTF-8 name and email strings.
     fn author_strict(&self) -> Result<gix::actor::Signature>;
 
     /// Get committer signature, strictly.

@@ -67,7 +67,7 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 
     /// Allow pushing of a patch that results in conflicts. Will use the value of
-    /// "stgit.push.allow-conflicts" if not set explicitly.
+    /// `"stgit.push.allow-conflicts"` if not set explicitly.
     #[must_use]
     pub(crate) fn allow_push_conflicts(mut self, allow: bool) -> Self {
         self.options.allow_push_conflicts = Some(allow);

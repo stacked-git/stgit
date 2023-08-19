@@ -178,7 +178,7 @@ impl<'repo> TemporaryMessage<'repo> {
 
     /// Get name of temporary message file.
     ///
-    /// This is not a complete path. The temporary file is relative to the work_dir.
+    /// This is not a complete path. The temporary file is relative to the `work_dir`.
     fn filename(&self) -> &Path {
         self.filename.as_ref()
     }

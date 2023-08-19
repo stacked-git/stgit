@@ -107,7 +107,7 @@ pub(crate) fn get_one_str<'a>(matches: &'a clap::ArgMatches, id: &str) -> Option
     matches.get_one::<String>(id).map(String::as_str)
 }
 
-/// For use with `clap::Arg::value_parser()` to parse a usize argument.
+/// For use with `clap::Arg::value_parser()` to parse a `usize` argument.
 ///
 /// This function has a custom error message that is preferable to the messages reported
 /// by `str::parse::<usize>()`.

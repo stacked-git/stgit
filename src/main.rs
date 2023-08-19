@@ -104,7 +104,7 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
 /// Create [`clap::Command`] instance sufficient for finding subcommand candidates.
 ///
 /// By using [`clap::Command::allow_external_subcommands()`], the command line arguments
-/// can be quickly parsed just enough to determine whether the user has providied a valid
+/// can be quickly parsed just enough to determine whether the user has provided a valid
 /// subcommand or alias, but without the cost of instantiating [`clap::Command`]
 /// instances for any of subcommands or aliases.
 fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command {
@@ -296,8 +296,8 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
 
 /// Display the help for the fully-instantiated top-level [`clap::Command`].
 ///
-/// Process argv using full top-level [`clap::Command`] instance with the expectation
-/// that argv was previously determined to be invalid. The full command can then output
+/// Process `argv` using full top-level [`clap::Command`] instance with the expectation
+/// that `argv` was previously determined to be invalid. The full command can then output
 /// a help message with a complete view of all subcommands and aliases, and then
 /// terminate to process.
 fn full_app_help(
@@ -326,7 +326,7 @@ fn full_app_help(
 
 /// Execute regular StGit subcommand.
 ///
-/// The particular subcommand name must have previously been matched in argv such that
+/// The particular subcommand name must have previously been matched in `argv` such that
 /// it is guaranteed to be matched again here.
 ///
 /// N.B. a new top-level app instance is created to ensure that help messages are

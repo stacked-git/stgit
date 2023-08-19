@@ -20,7 +20,7 @@ pub(crate) trait RepositoryExtended {
     /// Determine whether the repository is in a clean state.
     ///
     /// A clean repository is not in the middle of any of a variety of stateful
-    /// operations such as merge, rebase, cherrypick, etc.; see
+    /// operations such as merge, rebase, cherry-pick, etc.; see
     /// [`gix::state::InProgress`].
     fn check_repository_state(&self) -> Result<()>;
 

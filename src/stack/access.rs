@@ -13,7 +13,7 @@ use crate::patch::{LocationConstraint, LocationGroup, PatchName};
 
 /// Trait for accessing information about a stack, including its parent branch.
 ///
-/// This is a supertrait of [`StackStateAccess`].
+/// This is a super-trait of [`StackStateAccess`].
 pub(crate) trait StackAccess<'repo>: StackStateAccess<'repo> {
     /// Get branch name.
     ///
