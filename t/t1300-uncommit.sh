@@ -115,8 +115,13 @@ test_expect_success 'Uncommit when top != head' '
     stg new -m foo &&
     git reset --hard HEAD^ &&
     h=$(git rev-parse HEAD) &&
-    stg uncommit bar &&
+    command_error stg uncommit bar 2>err &&
+    grep "error: HEAD and stack top are not the same" err &&
     test "$(git rev-parse HEAD)" = "$h" &&
+    test "$(echo $(stg series))" = "> foo" &&
+    stg repair &&
+    stg push &&
+    stg uncommit bar &&
     test "$(echo $(stg series))" = "+ bar > foo"
 '
 

@@ -93,6 +93,7 @@ fn make() -> clap::Command {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
     let stack = Stack::current(&repo, InitializationPolicy::AutoInitialize)?;
+    stack.check_head_top_mismatch()?;
     let config = repo.config_snapshot();
 
     let opt_number = matches.get_one::<usize>("number").copied();
