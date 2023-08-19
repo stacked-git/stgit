@@ -210,9 +210,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     /// An interactive edit session may or may not be triggered depending on the
     /// user-provided options and command-specific setup.
     ///
-    /// A successful [`EditOutcome`] means that either the `--save-template` option was used
-    /// and the template was saved, or that the patch was edited successfully in which case
-    /// potentially new patch commit and patch name are returned.
+    /// A successful [`EditOutcome`] means that either the `--save-template` option was
+    /// used and the template was saved, or that the patch was edited successfully in
+    /// which case potentially new patch commit and patch name are returned.
     pub(crate) fn edit(
         self,
         stack_state: &impl StackStateAccess<'repo>,

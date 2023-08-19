@@ -281,7 +281,8 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
     std::process::exit(code)
 }
 
-/// Change the current directory based on any -C options from the top-level Command matches.
+/// Change the current directory based on any -C options from the top-level Command
+/// matches.
 ///
 /// Each -C path is relative to the prior. Empty paths are allowed, but ignored.
 fn change_directories(matches: &ArgMatches) -> Result<()> {
@@ -297,8 +298,8 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
 /// Display the help for the fully-instantiated top-level [`clap::Command`].
 ///
 /// Process `argv` using full top-level [`clap::Command`] instance with the expectation
-/// that `argv` was previously determined to be invalid. The full command can then output
-/// a help message with a complete view of all subcommands and aliases, and then
+/// that `argv` was previously determined to be invalid. The full command can then
+/// output a help message with a complete view of all subcommands and aliases, and then
 /// terminate to process.
 fn full_app_help(
     argv: Vec<OsString>,

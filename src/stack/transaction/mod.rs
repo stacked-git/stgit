@@ -111,8 +111,8 @@ pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
 impl<'repo> ExecuteContext<'repo> {
     /// Execute the transaction.
     ///
-    /// If any of the transaction operations (i.e. from `transact()`) fail, the
-    /// stack, index, and worktree state will be rolled back.
+    /// If any of the transaction operations (i.e. from `transact()`) fail, the stack,
+    /// index, and worktree state will be rolled back.
     ///
     /// A new `Stack` instance is returned.
     pub(crate) fn execute(self, reflog_msg: &str) -> Result<Stack<'repo>> {
@@ -726,8 +726,8 @@ impl<'repo> StackTransaction<'repo> {
 
     /// Transform regular git commits from the base of the stack into StGit patches.
     ///
-    /// The `(patchname, commit_id)` pairs must be in application order. I.e. the furthest
-    /// ancestor of the current base first and the current base last.
+    /// The `(patchname, commit_id)` pairs must be in application order. I.e. the
+    /// furthest ancestor of the current base first and the current base last.
     pub(crate) fn uncommit_patches<'a>(
         &mut self,
         patches: impl IntoIterator<Item = (&'a PatchName, gix::ObjectId)>,

@@ -78,8 +78,8 @@ pub(crate) struct StGitCommand {
 
 /// Builtin [`StGitCommand`]'s.
 ///
-/// This is used in [`crate::main`] for command line argument parsing and
-/// eventual dispatch of a subcommand.
+/// This is used in [`crate::main`] for command line argument parsing and eventual
+/// dispatch of a subcommand.
 pub(crate) const STGIT_COMMANDS: &[StGitCommand] = &[
     branch::STGIT_COMMAND,
     clean::STGIT_COMMAND,

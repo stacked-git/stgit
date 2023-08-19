@@ -75,7 +75,8 @@ pub(crate) trait StackStateAccess<'repo> {
 
     /// Get recorded head of the stack.
     ///
-    /// N.B. this is probably not what you want. See also [`crate::stack::Stack::branch_head`].
+    /// N.B. this is probably not what you want. See also
+    /// [`crate::stack::Stack::branch_head`].
     fn head(&self) -> &Rc<gix::Commit<'repo>>;
 
     /// Get the commit for the given patch name.

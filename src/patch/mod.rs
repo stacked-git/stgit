@@ -32,8 +32,8 @@ use crate::branchloc::BranchLocator;
 /// patch after the stack's base commit.
 ///
 /// The last patch in an open-ended range depends on command-specific policy which is
-/// determined by the [`RangeConstraint`] used with [`patchrange::resolve_names()`]
-/// or [`patchrange::resolve_names_contiguous()`].
+/// determined by the [`RangeConstraint`] used with [`patchrange::resolve_names()`] or
+/// [`patchrange::resolve_names_contiguous()`].
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum PatchRange {
     /// A range consisting of a single patch.
@@ -64,8 +64,8 @@ pub(crate) struct PatchLocator {
 
 /// Identifier for a patch or position within the stack.
 ///
-/// The canonical patch identifier is its name. Other identifiers may be specified
-/// in command line arguments using special syntax.
+/// The canonical patch identifier is its name. Other identifiers may be specified in
+/// command line arguments using special syntax.
 ///
 /// The stack base is spelled `{base}`. Note that a (positive) offset must be supplied
 /// in a [`PatchLocator`] using [`PatchId::Base`] since the stack's base is outside the
@@ -80,7 +80,7 @@ pub(crate) struct PatchLocator {
 /// patch, into the hidden patches.
 ///
 /// Absolute indexes into the stack, relative offsets, and commit id prefixes are also
-/// valid identifiers.  However, these identifiers are ambiguous with patch names since
+/// valid identifiers. However, these identifiers are ambiguous with patch names since
 /// they cannot be disambiguated syntactically. These ambiguous patch identifiers are
 /// disambiguated in the context of the actual stack. When an ambiguous identifier
 /// matches a patch name in the stack, it is always interpreted as the patch name. Only
@@ -180,9 +180,9 @@ pub(crate) enum LocationGroup {
 /// Specification for a multiple StGit revisions.
 ///
 /// A StGit revision specification resolves to a commit that may or may not have an
-/// associated patch name. Thus StGit revision specifications may be a patch locator, but
-/// may also be a git revision specifier which resolves to a commit that may be outside
-/// the stack.
+/// associated patch name. Thus StGit revision specifications may be a patch locator,
+/// but may also be a git revision specifier which resolves to a commit that may be
+/// outside the stack.
 ///
 /// Patch ranges are allowed, but git revision ranges *are not* allowed. Any
 /// specification using the ".." range syntax will be resolved as a StGit patch range.
@@ -210,8 +210,8 @@ pub(crate) enum RangeRevisionSpec {
 ///
 /// Any StGit offsets in the specification, i.e. `~[<n>]` or `+[<n>]`, *may* resolve to
 /// commits below the stack. Furthermore, git revision suffixes may be supplied after
-/// any patch locator offsets. For example, `{base}~^2` would refer to the second
-/// parent of the parent of the current stack's base commit.
+/// any patch locator offsets. For example, `{base}~^2` would refer to the second parent
+/// of the parent of the current stack's base commit.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum SingleRevisionSpec {
     Branch {
@@ -239,8 +239,8 @@ pub(crate) enum StGitBoundaryRevisions<'repo> {
 
 /// A regular [`PatchLocator`] with an optional git revision suffix.
 ///
-/// These extended locators are used with [`SingleRevisionSpec`] (and
-/// transitively [`RangeRevisionSpec`]).
+/// These extended locators are used with [`SingleRevisionSpec`] (and transitively
+/// [`RangeRevisionSpec`]).
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct PatchLikeSpec {
     patch_loc: PatchLocator,

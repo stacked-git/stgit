@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Implementations for [`LocationConstraint`], [`LocationGroup`], and [`RangeConstraint`].
+//! Implementations for [`LocationConstraint`], [`LocationGroup`], and
+//! [`RangeConstraint`].
 
 use super::{LocationConstraint, LocationGroup, RangeConstraint};
 

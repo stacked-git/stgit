@@ -5,10 +5,10 @@
 //! The current stack state format is version 5, introduced in StGit `v1.2`.
 //!
 //! This module is capable of upgrading stack state version 4 to version 5.
-//! Stack state version 5 was introduced in StGit `v1.2`.
-//! Stack state version 4 was introduced in StGit `v1.0`.
-//! Stack state version 3 was introduced in StGit `v0.20`.
-//! Stack state version 2 was introduced in StGit `v0.13`.
+//! - Stack state version 5 was introduced in StGit `v1.2`.
+//! - Stack state version 4 was introduced in StGit `v1.0`.
+//! - Stack state version 3 was introduced in StGit `v0.20`.
+//! - Stack state version 2 was introduced in StGit `v0.13`.
 
 use std::{
     collections::BTreeMap,

@@ -2,8 +2,8 @@
 
 //! Low-level representation of StGit Stack.
 //!
-//! This stack state representation is serialized to/from the `stack.json` blob in the
-//! stack state tree.
+//! This stack state representation is serialized to/from the `stack.json` blob
+//! in the stack state tree.
 
 use std::{collections::BTreeMap, rc::Rc, str};
 
@@ -19,19 +19,19 @@ use crate::{
 
 /// Stack state as recorded in the git repository.
 ///
-/// This is the core state recorded-to and read-from the git repository that describes
-/// the state of a StGit stack.
+/// This is the core state recorded-to and read-from the git repository that
+/// describes the state of a StGit stack.
 pub(crate) struct StackState<'repo> {
     /// Commit of the previous stack state.
     ///
-    /// Will be None for a newly initialized stack or when the stack history is cleared
-    /// (i.e. with `stg log --clear`).
+    /// Will be None for a newly initialized stack or when the stack history is
+    /// cleared (i.e. with `stg log --clear`).
     pub(crate) prev: Option<Rc<gix::Commit<'repo>>>,
 
     /// Head commit of the stack.
     ///
-    /// Either the topmost patch if patches are applied, or the stack base if no patches
-    /// are applied.
+    /// Either the topmost patch if patches are applied, or the stack base if no
+    /// patches are applied.
     pub(super) head: Rc<gix::Commit<'repo>>,
 
     /// List of applied patches.
@@ -89,8 +89,8 @@ impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
     }
 }
 
-/// Maximum number of parents a stack state commit is allowed before parent commit
-/// bundles are created.
+/// Maximum number of parents a stack state commit is allowed before parent
+/// commit bundles are created.
 const MAX_PARENTS: usize = 16;
 
 impl<'repo> StackState<'repo> {
@@ -129,8 +129,9 @@ impl<'repo> StackState<'repo> {
 
     /// Convert [`RawStackState`] to [`StackState`].
     ///
-    /// Commit objects are looked-up from commit ids in the raw state. This may fail if
-    /// the raw state references commit ids not present in the repository.
+    /// Commit objects are looked-up from commit ids in the raw state. This may
+    /// fail if the raw state references commit ids not present in the
+    /// repository.
     pub(super) fn from_raw_state(
         repo: &'repo gix::Repository,
         raw_state: RawStackState,
@@ -188,11 +189,12 @@ impl<'repo> StackState<'repo> {
 
     /// Commit stack state to repository.
     ///
-    /// The stack state content exists in a tree that is unrelated to the associated
-    /// branch's content. However, in order to ensure that unapplied and hidden patches
-    /// are not subject to garbage collection, stack state commit objects have parent
-    /// commits with tree content of the associated branch in addition to a "regular"
-    /// parent commit from the stack state branch.
+    /// The stack state content exists in a tree that is unrelated to the
+    /// associated branch's content. However, in order to ensure that unapplied
+    /// and hidden patches are not subject to garbage collection, stack state
+    /// commit objects have parent commits with tree content of the associated
+    /// branch in addition to a "regular" parent commit from the stack state
+    /// branch.
     pub(crate) fn commit(
         &self,
         repo: &'repo gix::Repository,
@@ -296,11 +298,11 @@ impl<'repo> StackState<'repo> {
 
     /// Make stack state tree.
     ///
-    /// The stack state tree contains a `stack.json` blob at the top level along with a
-    /// `patches` sub-tree which contains a blob for each patch. The `stack.json` blob
-    /// contains the operable stack state whereas the per-patch metadata blobs are
-    /// treated as write-only by StGit and most useful when running `stg log
-    /// <patchname>`.
+    /// The stack state tree contains a `stack.json` blob at the top level along
+    /// with a `patches` sub-tree which contains a blob for each patch. The
+    /// `stack.json` blob contains the operable stack state whereas the
+    /// per-patch metadata blobs are treated as write-only by StGit and most
+    /// useful when running `stg log <patchname>`.
     ///
     /// ```
     /// stack.json
@@ -374,9 +376,9 @@ impl<'repo> StackState<'repo> {
 
     /// Make patch metadata blob.
     ///
-    /// The patch metadata blobs are for human consumption. The per-patch log, viewed
-    /// with `stg log <patchname>`, shows the evolution of the patch's metadata,
-    /// including its commit message.
+    /// The patch metadata blobs are for human consumption. The per-patch log,
+    /// viewed with `stg log <patchname>`, shows the evolution of the patch's
+    /// metadata, including its commit message.
     fn make_patch_meta(
         &self,
         repo: &gix::Repository,

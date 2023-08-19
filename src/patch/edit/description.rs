@@ -20,15 +20,15 @@ impl AsRef<[u8]> for DiffBuffer {
 
 /// Patch details presented to user when interactively editing a patch.
 ///
-/// After the user edits the patch description file, the details are read back into
-/// the complementary [`EditedPatchDescription`] struct.
+/// After the user edits the patch description file, the details are read back into the
+/// complementary [`EditedPatchDescription`] struct.
 #[derive(Default)]
 pub(super) struct EditablePatchDescription {
     /// Patch name.
     ///
     /// Should be the original or default patch name when setting up an interactive
-    /// edit, but may be `None` after interactive edit (i.e. if the user removes the name
-    /// or the entire `Patch:` header).
+    /// edit, but may be `None` after interactive edit (i.e. if the user removes the
+    /// name or the entire `Patch:` header).
     pub patchname: Option<PatchName>,
 
     /// Patch author.
@@ -100,7 +100,8 @@ impl EditablePatchDescription {
     }
 }
 
-/// Patch details read-back after the user interactively edits a [`EditablePatchDescription`].
+/// Patch details read-back after the user interactively edits a
+/// [`EditablePatchDescription`].
 #[derive(Default)]
 pub(super) struct EditedPatchDescription {
     /// Patch name.
@@ -120,7 +121,7 @@ pub(super) struct EditedPatchDescription {
     /// The outer option indicates whether the "Author:" header was present in the
     /// user-edited buffer.
     ///
-    /// | `Author:` header      | `author`  value         |
+    /// | `Author:` header      | `author` value          |
     /// |-----------------------|-------------------------|
     /// | `Author: name <mail>` | `Some(Some(signature))` |
     /// | `Author: `            | `Some(None)`            |

@@ -8,8 +8,8 @@ use bstr::BString;
 pub(crate) trait SignatureExtended {
     /// Override signature with author information from the command line.
     ///
-    /// A new signature is created with some, all, or none of the author name, email, and time
-    /// replaced based on command line options.
+    /// A new signature is created with some, all, or none of the author name, email,
+    /// and time replaced based on command line options.
     ///
     /// The provided `matches` must come from a [`clap::Command`] setup with
     /// [`crate::patch::edit::add_args()`].

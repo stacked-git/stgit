@@ -4,8 +4,8 @@ use anyhow::{anyhow, Result};
 
 /// Parse name and email from string.
 ///
-/// The incoming string is expected to be of the form `name <email>`. It is an
-/// error if either the name or email contain extra `<` or `>` characters.
+/// The incoming string is expected to be of the form `name <email>`. It is an error if
+/// either the name or email contain extra `<` or `>` characters.
 pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
     if let Some((name, rem)) = name_email.split_once('<') {
         if let Some((email, rem)) = rem.split_once('>') {

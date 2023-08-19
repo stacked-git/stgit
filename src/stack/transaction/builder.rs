@@ -75,8 +75,8 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 
     /// Discard any modifications to files in the working tree when the transaction
-    /// executes. By default, the transaction will not execute if there are any
-    /// modified files in the working tree.
+    /// executes. By default, the transaction will not execute if there are any modified
+    /// files in the working tree.
     #[must_use]
     pub(crate) fn discard_changes(mut self, discard: bool) -> Self {
         self.options.discard_changes = discard;
@@ -101,8 +101,8 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 
     /// Determines whether the branch and stack metadata refs should be updated when the
-    /// transaction executes successfully. This is the default. Disabling this is only useful
-    /// in very special circumstances (e.g. for `stg uncommit`).
+    /// transaction executes successfully. This is the default. Disabling this is only
+    /// useful in very special circumstances (e.g. for `stg uncommit`).
     #[must_use]
     pub(crate) fn set_head(mut self, yes: bool) -> Self {
         self.options.set_head = yes;
@@ -120,13 +120,14 @@ impl<'repo> TransactionBuilder<'repo> {
     /// Perform stack transaction operations.
     ///
     /// The closure provided to this method may call various methods on the provided
-    /// [`StackTransaction`] instance. The closure returns `Err`, any changes to the stack,
-    /// index, or work tree will be rolled-back during the subsequent execution phase.
+    /// [`StackTransaction`] instance. The closure returns `Err`, any changes to the
+    /// stack, index, or work tree will be rolled-back during the subsequent execution
+    /// phase.
     ///
     /// N.B. [`super::Error::TransactionHalt`] errors do not trigger rollback.
     ///
-    /// This method must be called. It returns an [`ExecuteContext`] which must then be used
-    /// to execute the transaction by calling [`ExecuteContext::execute()`].
+    /// This method must be called. It returns an [`ExecuteContext`] which must then be
+    /// used to execute the transaction by calling [`ExecuteContext::execute()`].
     #[must_use]
     pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
     where

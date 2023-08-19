@@ -25,9 +25,9 @@ pub(super) trait StupidCommand {
 
     /// Write input to child process and gather its output.
     ///
-    /// The input data is written from a separate thread to avoid potential
-    /// deadlock that can occur if the child process's input buffer is filled
-    /// without concurrently reading from the child's stdout and stderr.
+    /// The input data is written from a separate thread to avoid potential deadlock
+    /// that can occur if the child process's input buffer is filled without
+    /// concurrently reading from the child's stdout and stderr.
     ///
     /// By default, stdout is inherited. Stdin and stderr are piped.
     fn in_and_out(&mut self, input: &[u8]) -> Result<Output>;

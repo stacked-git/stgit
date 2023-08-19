@@ -329,8 +329,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     /// Move branch
     ///
-    /// Moves branch ref, moves reflog, updates HEAD, and
-    /// renames `branch.<name>` config sections.
+    /// Moves branch ref, moves reflog, updates HEAD, and renames `branch.<name>` config
+    /// sections.
     pub(crate) fn branch_move(
         &self,
         old_branchname: Option<&str>,
@@ -495,7 +495,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(BString::from(output.stdout))
     }
 
-    /// Generate diff between specified tree and the working tree or index with `git diff-index`.
+    /// Generate diff between specified tree and the working tree or index with
+    /// `git diff-index`.
     pub(crate) fn diff_index(&self, tree_id: gix::ObjectId) -> Result<BString> {
         let output = self
             .git()
@@ -869,7 +870,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
     }
 
-    /// Perform three-way merge, with optional auto-resolution of conflicts with `git merge-tool`.
+    /// Perform three-way merge, with optional auto-resolution of conflicts with
+    /// `git merge-tool`.
     pub(crate) fn merge_recursive_or_mergetool(
         &self,
         base_tree_id: gix::ObjectId,
