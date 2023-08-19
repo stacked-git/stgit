@@ -27,7 +27,7 @@ StGit also has a complete set of [man pages][man] describing the
 
 ## Installation
 
-See [CHANGELOG.md](CHANGELOG.md) to see what has changed in the latest
+See [`CHANGELOG.md`](CHANGELOG.md) to see what has changed in the latest
 StGit release.
 
 ### Dependencies
@@ -71,9 +71,11 @@ versions of StGit (see [repology][repology]). These unofficial packages
 are meant to be a stop-gap until official StGit packages are provided by
 downstream distributions.
 
-The Linux deb and rpm packages are statically linked use musl libc to
-maximize compatibility. They should hopefully work on a wide range of
-deb and rpm based distributions.
+The Linux deb and rpm packages are statically linked use [`musl`][musl]
+libc to maximize compatibility. They should hopefully work on a wide
+range of deb and rpm based distributions.
+
+[musl]: https://musl.libc.org/
 
 ### Source Installation
 
@@ -89,15 +91,15 @@ To install the `stg` executable from source, choose a `prefix` and run:
 $ make prefix=$HOME/.local install
 ```
 
-For more information about installation, see [INSTALL.md](INSTALL.md).
+For more information about installation, see [`INSTALL.md`](INSTALL.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for a full guide to contributing
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for a full guide to contributing
 to StGit.
 
 ## Maintainers
 
 StGit is maintained by Catalin Marinas and Peter Grayson.
 
-For a complete list of StGit's authors, see [AUTHORS.md](AUTHORS.md).
+For a complete list of StGit's authors, see [`AUTHORS.md`](AUTHORS.md).
