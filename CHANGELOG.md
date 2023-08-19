@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.3.2] 2023-08-19
+
+### Fixed
+- fix!(uncommit): check for HEAD/top mismatch (#360)
+- docs: docstring spelling and formatting fixes
+
+### Changed
+- feat(uncommit): print uncommited patches
+- pin serde to avoid using precompiled binary
+- update dependencies
+
+
 ## [2.3.1] 2023-07-25
 
 ### Fixed
