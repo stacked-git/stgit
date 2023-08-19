@@ -75,6 +75,24 @@ impl TransactionUserInterface {
         Ok(())
     }
 
+    pub(super) fn print_uncommitted(&mut self, uncommitted: &[PatchName]) -> Result<()> {
+        if !uncommitted.is_empty() {
+            let mut output = self.output.borrow_mut();
+            let mut color_spec = termcolor::ColorSpec::new();
+            output.set_color(color_spec.set_fg(Some(termcolor::Color::Green)))?;
+            write!(output, "+ ")?;
+            output.set_color(color_spec.set_fg(None))?;
+            let first = uncommitted.first().unwrap();
+            if uncommitted.len() == 1 {
+                writeln!(output, "{first}")?;
+            } else {
+                let last = uncommitted.last().unwrap();
+                writeln!(output, "{first}..{last}")?;
+            }
+        }
+        Ok(())
+    }
+
     pub(super) fn print_deleted(&self, deleted: &[PatchName]) -> Result<()> {
         if !deleted.is_empty() {
             let mut output = self.output.borrow_mut();

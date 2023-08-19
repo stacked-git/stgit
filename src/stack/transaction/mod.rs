@@ -743,6 +743,7 @@ impl<'repo> StackTransaction<'repo> {
             );
             new_applied.push(patchname.clone());
         }
+        self.ui.print_uncommitted(new_applied.as_ref())?;
         new_applied.append(&mut self.applied);
         self.applied = new_applied;
         Ok(())
