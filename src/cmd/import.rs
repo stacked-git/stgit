@@ -823,16 +823,15 @@ impl Headers {
             let header = parts.next().expect("mailinfo header line has header");
             let value = parts.next().expect("mailinfo header line has value");
             if let Ok(value) = value.to_str() {
-                let value = Some(value.to_string());
+                let value = value.to_string();
                 match header {
-                    b"Author" => author_name = value,
-                    b"Email" => author_email = value,
-                    b"Date" => author_date = value,
-                    b"Subject" => subject = value,
+                    b"Author" => author_name = Some(value),
+                    b"Email" => author_email = Some(value),
+                    b"Date" => author_date = Some(value),
+                    b"Subject" => subject = Some(value),
                     _ => panic!(
-                        "unexpected mailinfo header \"{}\" with value \"{}\"",
-                        header.to_str_lossy(),
-                        value.unwrap()
+                        "unexpected mailinfo header \"{}\" with value \"{value}\"",
+                        header.to_str_lossy()
                     ),
                 }
             }
