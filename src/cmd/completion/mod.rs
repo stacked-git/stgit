@@ -57,7 +57,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     }
 }
 
-pub(self) fn get_output_stream(matches: &clap::ArgMatches) -> Result<Box<dyn std::io::Write>> {
+fn get_output_stream(matches: &clap::ArgMatches) -> Result<Box<dyn std::io::Write>> {
     Ok(match matches.get_one::<PathBuf>("output") {
         Some(path) => Box::new(
             std::fs::OpenOptions::new()
