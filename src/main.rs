@@ -51,6 +51,7 @@ const CONFLICT_ERROR: i32 = 3;
 /// cost of instantiating [`clap::Command`] instances for every StGit subcommand.
 fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command {
     let mut command = clap::Command::new("stg")
+        .styles(cmd::STYLES)
         .about("Maintain a stack of patches on top of a Git branch.")
         .override_usage(cmd::make_usage(
             "stg",

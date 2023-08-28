@@ -135,10 +135,12 @@ pub(crate) enum Error {
     NoAppliedPatches,
 }
 
+pub(crate) const STYLES: clap::builder::Styles = clap::builder::Styles::styled();
+
 pub(crate) fn make_usage(command_name: &str, usages: &[&str]) -> clap::builder::StyledStr {
     use std::fmt::Write as _;
     let mut s = StyledStr::new();
-    let bold = anstyle::Style::new().bold();
+    let literal = STYLES.get_literal();
     for (i, &usage) in usages.iter().enumerate() {
         let indent = if i == 0 { "" } else { "       " };
         let end = if i + 1 == usages.len() { "" } else { "\n" };
@@ -146,8 +148,8 @@ pub(crate) fn make_usage(command_name: &str, usages: &[&str]) -> clap::builder::
         write!(
             s,
             "{indent}{}{command_name}{}{sep}{usage}{end}",
-            bold.render(),
-            bold.render_reset()
+            literal.render(),
+            literal.render_reset()
         )
         .unwrap();
     }
