@@ -76,10 +76,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         let mut paths: Vec<&Path> = Vec::new();
         pathsbuf = stupid
-            .diff_index_names(
-                stack.get_branch_head().tree_id()?.detach(),
-                prefix.as_deref(),
-            )
+            .diff_index_names(stack.get_branch_head().tree_id()?.detach(), prefix)
             .context("getting modified files")?;
 
         for path_bytes in pathsbuf.split_str(b"\0") {
