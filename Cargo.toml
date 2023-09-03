@@ -37,7 +37,7 @@ flate2 = "1"
 gix = { version = "0.52", default-features = false, features = [] }
 indexmap = "2.0"
 is-terminal = "0.4"
-nom = { version = "7", default_features = false, features = [ "std" ] }
+nom = { version = "7", default_features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 strsim = "0.10"
@@ -45,7 +45,12 @@ tar = "0.4"
 tempfile = "3"
 termcolor = "1.1"
 thiserror = "~1.0"
-time = { version = "0.3.23", default-features = false, features = ["local-offset", "formatting", "macros", "parsing"] }
+time = { version = "0.3.23", default-features = false, features = [
+  "local-offset",
+  "formatting",
+  "macros",
+  "parsing",
+] }
 
 curl = { version = "0.4", optional = true }
 
@@ -57,25 +62,6 @@ import-url = ["dep:curl"]
 inherits = "release"
 lto = true
 strip = "none"
-
-[package.metadata.deb]
-maintainer = "Peter Grayson <pete@jpgrayson.net>"
-section = "vcs"
-priority = "optional"
-depends = "git"
-recommends = "git-email"
-extended-description = ""
-assets = [
-  ["target/release/stg", "usr/bin/", "755"],
-  ["README.md", "usr/share/doc/stgit/", "644"],
-  ["COPYING", "usr/share/doc/stgit/copyright", "644"],
-  ["Documentation/*.1", "usr/share/man/man1/", "644"],
-  ["completion/stgit.zsh", "usr/share/zsh/vendor-completions/_stg", "644"],
-  ["completion/stg.fish", "usr/share/fish/vendor-completions.d/", "644"],
-  ["completion/stgit.bash", "usr/share/bash-completion/completions/stg", "644"],
-  ["contrib/vim/ftdetect/stg.vim", "usr/share/vim/addons/ftdetect/", "644"],
-  ["contrib/vim/syntax/*.vim", "usr/share/vim/addons/syntax/", "644"],
-]
 
 [package.metadata.generate-rpm]
 assets = [
@@ -90,3 +76,58 @@ assets = [
   { source = "contrib/vim/syntax/*.vim", dest = "/usr/share/vim/vimfiles/syntax/", mode = "644" },
 ]
 requires = { git-core = "*", git-email = "*", vim-filesystem = "*" }
+
+[package.metadata.deb]
+maintainer = "Peter Grayson <pete@jpgrayson.net>"
+section = "vcs"
+priority = "optional"
+depends = "git"
+recommends = "git-email"
+extended-description = ""
+assets = [
+  [
+    "target/release/stg",
+    "usr/bin/",
+    "755",
+  ],
+  [
+    "README.md",
+    "usr/share/doc/stgit/",
+    "644",
+  ],
+  [
+    "COPYING",
+    "usr/share/doc/stgit/copyright",
+    "644",
+  ],
+  [
+    "Documentation/*.1",
+    "usr/share/man/man1/",
+    "644",
+  ],
+  [
+    "completion/stgit.zsh",
+    "usr/share/zsh/vendor-completions/_stg",
+    "644",
+  ],
+  [
+    "completion/stg.fish",
+    "usr/share/fish/vendor-completions.d/",
+    "644",
+  ],
+  [
+    "completion/stgit.bash",
+    "usr/share/bash-completion/completions/stg",
+    "644",
+  ],
+  [
+    "contrib/vim/ftdetect/stg.vim",
+    "usr/share/vim/addons/ftdetect/",
+    "644",
+  ],
+  [
+    "contrib/vim/syntax/*.vim",
+    "usr/share/vim/addons/syntax/",
+    "644",
+  ],
+]
