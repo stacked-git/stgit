@@ -72,11 +72,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let pathspecs: Vec<&Path> = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
         pathspecs.map(PathBuf::as_path).collect()
     } else {
-        let prefix = if let Some(prefix_result) = repo.prefix() {
-            Some(prefix_result.context("determining Git prefix")?)
-        } else {
-            None
-        };
+        let prefix = repo.prefix().context("determining Git prefix")?;
 
         let mut paths: Vec<&Path> = Vec::new();
         pathsbuf = stupid

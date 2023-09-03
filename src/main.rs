@@ -394,8 +394,8 @@ fn execute_shell_alias(
     if let Some(repo) = repo {
         if let Some(work_dir) = repo.work_dir() {
             command.current_dir(work_dir);
-            if let Some(Ok(prefix)) = repo.prefix() {
-                let mut prefix = prefix.into_os_string();
+            if let Ok(Some(prefix)) = repo.prefix() {
+                let mut prefix = prefix.as_os_str().to_owned();
                 if !prefix.is_empty() {
                     prefix.push("/");
                 }
