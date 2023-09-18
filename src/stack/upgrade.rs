@@ -18,6 +18,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
+use bstr::ByteSlice;
 
 use super::serde::{RawPatchState, RawStackState};
 use crate::{ext::RepositoryExtended, patch::PatchName, stack::state::StackState};
@@ -336,7 +337,7 @@ fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()
         value.delete();
     }
     if let Ok(section) =
-        local_config_file.section_by_key(format!("{section}.{subsection}").as_str())
+        local_config_file.section_by_key(format!("{section}.{subsection}").as_bytes().as_bstr())
     {
         if section.num_values() == 0 {
             local_config_file.remove_section_by_id(section.id());

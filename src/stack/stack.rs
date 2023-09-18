@@ -259,8 +259,8 @@ impl<'repo> Stack<'repo> {
             {
                 value.delete();
             }
-            if let Ok(section) =
-                local_config_file.section_by_key(format!("{section}.{subsection}").as_str())
+            if let Ok(section) = local_config_file
+                .section_by_key(format!("{section}.{subsection}").as_bytes().as_bstr())
             {
                 if section.num_values() == 0 {
                     local_config_file.remove_section_by_id(section.id());

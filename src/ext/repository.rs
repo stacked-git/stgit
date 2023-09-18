@@ -199,7 +199,7 @@ impl RepositoryExtended for gix::Repository {
         );
 
         file.write_to(
-            std::fs::File::options()
+            &mut std::fs::File::options()
                 .truncate(true)
                 .write(true)
                 .open(local_config_path)?,
