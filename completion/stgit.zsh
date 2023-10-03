@@ -1044,7 +1044,8 @@ _stg-sink() {
     __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after sinking]'
-        '(-t --to)'{-t,--to=}'[sink patches below target patch]: :__stg_patch --applied'
+        '(-T --above -t --to --below)'{-t,--to=,--below=}'[sink patches below target patch]: :__stg_patch --applied'
+        '(-T --above -t --to --below)'{-T,--above=}'[sink patches above target patch]: :__stg_patch --applied'
         '*:patches:__stg_dedup_inside_arguments __stg_patchrange'
     )
     _arguments -s -S $subcmd_args

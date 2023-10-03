@@ -29,12 +29,13 @@ fn make() -> clap::Command {
              \n\
              If no patch is specified on the command line, the current (topmost) patch \
              is sunk. By default, patches are sunk to the bottom of the stack, but the \
-             '--to' option may be used to place them under any applied patch.\n\
+             '--above' or '--below' (alias '--to') options may be used to place them \
+             above or below any applied patch.\n\
              \n\
              Internally, sinking involves popping all patches to the bottom (or to the \
-             target patch if '--to' is used), then pushing the patches to sink, and \
-             then, unless '--nopush' is specified, pushing back any other formerly \
-             applied patches.\n\
+             target patch if '--above' or '--below' is used), then pushing the patches \
+             to sink, and then, unless '--nopush' is specified, pushing back any other \
+             formerly applied patches.\n\
              \n\
              Sinking may be useful, for example, to group stable patches at the bottom \
              of the stack where they less likely to be impacted by the push of another \
@@ -62,8 +63,9 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("target")
-                .long("to")
+            Arg::new("target-below")
+                .long("below")
+                .visible_alias("to")
                 .short('t')
                 .help("Sink patches below <target> patch")
                 .long_help(
@@ -75,6 +77,22 @@ fn make() -> clap::Command {
                 .value_name("target")
                 .allow_hyphen_values(true)
                 .value_parser(clap::value_parser!(PatchLocator)),
+        )
+        .arg(
+            Arg::new("target-above")
+                .long("above")
+                .short('T')
+                .help("Sink patches above <target> patch")
+                .long_help(
+                    "Sink patches above <target> patch.\n\
+                    \n\
+                    Specified patches are placed above <target> instead of at the \
+                    bottom of the stack.",
+                )
+                .value_name("target")
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchLocator))
+                .conflicts_with("target-below"),
         )
         .arg(argset::keep_arg())
         .arg(argset::committer_date_is_author_date_arg())
@@ -96,8 +114,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         statuses.check_index_and_worktree_clean()?;
     }
 
+    let is_above = matches.contains_id("target-above");
+
     let opt_target: Option<PatchName> = matches
-        .get_one::<PatchLocator>("target")
+        .get_one::<PatchLocator>("target-above")
+        .or_else(|| matches.get_one::<PatchLocator>("target-below"))
         .map(|loc| loc.resolve_name(&stack))
         .transpose()
         .map_err(|e| anyhow!("target: {e}"))?
@@ -105,7 +126,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .transpose()
         .map_err(|e| match e {
             crate::patch::name::Error::PatchNotAllowed { patchname, .. } => {
-                anyhow!("cannot sink below `{patchname}` since it is not applied")
+                anyhow!(
+                    "cannot sink {} `{patchname}` since it is not applied",
+                    if is_above { "above" } else { "below" }
+                )
             }
             _ => e.into(),
         })?;
@@ -146,6 +170,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .iter()
             .position(|pn| pn == target_patch)
             .expect("already validated that target is applied")
+            + if is_above { 1 } else { 0 }
     } else {
         0
     };

@@ -68,6 +68,15 @@ test_expect_success 'sink specified patch below a target' '
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3 p4"
 '
 
+test_expect_success 'sink patch above a target' '
+    stg new -m p5 &&
+    stg series --applied --noprefix &&
+    stg sink --above=p2 p5 &&
+    test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p5 p3 p4" &&
+    test "$(echo $(stg series --unapplied --noprefix))" = "p22" &&
+		stg delete p5
+'
+
 test_expect_success 'sink --nopush' '
     stg sink --nopush --to=p2 &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p4" &&
