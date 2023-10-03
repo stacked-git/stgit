@@ -16,6 +16,7 @@ use crate::{
 
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--clone")
+        .short_flag('C')
         .override_usage(super::super::make_usage(
             "stg branch --clone",
             &["[new-branch]"],

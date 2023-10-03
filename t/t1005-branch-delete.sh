@@ -13,7 +13,7 @@ test_expect_success 'Initialize master branch' '
 '
 
 test_expect_success 'Create a branch (and switch to it)' '
-    stg branch --clone foo
+    stg branch -C foo
 '
 
 test_expect_success 'Attempt to delete branch with patches' '
@@ -53,7 +53,7 @@ test_expect_success 'Invalid num args to delete' '
 
 test_expect_success 'Create a non-StGit branch and delete it' '
     git branch bar &&
-    stg branch --delete bar
+    stg branch -D bar
 '
 
 test_expect_success 'Delete a nonexistent branch' '

@@ -33,11 +33,11 @@ _stg-branch() {
             commands=(
                 {-l,--list}':list branches'
                 {-c,--create}':create and switch to new branch'
-                '--clone:clone current branch to new branch'
+                {-C,--clone}':clone current branch to new branch'
                 {-r,--rename}':rename existing branch'
                 {-p,--protect}':prevent stg from modifying branch'
                 {-u,--unprotect}':allow stg to modify branch'
-                '--delete:delete branch'
+                {-D,--delete}':delete branch'
                 '--cleanup:cleanup stg metadata for branch'
                 {-d,--describe}':set branch description'
             )
@@ -55,11 +55,11 @@ _stg-branch() {
             case $line[1] in
                 (--cleanup)
                     _call_function ret _stg-branch-cleanup ;;
-                (--clone)
+                (-C|--clone)
                     _call_function ret _stg-branch-clone ;;
                 (-c|--create)
                     _call_function ret _stg-branch-create ;;
-                (--delete)
+                (-D|--delete)
                     _call_function ret _stg-branch-delete ;;
                 (-d|--describe|--description)
                     _call_function ret _stg-branch-describe ;;
