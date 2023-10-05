@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.3.3 2023-10-04
+
+### Fixed
+- fix(zsh): -S option for float, import, and sync
+- build: avoid non-portable install options
+- test: improved test script portability
+
+### Changed
+- update dependencies
+
+
 ## [2.3.2] 2023-08-19
 
 ### Fixed
