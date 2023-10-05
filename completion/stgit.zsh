@@ -641,7 +641,7 @@ _stg-float() {
     __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         '--noapply[Reorder patches by floating without applying]'
-        '(-s --series)'{-s,--series=}'[arrange according to series file]: :_files'
+        '(-S --series)'{-S,--series=}'[arrange according to series file]: :_files'
         '*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -s -S $subcmd_args
@@ -723,7 +723,7 @@ _stg-import() {
         + '(source)'
         '(-m --mail)'{-m,--mail}'[import from standard email file]'
         '(-M --mbox)'{-M,--mbox}'[import from mbox file]'
-        '(-s --series)'{-s,--series}'[import from series file]'
+        '(-S --series)'{-S,--series}'[import from series file]'
         '(-u --url)'{-u,--url}'[import patch from URL]'
     )
     _arguments -s -S $subcmd_args
@@ -1100,7 +1100,7 @@ _stg-sync() {
         '*:patches:__stg_dedup_inside_arguments __stg_patchrange --suggest-range --use-ref-branch'
         + '(source)'
         '(-B --ref-branch)'{-B,--ref-branch}'[synchronize patches with branch]: :__stg_stgit_branch_names'
-        '(-s --series)'{-s,--series=}'[synchronize patches with series]: :_files'
+        '(-S --series)'{-S,--series=}'[synchronize patches with series]: :_files'
     )
     _arguments -s -S $subcmd_args
 }
