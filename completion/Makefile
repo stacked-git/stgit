@@ -17,15 +17,15 @@ install: install-bash install-fish install-zsh
 
 install-bash: stgit.bash
 	$(INSTALL) -d -m 755 $(DESTDIR)$(bashdir)
-	$(INSTALL) -T -m 644 stgit.bash $(DESTDIR)$(bashdir)/stg
+	$(INSTALL) -m 644 stgit.bash $(DESTDIR)$(bashdir)/stg
 
 install-fish: stg.fish
 	$(INSTALL) -d -m 755 $(DESTDIR)$(fishdir)
-	$(INSTALL) -T -m 644 stg.fish $(DESTDIR)$(fishdir)/stg.fish
+	$(INSTALL) -m 644 stg.fish $(DESTDIR)$(fishdir)/stg.fish
 
 install-zsh:
 	$(INSTALL) -d -m 755 $(DESTDIR)$(zshdir)
-	$(INSTALL) -T -m 644 stgit.zsh $(DESTDIR)$(zshdir)/_stg
+	$(INSTALL) -m 644 stgit.zsh $(DESTDIR)$(zshdir)/_stg
 
 .PHONY: install install-bash install-fish install-zsh
 
