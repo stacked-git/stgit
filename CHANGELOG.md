@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.0 2024-10-08
+
+### Added
+- feat(delete): --all -A -U -H options
+- feat(sink): -T/--above option
+- feat(branch): short opts for clone and delete
+
+
 ## 2.3.3 2023-10-04
 
 ### Fixed
