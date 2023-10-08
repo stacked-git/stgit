@@ -27,7 +27,12 @@ fn make() -> clap::Command {
         .about("Delete patches")
         .override_usage(super::make_usage(
             "stg delete",
-            &["[OPTIONS] <patch>...", "[OPTIONS] --top"],
+            &[
+                "[OPTIONS] [<patch>...]",
+                "[OPTIONS] [-A] [-U] [-H]",
+                "[OPTIONS] --all",
+                "[OPTIONS] --top",
+            ],
         ))
         .arg(
             Arg::new("patchranges-all")
@@ -36,8 +41,51 @@ fn make() -> clap::Command {
                 .num_args(1..)
                 .allow_hyphen_values(true)
                 .value_parser(clap::value_parser!(PatchRange))
-                .conflicts_with("top")
-                .required_unless_present("top"),
+                .conflicts_with_all(["top", "all", "A-U-H"])
+                .required_unless_present_any(["all", "top", "A-U-H"]),
+        )
+        .arg(
+            Arg::new("all")
+                .long("all")
+                .short('a')
+                .help("Delete all patches")
+                .action(clap::ArgAction::SetTrue)
+                .conflicts_with_all(["top", "A-U-H", "patchranges-all"]),
+        )
+        .arg(
+            Arg::new("applied")
+                .long("applied")
+                .short('A')
+                .help("Delete the applied patches")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("unapplied")
+                .long("unapplied")
+                .short('U')
+                .help("Delete the unapplied patches")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("hidden")
+                .long("hidden")
+                .short('H')
+                .help("Delete the hidden patches")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .group(
+            clap::ArgGroup::new("A-U-H")
+                .multiple(true)
+                .args(["applied", "unapplied", "hidden"])
+                .conflicts_with_all(["top", "all", "patchranges-all"]),
+        )
+        .arg(
+            Arg::new("top")
+                .long("top")
+                .short('t')
+                .help("Delete topmost patch")
+                .action(clap::ArgAction::SetTrue)
+                .conflicts_with_all(["all", "A-U-H", "patchranges-all"]),
         )
         .arg(
             Arg::new("spill")
@@ -51,13 +99,6 @@ fn make() -> clap::Command {
                      \n\
                      This can be useful for splitting a patch into smaller pieces.",
                 )
-                .action(clap::ArgAction::SetTrue),
-        )
-        .arg(
-            Arg::new("top")
-                .long("top")
-                .short('t')
-                .help("Delete topmost patch")
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::branch_arg())
@@ -79,11 +120,22 @@ fn run(matches: &ArgMatches) -> Result<()> {
         } else {
             return Err(super::Error::NoAppliedPatches.into());
         }
-    } else {
-        let range_specs = matches
-            .get_many::<PatchRange>("patchranges-all")
-            .expect("clap will ensure either patches or --top");
+    } else if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges-all") {
         patchrange::resolve_names(&stack, range_specs, RangeConstraint::AllWithAppliedBoundary)?
+    } else if matches.get_flag("all") {
+        stack.all_patches().cloned().collect::<Vec<_>>()
+    } else {
+        let mut patches = Vec::new();
+        if matches.get_flag("applied") {
+            patches.extend(stack.applied().iter().cloned())
+        }
+        if matches.get_flag("unapplied") {
+            patches.extend(stack.unapplied().iter().cloned())
+        }
+        if matches.get_flag("hidden") {
+            patches.extend(stack.hidden().iter().cloned())
+        }
+        patches
     };
 
     if spill_flag

@@ -43,6 +43,33 @@ test_expect_success 'Delete a range of patches' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "p9" ]
 '
 
+test_expect_success 'Delete -U' '
+    stg undo --hard &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ] &&
+    stg delete -U &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
+'
+
+test_expect_success 'Delete -A' '
+    stg undo --hard &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ] &&
+    stg delete -A &&
+    [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ]
+'
+
+test_expect_success 'Delete --all' '
+    stg undo --hard &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ] &&
+    stg delete --all &&
+    [ "$(echo $(stg series --all --noprefix))" = "" ] &&
+    stg undo --hard
+'
+
 test_expect_success 'Delete leading to conflict when re-pushing' '
     echo "stuff" >foo.txt &&
     stg new -m p-stuff &&

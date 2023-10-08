@@ -410,6 +410,12 @@ _stg-delete() {
     __stg_add_args_push_conflicts
     subcmd_args+=(
         '--spill[spill patch contents to worktree and index]'
+        - group-ahu
+        '(-A --applied)'{-A,--applied}'[delete applied patches]'
+        '(-H --hidden)'{-H,--hidden}'[delete hidden patches]'
+        '(-U --unapplied)'{-U,--unapplied}'[delete unapplied patches]'
+        - group-all
+        '--all[delete all patches]'
         - group-top
         '(-t --top)'{-t,--top}'[delete top patch]'
         - group-patchnames
