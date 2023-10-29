@@ -18,7 +18,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::ByteSlice;
+use bstr::{ByteSlice, ByteVec};
 
 use super::serde::{RawPatchState, RawStackState};
 use crate::{ext::RepositoryExtended, patch::PatchName, stack::state::StackState};
@@ -57,21 +57,14 @@ fn get_format_version(repo: &gix::Repository, branch_name: &str) -> Result<i64> 
             .tree()
             .context("finding version 4 state tree")?;
         if let Some(meta_entry) = state_tree.peel_to_entry_by_path("meta")? {
-            let meta_blob = meta_entry
+            let meta_content = meta_entry
                 .object()
-                .context("finding old stack `meta` blob")
-                .and_then(|obj| {
-                    if matches!(obj.kind, gix::objs::Kind::Blob) {
-                        Ok(obj)
-                    } else {
-                        Err(anyhow!(
-                            "`meta` object `{}` in stack state is not a blob",
-                            obj.id
-                        ))
-                    }
-                })?;
-            let meta_content =
-                std::str::from_utf8(&meta_blob.data).context("decoding version 4 meta")?;
+                .context("finding old stack `meta` blob")?
+                .try_into_blob()
+                .context("interpret `meta` object `{meta_obj.id}` as blob")?
+                .take_data()
+                .into_string()
+                .context("decoding version 4 meta")?;
             let mut meta_lines = meta_content.lines();
             let first_line = meta_lines.next();
             if first_line == Some("Version: 4") {
@@ -104,21 +97,14 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
             .tree()
             .context("finding version 4 state tree")?;
         if let Some(meta_entry) = state_tree.peel_to_entry_by_path("meta")? {
-            let meta_blob = meta_entry
+            let meta_content = meta_entry
                 .object()
-                .context("finding old stack `meta` blob")
-                .and_then(|obj| {
-                    if matches!(obj.kind, gix::objs::Kind::Blob) {
-                        Ok(obj)
-                    } else {
-                        Err(anyhow!(
-                            "`meta` object `{}` in stack state is not a blob",
-                            obj.id
-                        ))
-                    }
-                })?;
-            let meta_content =
-                std::str::from_utf8(&meta_blob.data).context("decoding version 4 meta")?;
+                .context("finding old stack `meta` blob")?
+                .try_into_blob()
+                .context("interpret `meta` object `{meta_obj.id}` as blob")?
+                .take_data()
+                .into_string()
+                .context("decoding version 4 meta")?;
             let mut meta_lines = meta_content.lines();
             let first_line = meta_lines.next();
             if first_line != Some("Version: 4") {

@@ -119,8 +119,8 @@ impl<'repo> StackState<'repo> {
         let mut tree = tree;
         let stack_json = tree.peel_to_entry_by_path("stack.json")?;
         if let Some(stack_json) = stack_json {
-            let stack_json_blob = stack_json.object()?.peel_to_kind(gix::objs::Kind::Blob)?;
-            let raw_state = RawStackState::from_stack_json(&stack_json_blob.data)?;
+            let stack_json_data = stack_json.object()?.try_into_blob()?.take_data();
+            let raw_state = RawStackState::from_stack_json(&stack_json_data)?;
             Self::from_raw_state(repo, raw_state)
         } else {
             Err(anyhow!("stack metadata not found"))
