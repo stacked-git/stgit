@@ -124,27 +124,37 @@ jobs:
     - name: Build
       run: |
         cargo --locked build --profile ${{ matrix.profile }}
-    - name: Install Test Dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Install Test Dependencies
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
         sudo apt-get install quilt gnupg2 libio-pty-perl
-    - name: Install Test Dependencies (MacOS)
-      if: matrix.os == 'macos-latest'
+    - name: Install Test Dependencies
+      if: ${{ matrix.os == 'macos-latest' }}
       run: |
         # coreutils provides the `timeout` command used to wrap `make` below.
         # gnu-sed is needed by some tests (e.g. t3400-pick.sh).
         brew install coreutils cpanminus gnu-sed
         echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
         echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
-        sudo cpanm IO::Pty
+        # The IO:Pty 1.18 release does not work on MacOS.
+        # https://github.com/cpan-authors/IO-Tty/issues/37
+        # sudo cpanm IO::Pty
     - name: Test
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       env:
         STG_PROVE_OPTS: "--jobs=2"
         STG_TEST_OPTS: "--verbose-log"
         STG_PROFILE: ${{ matrix.profile }}
       run: |
         timeout 900s make -C t prove
+    - name: Test
+      if: ${{ matrix.os == 'macos-latest' }}
+      env:
+        STG_TEST_OPTS: "--verbose-log"
+        STG_PROFILE: ${{ matrix.profile }}
+      run: |
+        timeout 900s make -j2 test
     - name: Show Failures
       if: ${{ failure() }}
       run: |
