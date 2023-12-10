@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.1 2024-12-10
+
+### Fixed
+- fix(zsh): short -r opt for `stg series`
+
+### Changed
+- chore: update gix to 0.56.0
+- chore: update transient depsupdate dependencies
+
+
 ## 2.4.0 2024-10-08
 
 ### Added
