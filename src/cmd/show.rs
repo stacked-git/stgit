@@ -52,6 +52,7 @@ fn make() -> clap::Command {
                 )
                 .value_name("patch-or-rev")
                 .num_args(1..)
+                .allow_negative_numbers(true)
                 .value_parser(clap::value_parser!(RangeRevisionSpec))
                 .conflicts_with_all(["applied", "unapplied", "hidden"]),
         )
