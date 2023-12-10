@@ -318,7 +318,7 @@ impl<'repo> StackState<'repo> {
     ) -> Result<gix::ObjectId> {
         let stack_json_id = repo.write_blob(serde_json::to_string_pretty(self)?.as_bytes())?;
         let stack_json_entry = gix::objs::tree::Entry {
-            mode: gix::objs::tree::EntryMode::Blob,
+            mode: gix::objs::tree::EntryKind::Blob.into(),
             filename: "stack.json".into(),
             oid: stack_json_id.detach(),
         };
@@ -337,7 +337,7 @@ impl<'repo> StackState<'repo> {
 
         let patches_tree_id = self.make_patches_tree(repo, prev_state, &prev_patches_tree)?;
         let patches_entry = gix::objs::tree::Entry {
-            mode: gix::objs::tree::EntryMode::Tree,
+            mode: gix::objs::tree::EntryKind::Tree.into(),
             filename: patches_tree_name.into(),
             oid: patches_tree_id,
         };
@@ -362,7 +362,7 @@ impl<'repo> StackState<'repo> {
         };
         for patchname in self.all_patches() {
             patches_tree.entries.push(gix::objs::tree::Entry {
-                mode: gix::objs::tree::EntryMode::Blob,
+                mode: gix::objs::tree::EntryKind::Blob.into(),
                 filename: patchname.to_string().into(),
                 oid: self.make_patch_meta(repo, patchname, prev_state, prev_patches_tree)?,
             });
@@ -399,7 +399,7 @@ impl<'repo> StackState<'repo> {
                             .filter_map(Result::ok)
                             .find(|entry_ref| entry_ref.filename() == patchname_str.as_bytes())
                         {
-                            if matches!(prev_patch_entry.mode(), gix::objs::tree::EntryMode::Blob) {
+                            if prev_patch_entry.mode() == gix::objs::tree::EntryKind::Blob.into() {
                                 return Ok(prev_patch_entry.object_id());
                             }
                         }
