@@ -991,7 +991,7 @@ _stg-series() {
         '(-O --offsets)'{-O,--offsets}'[display relative offsets of patches]'
         '--prefix[display patch status prefix]'
         '(-P --no-prefix)'{-P,--no-prefix}'[do not display the patch status prefix]'
-        '(-r --reverse)'{-s,--reverse}'[display in reverse order]'
+        '(-r --reverse)'{-r,--reverse}'[display in reverse order]'
         '(-s --short)'{-s,--short}'[list just patches around the topmost patch]'
         '--showbranch[display branch name of listed patches]'
         '--no-author[do not display patch author]'
