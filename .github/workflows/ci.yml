@@ -2,101 +2,101 @@ name: CI
 
 on:
   push:
-    branches: [ '*' ]
-    tags: [ '*' ]
+    branches: ['*']
+    tags: ['*']
   pull_request:
   schedule:
-  # Every Sunday at 1:30
-  - cron: '30 1 * * 0'
+    # Every Sunday at 1:30
+    - cron: '30 1 * * 0'
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-        targets: i686-unknown-linux-musl,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
-        components: clippy, rustfmt
-    - name: Build
-      run: |
-        cargo --locked build --profile release
-    - name: Install Test Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install quilt gnupg2 libio-pty-perl
-    - name: Test
-      env:
-        STG_PROVE_OPTS: "--jobs=2"
-        STG_TEST_OPTS: "--verbose-log"
-        STG_PROFILE: "release"
-      run: |
-        timeout 900s make -C t prove
-    - name: Show Failures
-      if: ${{ failure() }}
-      run: |
-        make -C t show-failure-results
-    - name: Install Doc Dependencies
-      run: |
-        sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
-    - name: Build Docs Asciidoc
-      run: |
-        make -j2 doc
-    - name: Build Docs Asciidoctor
-      env:
-        USE_ASCIIDOCTOR: "1"
-      run: |
-        make -j2 doc
-    - name: Install HTML Docs
-      env:
-        USE_ASCIIDOCTOR: "1"
-      run: |
-        make -j2 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
-    - name: Upload HTML Docs
-      uses: actions/upload-artifact@v3
-      with:
-        name: html-doc
-        path: ${{ github.workspace }}/stgit-html
-    - name: Install cargo-deb
-      uses: baptiste0928/cargo-install@v2
-      with:
-        crate: cargo-deb
-    - name: Install cargo-generate-rpm
-      uses: baptiste0928/cargo-install@v2
-      with:
-        crate: cargo-generate-rpm
-        version: "^0.13.0"
-    - name: Install aarch64 Dependencies
-      run: |
-        sudo apt-get install gcc-aarch64-linux-gnu
-    - name: Static Build x86_64
-      run: |
-        make build-static-x86_64
-    - name: Static Build i686
-      run: |
-        make build-static-i686
-    - name: Build  Build aarch64
-      env:
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
-      run: |
-        make build-static-aarch64
-    - name: Build Packages
-      env:
-        USE_ASCIIDOCTOR: "1"
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
-      run: |
-        make packages
-    - name: Upload Packages
-      uses: actions/upload-artifact@v3
-      with:
-        name: stgit-packages
-        path: target/pkg/*
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: i686-unknown-linux-musl,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+          components: clippy, rustfmt
+      - name: Build
+        run: |
+          cargo --locked build --profile release
+      - name: Install Test Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install quilt gnupg2 libio-pty-perl
+      - name: Test
+        env:
+          STG_PROVE_OPTS: "--jobs=2"
+          STG_TEST_OPTS: "--verbose-log"
+          STG_PROFILE: "release"
+        run: |
+          timeout 900s make -C t prove
+      - name: Show Failures
+        if: ${{ failure() }}
+        run: |
+          make -C t show-failure-results
+      - name: Install Doc Dependencies
+        run: |
+          sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
+      - name: Build Docs Asciidoc
+        run: |
+          make -j2 doc
+      - name: Build Docs Asciidoctor
+        env:
+          USE_ASCIIDOCTOR: "1"
+        run: |
+          make -j2 doc
+      - name: Install HTML Docs
+        env:
+          USE_ASCIIDOCTOR: "1"
+        run: |
+          make -j2 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+      - name: Upload HTML Docs
+        uses: actions/upload-artifact@v3
+        with:
+          name: html-doc
+          path: ${{ github.workspace }}/stgit-html
+      - name: Install cargo-deb
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-deb
+      - name: Install cargo-generate-rpm
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-generate-rpm
+          version: "^0.13.0"
+      - name: Install aarch64 Dependencies
+        run: |
+          sudo apt-get install gcc-aarch64-linux-gnu
+      - name: Static Build x86_64
+        run: |
+          make build-static-x86_64
+      - name: Static Build i686
+        run: |
+          make build-static-i686
+      - name: Build  Build aarch64
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
+        run: |
+          make build-static-aarch64
+      - name: Build Packages
+        env:
+          USE_ASCIIDOCTOR: "1"
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
+        run: |
+          make packages
+      - name: Upload Packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: stgit-packages
+          path: target/pkg/*
 
   build-and-test:
     name: Build and Test
@@ -115,154 +115,154 @@ jobs:
             toolchain: stable
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.toolchain }}
-    - name: Build
-      run: |
-        cargo --locked build --profile ${{ matrix.profile }}
-    - name: Install Test Dependencies
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: |
-        sudo apt-get update
-        sudo apt-get install quilt gnupg2 libio-pty-perl
-    - name: Install Test Dependencies
-      if: ${{ matrix.os == 'macos-latest' }}
-      run: |
-        # coreutils provides the `timeout` command used to wrap `make` below.
-        # gnu-sed is needed by some tests (e.g. t3400-pick.sh).
-        brew install coreutils cpanminus gnu-sed
-        echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
-        echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
-        # The IO:Pty 1.18 release does not work on MacOS.
-        # https://github.com/cpan-authors/IO-Tty/issues/37
-        # sudo cpanm IO::Pty
-    - name: Test
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      env:
-        STG_PROVE_OPTS: "--jobs=2"
-        STG_TEST_OPTS: "--verbose-log"
-        STG_PROFILE: ${{ matrix.profile }}
-      run: |
-        timeout 900s make -C t prove
-    - name: Test
-      if: ${{ matrix.os == 'macos-latest' }}
-      env:
-        STG_TEST_OPTS: "--verbose-log"
-        STG_PROFILE: ${{ matrix.profile }}
-      run: |
-        timeout 900s make -j2 test
-    - name: Show Failures
-      if: ${{ failure() }}
-      run: |
-        make -C t show-failure-results
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+      - name: Build
+        run: |
+          cargo --locked build --profile ${{ matrix.profile }}
+      - name: Install Test Dependencies
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install quilt gnupg2 libio-pty-perl
+      - name: Install Test Dependencies
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          # coreutils provides the `timeout` command used to wrap `make` below.
+          # gnu-sed is needed by some tests (e.g. t3400-pick.sh).
+          brew install coreutils cpanminus gnu-sed
+          echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
+          echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
+          # The IO:Pty 1.18 release does not work on MacOS.
+          # https://github.com/cpan-authors/IO-Tty/issues/37
+          # sudo cpanm IO::Pty
+      - name: Test
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        env:
+          STG_PROVE_OPTS: "--jobs=2"
+          STG_TEST_OPTS: "--verbose-log"
+          STG_PROFILE: ${{ matrix.profile }}
+        run: |
+          timeout 900s make -C t prove
+      - name: Test
+        if: ${{ matrix.os == 'macos-latest' }}
+        env:
+          STG_TEST_OPTS: "--verbose-log"
+          STG_PROFILE: ${{ matrix.profile }}
+        run: |
+          timeout 900s make -j2 test
+      - name: Show Failures
+        if: ${{ failure() }}
+        run: |
+          make -C t show-failure-results
 
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    - name: Run Unit Tests
-      run: |
-        cargo --locked test
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Run Unit Tests
+        run: |
+          cargo --locked test
 
   clippy:
     name: Clippy Lint
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-        components: clippy
-    - name: Clippy Checks
-      run: |
-        cargo --locked clippy -- --deny warnings
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy
+      - name: Clippy Checks
+        run: |
+          cargo --locked clippy -- --deny warnings
 
   rustfmt:
     name: Format Lint
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-        components: rustfmt
-    - name: Check formatting
-      run: |
-        cargo --locked fmt --all --check
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt
+      - name: Check formatting
+        run: |
+          cargo --locked fmt --all --check
 
   api-docs:
     name: API Documentation
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    - name: Build docs
-      run: |
-        cargo rustdoc -- --deny warnings
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Build docs
+        run: |
+          cargo rustdoc -- --deny warnings
 
   windows-build:
     name: Windows Build
     runs-on: windows-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    - name: Build
-      run: |
-        cargo --locked build --profile release
-    - name: Setup MSYS2
-      uses: msys2/setup-msys2@v2
-      with:
-        msystem: UCRT64
-        update: true
-        install: diffutils make
-        path-type: inherit
-    - name: Test
-      shell: msys2 {0}
-      env:
-        STG_PROVE_OPTS: "--jobs=2"
-        STG_TEST_OPTS: "--verbose-log"
-        STG_PROFILE: "release"
-      run: |
-        timeout 900s make -C t prove
-    - name: Show Failures
-      if: ${{ failure() }}
-      shell: msys2 {0}
-      run: |
-        make -C t show-failure-results
-    - name: Install Wix Toolset v4
-      run: |
-        dotnet tool install --global wix --version 4.0.0
-    - name: Install Wix UI Extension
-      run: |
-        wix extension add -g WixToolset.UI.wixext
-    - name: Build MSI Installer
-      shell: msys2 {0}
-      run: |
-        make -C contrib/wix
-    - name: Upload MSI Package
-      uses: actions/upload-artifact@v3
-      with:
-        name: stgit-msi-package
-        path: contrib/wix/stgit-*.msi
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Build
+        run: |
+          cargo --locked build --profile release
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: diffutils make
+          path-type: inherit
+      - name: Test
+        shell: msys2 {0}
+        env:
+          STG_PROVE_OPTS: "--jobs=2"
+          STG_TEST_OPTS: "--verbose-log"
+          STG_PROFILE: "release"
+        run: |
+          timeout 900s make -C t prove
+      - name: Show Failures
+        if: ${{ failure() }}
+        shell: msys2 {0}
+        run: |
+          make -C t show-failure-results
+      - name: Install Wix Toolset v4
+        run: |
+          dotnet tool install --global wix --version 4.0.0
+      - name: Install Wix UI Extension
+        run: |
+          wix extension add -g WixToolset.UI.wixext
+      - name: Build MSI Installer
+        shell: msys2 {0}
+        run: |
+          make -C contrib/wix
+      - name: Upload MSI Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: stgit-msi-package
+          path: contrib/wix/stgit-*.msi
