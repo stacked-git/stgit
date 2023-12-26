@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.2 2024-12-26
+
+### Changed
+- feat(pop): allow unescaped negative patch offsets
+- feat(show): allow unescaped negative patch offsets
+- chore: update dependencies
+
+
 ## 2.4.1 2024-12-10
 
 ### Fixed
@@ -7,7 +15,7 @@
 
 ### Changed
 - chore: update gix to 0.56.0
-- chore: update transient depsupdate dependencies
+- chore: update transient dependencies
 
 
 ## 2.4.0 2024-10-08

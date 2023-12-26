@@ -1165,7 +1165,7 @@ dependencies = [
 
 [[package]]
 name = "stgit"
-version = "2.4.1"
+version = "2.4.2"
 dependencies = [
  "anstyle",
  "anyhow",
