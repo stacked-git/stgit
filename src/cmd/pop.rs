@@ -50,6 +50,7 @@ fn make() -> clap::Command {
                 .help("Patches to pop")
                 .value_name("patch")
                 .num_args(1..)
+                .allow_negative_numbers(true)
                 .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with_all(["all", "number"]),
         )

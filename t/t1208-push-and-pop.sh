@@ -42,7 +42,7 @@ test_expect_success 'Check prev, next, and top with all applied' '
 '
 
 test_expect_success 'Pop three patches' '
-    stg pop -n 3 &&
+    stg pop -n3 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p7 p8 p9" ]
 '
@@ -124,6 +124,12 @@ test_expect_success 'Push two patches in reverse' '
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p8 p7" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p9" ] &&
     [ "$(git notes show)" = "note7" ]
+'
+
+test_expect_success 'Pop relative patch offset' '
+    stg pop -4 &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p5 p6 p8 p7" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p4 p9" ]
 '
 
 test_expect_success 'Attempt to push already applied patches' '
