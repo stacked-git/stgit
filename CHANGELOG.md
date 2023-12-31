@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.4.2 2024-12-26
+## 2.4.2 2023-12-26
 
 ### Changed
 - feat(pop): allow unescaped negative patch offsets
@@ -8,7 +8,7 @@
 - chore: update dependencies
 
 
-## 2.4.1 2024-12-10
+## 2.4.1 2023-12-10
 
 ### Fixed
 - fix(zsh): short -r opt for `stg series`
@@ -18,7 +18,7 @@
 - chore: update transient dependencies
 
 
-## 2.4.0 2024-10-08
+## 2.4.0 2023-10-08
 
 ### Added
 - feat(delete): --all -A -U -H options
