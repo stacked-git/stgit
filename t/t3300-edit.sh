@@ -204,6 +204,13 @@ test_expect_success 'Both noninterative and interactive editing' '
     test "$(msg HEAD)" = "oneliner//twoliner"
 '
 
+test_expect_success 'Interactive edit with embedded editor script' '
+    stg new -m "old message" &&
+    test_when_finished "stg delete --top" &&
+    GIT_EDITOR="printf \"new message\" >\"\$1\"" stg edit --edit &&
+    test "$(msg HEAD)" = "new message"
+'
+
 test_expect_success 'Edit patch diff' '
     write_script diffedit <<-\EOF &&
 	sed "s/111yy/111YY/" "$1" >"$1".tmp && mv "$1".tmp "$1"
