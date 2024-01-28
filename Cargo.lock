@@ -82,9 +82,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "327762f6e5a765692301e5bb513e0d9fef63be86bbc14528052b1cd3e6f03e07"
+checksum = "ed570934406eb16438a4e976b1b4500774099c13b8cb96eec99f620f05090ddf"
 
 [[package]]
 name = "bstr"
@@ -420,7 +420,7 @@ version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b8a1e7bfb37a46ed0b8468db37a6d8a0a61d56bdbe4603ae492cb322e5f3958"
 dependencies = [
- "bitflags 2.4.1",
+ "bitflags 2.4.2",
  "bstr",
  "gix-path",
  "libc",
@@ -502,7 +502,7 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4965a1d06d0ab84a29d4a67697a97352ab14ae1da821084e5afb1fd6d8191ca0"
 dependencies = [
- "bitflags 2.4.1",
+ "bitflags 2.4.2",
  "bstr",
  "gix-features",
  "gix-path",
@@ -535,7 +535,7 @@ version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d7152181ba8f0a3addc5075dd612cea31fc3e252b29c8be8c45f4892bf87426"
 dependencies = [
- "bitflags 2.4.1",
+ "bitflags 2.4.2",
  "bstr",
  "btoi",
  "filetime",
@@ -732,7 +732,7 @@ version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8d9bf462feaf05f2121cba7399dbc6c34d88a9cad58fc1e95027791d6a3c6d2"
 dependencies = [
- "bitflags 2.4.1",
+ "bitflags 2.4.2",
  "gix-path",
  "libc",
  "windows-sys 0.52.0",
@@ -935,7 +935,7 @@ version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2eb04e9c688eff1c89d72b407f168cf79bb9e867a9d3323ed6c01519eb9cc053"
 dependencies = [
- "bitflags 2.4.1",
+ "bitflags 2.4.2",
  "cfg-if",
  "libc",
 ]
@@ -1078,7 +1078,7 @@ version = "0.38.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "322394588aaf33c24007e8bb3238ee3e4c5c09c084ab32bc73890b99ff326bca"
 dependencies = [
- "bitflags 2.4.1",
+ "bitflags 2.4.2",
  "errno",
  "libc",
  "linux-raw-sys",
