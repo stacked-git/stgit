@@ -57,7 +57,7 @@ jobs:
         run: |
           make -j2 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
       - name: Upload HTML Docs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: html-doc
           path: ${{ github.workspace }}/stgit-html
@@ -93,7 +93,7 @@ jobs:
         run: |
           make packages
       - name: Upload Packages
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: stgit-packages
           path: target/pkg/*
@@ -252,7 +252,7 @@ jobs:
         run: |
           make -C contrib/wix
       - name: Upload MSI Package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: stgit-msi-package
           path: contrib/wix/stgit-*.msi
