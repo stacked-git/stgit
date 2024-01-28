@@ -69,7 +69,7 @@ jobs:
         uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-generate-rpm
-          version: "^0.13.0"
+          version: "^0.14.0"
       - name: Install aarch64 Dependencies
         run: |
           sudo apt-get install gcc-aarch64-linux-gnu
