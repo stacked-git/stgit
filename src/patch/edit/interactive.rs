@@ -113,22 +113,14 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
 }
 
 fn run_editor<P: AsRef<Path>>(editor: &OsStr, path: P) -> Result<std::process::ExitStatus> {
-    let mut subcommand = OsString::new();
-    subcommand.push(editor);
-    subcommand.push(" ");
-    subcommand.push(path.as_ref().as_os_str());
-
-    let shell = if cfg!(target_os = "windows") {
-        "sh"
-    } else {
-        "/bin/sh"
-    };
-
-    let mut child = std::process::Command::new(shell)
-        .arg("-c")
-        .arg(subcommand)
-        .spawn()
-        .with_context(|| format!("running editor: {}", editor.to_string_lossy()))?;
+    let mut child = std::process::Command::from(
+        gix_command::prepare(editor)
+            .arg(path.as_ref())
+            .with_shell_allow_argument_splitting()
+            .stdout(std::process::Stdio::inherit()),
+    )
+    .spawn()
+    .with_context(|| format!("running editor: {}", editor.to_string_lossy()))?;
 
     child
         .wait()
