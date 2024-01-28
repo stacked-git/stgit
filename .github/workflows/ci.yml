@@ -137,24 +137,14 @@ jobs:
           brew install coreutils cpanminus gnu-sed
           echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
           echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
-          # The IO:Pty 1.18 release does not work on MacOS.
-          # https://github.com/cpan-authors/IO-Tty/issues/37
-          # sudo cpanm IO::Pty
+          sudo cpanm IO::Pty
       - name: Test
-        if: ${{ matrix.os == 'ubuntu-latest' }}
         env:
           STG_PROVE_OPTS: "--jobs=2"
           STG_TEST_OPTS: "--verbose-log"
           STG_PROFILE: ${{ matrix.profile }}
         run: |
           timeout 900s make -C t prove
-      - name: Test
-        if: ${{ matrix.os == 'macos-latest' }}
-        env:
-          STG_TEST_OPTS: "--verbose-log"
-          STG_PROFILE: ${{ matrix.profile }}
-        run: |
-          timeout 900s make -j2 test
       - name: Show Failures
         if: ${{ failure() }}
         run: |
