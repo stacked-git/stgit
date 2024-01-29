@@ -3,13 +3,13 @@
 //! Functions for conducting interactive patch edit session.
 
 use std::{
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     fs::File,
     io::{BufWriter, Write},
     path::Path,
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use bstr::BString;
 
 use super::description::{EditablePatchDescription, EditedPatchDescription};
@@ -89,22 +89,15 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
             stderr.flush()?;
         }
 
-        let mut subcommand = OsString::new();
-        subcommand.push(&editor);
-        subcommand.push(" ");
-        subcommand.push(path.as_ref().as_os_str());
+        let result = run_editor(&editor, path.as_ref());
 
-        let shell = if cfg!(target_os = "windows") {
-            "sh"
-        } else {
-            "/bin/sh"
-        };
-        let mut child = std::process::Command::new(shell)
-            .arg("-c")
-            .arg(subcommand)
-            .spawn()?;
+        if use_advice && !is_dumb {
+            let mut stderr = std::io::stderr();
+            stderr.write_all("\r\x1b[K".as_bytes()).unwrap_or(());
+            stderr.flush()?;
+        }
 
-        let status = child.wait()?;
+        let status = result?;
 
         if !status.success() {
             return Err(anyhow!(
@@ -112,17 +105,34 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
                 editor.to_string_lossy()
             ));
         }
-
-        if use_advice && !is_dumb {
-            let mut stderr = std::io::stderr();
-            stderr.write_all("\r\x1b[K".as_bytes()).unwrap_or(());
-            stderr.flush()?;
-        }
     }
 
     let buf = std::fs::read(&path)?.into();
     std::fs::remove_file(&path)?;
     Ok(buf)
+}
+
+fn run_editor<P: AsRef<Path>>(editor: &OsStr, path: P) -> Result<std::process::ExitStatus> {
+    let mut subcommand = OsString::new();
+    subcommand.push(editor);
+    subcommand.push(" ");
+    subcommand.push(path.as_ref().as_os_str());
+
+    let shell = if cfg!(target_os = "windows") {
+        "sh"
+    } else {
+        "/bin/sh"
+    };
+
+    let mut child = std::process::Command::new(shell)
+        .arg("-c")
+        .arg(subcommand)
+        .spawn()
+        .with_context(|| format!("running editor: {}", editor.to_string_lossy()))?;
+
+    child
+        .wait()
+        .with_context(|| format!("waiting editor: {}", editor.to_string_lossy()))
 }
 
 /// Determine user's editor of choice based on config and environment.
