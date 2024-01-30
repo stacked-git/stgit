@@ -36,7 +36,7 @@ encoding_rs = "0.8"
 flate2 = "1"
 gix = { version = "0.58", default-features = false, features = ["revision"] }
 gix-command = "0.3"
-indexmap = "2.1"
+indexmap = "2.2"
 is-terminal = "0.4"
 nom = { version = "7", default_features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"] }
