@@ -5,12 +5,12 @@
 use std::{
     ffi::{OsStr, OsString},
     fs::File,
-    io::{BufWriter, Write},
+    io::{BufWriter, Read, Write},
     path::Path,
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::BString;
+use bstr::{BString, ByteSlice};
 
 use super::description::{EditablePatchDescription, EditedPatchDescription};
 
@@ -113,14 +113,25 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
 }
 
 fn run_editor<P: AsRef<Path>>(editor: &OsStr, path: P) -> Result<std::process::ExitStatus> {
-    let mut child = std::process::Command::from(
-        gix_command::prepare(editor)
-            .arg(path.as_ref())
-            .with_shell_allow_argument_splitting()
-            .stdout(std::process::Stdio::inherit()),
-    )
-    .spawn()
-    .with_context(|| format!("running editor: {}", editor.to_string_lossy()))?;
+    let prep = gix_command::prepare(editor)
+        .arg(path.as_ref())
+        .with_shell_allow_argument_splitting()
+        .stdout(std::process::Stdio::inherit());
+
+    let mut command = if cfg!(windows) && !prep.use_shell {
+        if let Some(interpreter) = parse_interpreter(&prep.command) {
+            let mut cmd = std::process::Command::new(interpreter);
+            cmd.arg(prep.command).arg(path.as_ref());
+            cmd
+        } else {
+            std::process::Command::from(prep)
+        }
+    } else {
+        std::process::Command::from(prep)
+    };
+    let mut child = command
+        .spawn()
+        .with_context(|| format!("running editor: {}", editor.to_string_lossy()))?;
 
     child
         .wait()
@@ -151,4 +162,79 @@ fn get_editor(config: &gix::config::Snapshot) -> Result<OsString> {
         OsString::from("vi")
     };
     Ok(editor)
+}
+
+fn parse_interpreter(command: &OsStr) -> Option<OsString> {
+    let command_path = Path::new(command);
+    if command_path.extension().and_then(|ext| ext.to_str()) == Some("exe") {
+        return None;
+    }
+
+    let mut buffer = [0; 128];
+    if let Some(n) = std::fs::File::open(command_path)
+        .ok()
+        .and_then(|mut file| file.read(&mut buffer).ok())
+    {
+        parse_shebang(&buffer[..n])
+            .and_then(|bytes| bytes.to_os_str().ok())
+            .map(|osstr| osstr.to_os_string())
+    } else {
+        None
+    }
+}
+
+fn parse_shebang(buffer: &[u8]) -> Option<&[u8]> {
+    buffer
+        .as_bstr()
+        .lines()
+        .next()
+        .and_then(|line| line.strip_prefix(b"#!"))
+        .and_then(|shebang| {
+            shebang.rfind_byteset(b"/\\").map(|index| {
+                if let Some(space_index) = shebang[index..].find_byte(b' ') {
+                    &shebang[..index + space_index]
+                } else {
+                    shebang
+                }
+            })
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plain_shebang() {
+        assert_eq!(parse_shebang(b"#!/bin/sh\nsome stuff").unwrap(), b"/bin/sh");
+    }
+
+    #[test]
+    fn shebang_with_options() {
+        assert_eq!(
+            parse_shebang(b"#!/bin/sh -i -o -u\nsome stuff").unwrap(),
+            b"/bin/sh"
+        );
+    }
+
+    #[test]
+    fn shebang_with_backslashes() {
+        assert_eq!(
+            parse_shebang(b"#!C:\\Program Files\\Imashell.exe\nsome stuff").unwrap(),
+            b"C:\\Program Files\\Imashell.exe"
+        );
+    }
+
+    #[test]
+    fn shebang_with_trailing_space() {
+        assert_eq!(
+            parse_shebang(b"#!/bin/sh         \nsome stuff").unwrap(),
+            b"/bin/sh"
+        );
+    }
+
+    #[test]
+    fn not_a_shebang() {
+        assert!(parse_shebang(b"/bin/sh\nsome stuff").is_none());
+    }
 }
