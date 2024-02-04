@@ -3,14 +3,14 @@
 //! Functions for conducting interactive patch edit session.
 
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::OsString,
     fs::File,
-    io::{BufWriter, Read, Write},
+    io::{BufWriter, Write},
     path::Path,
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::{BString, ByteSlice};
+use bstr::BString;
 
 use super::description::{EditablePatchDescription, EditedPatchDescription};
 
@@ -89,7 +89,17 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
             stderr.flush()?;
         }
 
-        let result = run_editor(&editor, path.as_ref());
+        let status_result = gix_command::prepare(&editor)
+            .arg(path.as_ref())
+            .with_shell_allow_argument_splitting()
+            .stdout(std::process::Stdio::inherit())
+            .spawn()
+            .with_context(|| format!("running editor: {}", editor.to_string_lossy()))
+            .and_then(|mut child| {
+                child
+                    .wait()
+                    .with_context(|| format!("waiting editor: {}", editor.to_string_lossy()))
+            });
 
         if use_advice && !is_dumb {
             let mut stderr = std::io::stderr();
@@ -97,7 +107,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
             stderr.flush()?;
         }
 
-        let status = result?;
+        let status = status_result?;
 
         if !status.success() {
             return Err(anyhow!(
@@ -110,32 +120,6 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
     let buf = std::fs::read(&path)?.into();
     std::fs::remove_file(&path)?;
     Ok(buf)
-}
-
-fn run_editor<P: AsRef<Path>>(editor: &OsStr, path: P) -> Result<std::process::ExitStatus> {
-    let prep = gix_command::prepare(editor)
-        .arg(path.as_ref())
-        .with_shell_allow_argument_splitting()
-        .stdout(std::process::Stdio::inherit());
-
-    let mut command = if cfg!(windows) && !prep.use_shell {
-        if let Some(interpreter) = parse_interpreter(&prep.command) {
-            let mut cmd = std::process::Command::new(interpreter);
-            cmd.arg(prep.command).arg(path.as_ref());
-            cmd
-        } else {
-            std::process::Command::from(prep)
-        }
-    } else {
-        std::process::Command::from(prep)
-    };
-    let mut child = command
-        .spawn()
-        .with_context(|| format!("running editor: {}", editor.to_string_lossy()))?;
-
-    child
-        .wait()
-        .with_context(|| format!("waiting editor: {}", editor.to_string_lossy()))
 }
 
 /// Determine user's editor of choice based on config and environment.
@@ -162,79 +146,4 @@ fn get_editor(config: &gix::config::Snapshot) -> Result<OsString> {
         OsString::from("vi")
     };
     Ok(editor)
-}
-
-fn parse_interpreter(command: &OsStr) -> Option<OsString> {
-    let command_path = Path::new(command);
-    if command_path.extension().and_then(|ext| ext.to_str()) == Some("exe") {
-        return None;
-    }
-
-    let mut buffer = [0; 128];
-    if let Some(n) = std::fs::File::open(command_path)
-        .ok()
-        .and_then(|mut file| file.read(&mut buffer).ok())
-    {
-        parse_shebang(&buffer[..n])
-            .and_then(|bytes| bytes.to_os_str().ok())
-            .map(|osstr| osstr.to_os_string())
-    } else {
-        None
-    }
-}
-
-fn parse_shebang(buffer: &[u8]) -> Option<&[u8]> {
-    buffer
-        .as_bstr()
-        .lines()
-        .next()
-        .and_then(|line| line.strip_prefix(b"#!"))
-        .and_then(|shebang| {
-            shebang.rfind_byteset(b"/\\").map(|index| {
-                if let Some(space_index) = shebang[index..].find_byte(b' ') {
-                    &shebang[..index + space_index]
-                } else {
-                    shebang
-                }
-            })
-        })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn plain_shebang() {
-        assert_eq!(parse_shebang(b"#!/bin/sh\nsome stuff").unwrap(), b"/bin/sh");
-    }
-
-    #[test]
-    fn shebang_with_options() {
-        assert_eq!(
-            parse_shebang(b"#!/bin/sh -i -o -u\nsome stuff").unwrap(),
-            b"/bin/sh"
-        );
-    }
-
-    #[test]
-    fn shebang_with_backslashes() {
-        assert_eq!(
-            parse_shebang(b"#!C:\\Program Files\\Imashell.exe\nsome stuff").unwrap(),
-            b"C:\\Program Files\\Imashell.exe"
-        );
-    }
-
-    #[test]
-    fn shebang_with_trailing_space() {
-        assert_eq!(
-            parse_shebang(b"#!/bin/sh         \nsome stuff").unwrap(),
-            b"/bin/sh"
-        );
-    }
-
-    #[test]
-    fn not_a_shebang() {
-        assert!(parse_shebang(b"/bin/sh\nsome stuff").is_none());
-    }
 }
