@@ -631,7 +631,7 @@ impl<'repo> StackTransaction<'repo> {
         self.hidden = hidden;
 
         for pn in self.all_patches() {
-            old.take(pn)
+            old.shift_take(pn)
                 .expect("new patchname must be an old patchname");
         }
         assert!(

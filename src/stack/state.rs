@@ -253,7 +253,7 @@ impl<'repo> StackState<'repo> {
             parent_set.insert(prev_commit.id);
             let prev_state = prev_state.as_ref().unwrap();
             for patchname in prev_state.all_patches() {
-                parent_set.remove(&prev_state.patches[patchname].commit.id);
+                parent_set.shift_remove(&prev_state.patches[patchname].commit.id);
             }
         }
 
