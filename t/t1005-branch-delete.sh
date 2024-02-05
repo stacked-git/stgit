@@ -5,6 +5,14 @@ test_description='Attempt to delete branches'
 . ./test-lib.sh
 
 test_expect_success 'Initialize master branch' '
+    test_create_repo origin_repo &&
+    (
+        cd origin_repo &&
+        test_commit_bulk 4
+    ) &&
+    git remote add origin origin_repo &&
+    git fetch origin &&
+    git branch -u origin/master &&
     stg init &&
     test_commit p0 &&
     test_commit p1 &&
@@ -26,7 +34,7 @@ test_expect_success 'Force delete branch with patches' '
 '
 
 test_expect_success 'Make sure the branch ref was deleted' '
-    [ -z "$(git show-ref | grep master | tee /dev/stderr)" ]
+    [ -z "$(git show-ref --heads | grep master | tee /dev/stderr)" ]
 '
 
 test_expect_success 'Make sure the branch config was deleted' '
@@ -36,7 +44,7 @@ test_expect_success 'Make sure the branch config was deleted' '
 '
 
 test_expect_success 'Make sure the branch files were deleted' '
-    [ -z "$(find .git -type f | grep master | tee /dev/stderr)" ]
+    [ -z "$(find .git -type f | grep master | grep -v origin/master | tee /dev/stderr)" ]
 '
 
 test_expect_success 'Attempt to delete current branch' '

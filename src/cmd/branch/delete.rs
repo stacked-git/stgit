@@ -2,7 +2,7 @@
 
 //! `stg branch --delete` implementation.
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 
 use crate::{
     branchloc::BranchLocator,
@@ -51,7 +51,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     let current_branchname = current_branch
         .as_ref()
         .and_then(|branch| branch.get_branch_partial_name().ok());
-    if Some(target_branchname) == current_branchname {
+    if Some(&target_branchname) == current_branchname.as_ref() {
         return Err(anyhow!("cannot delete the current branch"));
     }
 
@@ -71,5 +71,10 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     }
 
     target_branch.delete()?;
+
+    let mut local_config_file = repo.local_config_file()?;
+    local_config_file.remove_section("branch", Some(target_branchname.as_ref().into()));
+    repo.write_local_config(local_config_file).context("writing local config file")?;
+
     Ok(())
 }
