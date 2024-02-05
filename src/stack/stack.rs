@@ -4,7 +4,7 @@
 
 use std::{collections::BTreeMap, rc::Rc, str::FromStr};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use bstr::ByteSlice;
 
 use super::{
@@ -15,7 +15,6 @@ use crate::{
     branchloc::BranchLocator,
     ext::RepositoryExtended,
     patch::PatchName,
-    stupid::Stupid,
     wrap::{Branch, PartialRefName},
 };
 
@@ -90,9 +89,11 @@ impl<'repo> Stack<'repo> {
         state_ref.delete()?;
 
         // It is ok if the StGit-specific config section does not exist.
-        repo.stupid()
-            .config_remove_section(&format!("branch.{branch_name}.stgit"))
-            .ok();
+        let mut local_config_file = repo.local_config_file()?;
+        let section = format!("{branch_name}.stgit");
+        if local_config_file.remove_section("branch", Some(section.as_bytes().into())).is_some() {
+            repo.write_local_config(local_config_file).context("writing local config")?;
+        }
 
         Ok(())
     }
