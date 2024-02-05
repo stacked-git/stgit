@@ -4,7 +4,8 @@
 
 use std::str::FromStr;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use bstr::{BString, ByteSlice};
 
 use crate::{
     ext::RepositoryExtended,
@@ -77,12 +78,33 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
             ))?,
             deref: false,
         })?;
-        stupid
-            .config_rename_section(
-                &format!("branch.{old_branchname}.stgit"),
-                &format!("branch.{new_branchname}.stgit"),
-            )
-            .ok();
+
+        let mut local_config_file = repo.local_config_file().context("opening local config")?;
+        let old_section_name = format!("{old_branchname}.stgit");
+        let old_section_name = old_section_name.as_bytes().as_bstr();
+        if local_config_file
+            .section("branch", Some(old_section_name))
+            .is_ok()
+        {
+            let new_section_name =
+                std::borrow::Cow::Owned(BString::from(format!("{new_branchname}.stgit")));
+            local_config_file
+                .rename_section(
+                    "branch",
+                    Some(old_section_name),
+                    "branch",
+                    Some(new_section_name),
+                )
+                .with_context(|| {
+                    format!(
+                        "renaming config section `branch.{old_branchname}.stgit` \
+                         to `branch.{new_branchname}.stgit`"
+                    )
+                })?;
+            repo.write_local_config(local_config_file)
+                .context("writing local config")?;
+        }
+
         stupid.branch_move(Some(old_branchname.as_ref()), new_branchname.as_ref())?;
         stack.deinitialize()?;
     } else {
