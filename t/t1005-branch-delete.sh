@@ -47,14 +47,44 @@ test_expect_success 'Make sure the branch files were deleted' '
     [ -z "$(find .git -type f | grep master | grep -v origin/master | tee /dev/stderr)" ]
 '
 
-test_expect_success 'Attempt to delete current branch' '
-    command_error stg branch --delete $(stg branch) 2>err &&
-    grep -e "cannot delete the current branch" err
+test_expect_success 'Delete current branch' '
+    stg branch -c baz &&
+    stg branch --delete &&
+    stg branch >out &&
+    cat >expected <<-\EOF &&
+	foo
+	EOF
+    test_cmp expected out
+'
+
+test_expect_success 'Attempt delete current branch with patches' '
+    stg branch -c baz2 &&
+    stg new -m p0 &&
+    command_error stg branch --delete 2>err &&
+    grep "delete not permitted: the series still contains patches" err &&
+    stg branch --delete --force &&
+    stg branch >out &&
+    cat >expected <<-\EOF &&
+	foo
+	EOF
+    test_cmp expected out
+'
+
+test_expect_success 'Attempt delete current branch with dirty worktree' '
+    stg branch -c baz2 &&
+    echo content >>p0.t &&
+    command_error stg branch --delete 2>err &&
+    grep "cannot delete the current branch: worktree not clean" err &&
+    git checkout -- p0.t &&
+    stg branch --delete &&
+    stg branch >out &&
+    cat >expected <<-\EOF &&
+	foo
+	EOF
+    test_cmp expected out
 '
 
 test_expect_success 'Invalid num args to delete' '
-    general_error stg branch --delete 2>err &&
-    grep -e "the following required arguments were not provided" err &&
     general_error stg branch --delete foo extra 2>err &&
     grep -e "unexpected argument .extra." err
 '
