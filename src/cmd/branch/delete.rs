@@ -48,17 +48,14 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let (target_branch, target_branchname) = if let Some(branch_loc) = matches.get_one::<BranchLocator>("branch-any") {
-        let branch = branch_loc.resolve(repo)?;
-        let branchname = branch.get_branch_partial_name()?;
-        (branch, branchname)
+    let target_branch = if let Some(branch_loc) = matches.get_one::<BranchLocator>("branch-any") {
+        branch_loc.resolve(repo)?
     } else if let Ok(branch) = repo.get_current_branch() {
-        let branchname = branch.get_branch_partial_name()?;
-        (branch, branchname)
+        branch
     } else {
         return Err(anyhow!("no target branch specified and no current branch"));
     };
-
+    let target_branchname = target_branch.get_branch_partial_name()?;
     let current_branch = repo.get_current_branch().ok();
     let current_branchname = current_branch
         .as_ref()
