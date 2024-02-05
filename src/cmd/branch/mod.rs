@@ -55,7 +55,7 @@ fn make() -> clap::Command {
                 "{--rename,-r} [old-name] <new-name>",
                 "{--protect,-p} [branch]",
                 "{--unprotect,-u} [branch]",
-                "{--delete,-D} [--force] <branch>",
+                "{--delete,-D} [--force] [branch]",
                 "--cleanup [--force] [branch]",
                 "{--describe,-d} <description> [branch]",
             ],
