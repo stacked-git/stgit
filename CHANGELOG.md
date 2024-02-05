@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.4.3 2024-02-04
+
+### Added
+- feat(branch): allow delete of current branch
+
+### Fixed
+- fix(branch): delete branch config with branch
+- fix: use gix-command for interactive edit (#407)
+- fix: improved interactive editor diagnostics
+- chore: update gix to 0.58.0 (#407)
+- docs: fix dates in changelog
+
+### Changed
+- refactor(branch): use gix to rename config section
+- refactor: use gix to remove stgit branch config
+- refactor: use gix-command for hooks
+- refactor: use non-deprecated indexmap methods
+- ci: update cargo-generate-rpm to 0.14.0
+- ci: update to upload-artifact@v4
+- ci: restore use of IO::Pty in MacOS build
+
+
 ## 2.4.2 2023-12-26
 
 ### Changed
