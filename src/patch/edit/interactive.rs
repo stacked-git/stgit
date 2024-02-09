@@ -92,6 +92,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
         let status_result = gix_command::prepare(&editor)
             .arg(path.as_ref())
             .with_shell_allow_argument_splitting()
+            .stdin(std::process::Stdio::inherit())
             .stdout(std::process::Stdio::inherit())
             .spawn()
             .with_context(|| format!("running editor: {}", editor.to_string_lossy()))
