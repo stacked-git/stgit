@@ -493,12 +493,12 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let tree_id = if need_to_apply_diff {
             let diff = diff.unwrap().0;
-
-            match stupid.with_temp_index(|stupid_temp| {
+            let tree_result = stupid.with_temp_index(|stupid_temp| {
                 stupid_temp.read_tree(parent_id)?;
                 stupid_temp.apply_to_index(diff.as_ref())?;
                 stupid_temp.write_tree()
-            }) {
+            });
+            match tree_result {
                 Ok(tree_id) => tree_id,
                 Err(e) => {
                     let diff = Some(DiffBuffer(diff));
