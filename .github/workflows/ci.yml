@@ -226,7 +226,7 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          install: diffutils make
+          install: diffutils make https://repo.msys2.org/msys/x86_64/msys2-runtime-3.4.9-3-x86_64.pkg.tar.zst
           path-type: inherit
       - name: Test
         shell: msys2 {0}
