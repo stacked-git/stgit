@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.4 2024-02-11
+
+### Fixed
+- fix: pass stdio for interactive editing (#415)
+- fix: update gix-tempfile and gix-lock to 13.1.0 (#413)
+
+### Changed
+- chore: update dependencies
+
+
 ## 2.4.3 2024-02-04
 
 ### Added
