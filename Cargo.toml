@@ -22,7 +22,7 @@ anyhow = "1.0"
 anstyle = { version = "1.0", features = ["std"] }
 bstr = { version = "1.6", default-features = false, features = ["std"] }
 bzip2-rs = "0.1"
-clap = { version = "~4.4", default-features = false, features = [
+clap = { version = "~4.5", default-features = false, features = [
   "color",
   "help",
   "std",
