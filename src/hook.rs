@@ -68,7 +68,9 @@ pub(crate) fn run_pre_commit_hook(repo: &gix::Repository, use_editor: bool) -> R
 
     let work_dir = repo.work_dir().expect("not a bare repo");
 
-    let mut hook_command = std::process::Command::from(gix_command::prepare(hook_path));
+    let mut hook_command = std::process::Command::from(
+        gix_command::prepare(hook_path).stdout(std::process::Stdio::inherit()),
+    );
     hook_command.current_dir(work_dir);
     if !use_editor {
         hook_command.env("GIT_EDITOR", ":");
@@ -117,7 +119,9 @@ pub(crate) fn run_commit_msg_hook<'repo>(
 
     // TODO: when git runs this hook, it only sets GIT_INDEX_FILE and sometimes
     // GIT_EDITOR. So author and committer vars are not clearly required.
-    let mut hook_command = std::process::Command::from(gix_command::prepare(hook_path));
+    let mut hook_command = std::process::Command::from(
+        gix_command::prepare(hook_path).stdout(std::process::Stdio::inherit()),
+    );
     hook_command.current_dir(work_dir);
     hook_command.env("GIT_INDEX_FILE", &index_path);
     if !use_editor {
