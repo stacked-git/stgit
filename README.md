@@ -49,7 +49,8 @@ operations by running subordinate `git` commands.
 Recent versions of StGit are available in several package repositories
 such as [HomeBrew][pkg-homebrew] and [MacPorts][pkg-macports] for MacOS
 and for the [Arch][pkg-arch] and [Gentoo][pkg-gentoo] Linux
-distributions.
+distributions. StGit is also available via [crates.io][pkg-crate],
+[guix][pkg-guix], and [nix][pkg-nix].
 
 More details about StGit packages availability for various operating
 systems can be [found on repology][repology].
@@ -57,7 +58,10 @@ systems can be [found on repology][repology].
 [pkg-homebrew]: https://formulae.brew.sh/formula/stgit
 [pkg-macports]: https://ports.macports.org/port/stgit/
 [pkg-arch]: https://aur.archlinux.org/packages/stgit
-[pkg-gentoo]: //https://packages.gentoo.org/packages/dev-vcs/stgit
+[pkg-gentoo]: https://packages.gentoo.org/packages/dev-vcs/stgit
+[pkg-crate]: https://crates.io/crates/stgit
+[pkg-guix]: https://packages.guix.gnu.org/packages/stgit/
+[pkg-nix]: https://search.nixos.org/packages?type=packages&query=stgit
 [repology]: https://repology.org/project/stgit/versions
 
 ### Prebuilt Packages
