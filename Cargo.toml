@@ -13,6 +13,7 @@ homepage = "https://stacked-git.github.io/"
 repository = "https://github.com/stacked-git/stgit"
 keywords = ["git", "vcs", "cli", "utility"]
 categories = ["development-tools"]
+exclude = ["/.github", "Documentation/", "/t", "/contrib/release", "/contrib/wix"]
 
 [[bin]]
 bench = false
