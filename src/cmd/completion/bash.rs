@@ -220,7 +220,7 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
             }
             "committish" => {
                 script.line(
-                "mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches) $(_tags) $(_remotes)\")",
+                "mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches) $(_tags) $(_remotes)\" -- \"$cur\")",
             );
             }
             "git-diff-opt" => {
