@@ -287,6 +287,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             let mut file = std::fs::File::options()
                 .write(true)
                 .create(true)
+                .truncate(true)
                 .open(output_dir.join(&patchfile_name))
                 .with_context(|| format!("opening {patchfile_name}"))?;
             file.write_all(&specialized)?;
