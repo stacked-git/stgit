@@ -37,7 +37,7 @@ clap = { version = "~4.5", default-features = false, features = [
 ctrlc = "3.4"
 encoding_rs = "0.8"
 flate2 = "1"
-gix = { version = "0.58", default-features = false, features = ["revision"] }
+gix = { version = "0.61", default-features = false, features = ["revision"] }
 gix-command = "0.3.4"
 indexmap = "2.1"
 is-terminal = "0.4"
