@@ -250,7 +250,7 @@ jobs:
           dotnet tool install --global wix --version 4.0.5
       - name: Install Wix UI Extension
         run: |
-          wix extension add -g WixToolset.UI.wixext
+          wix extension add -g WixToolset.UI.wixext/4.0.5
       - name: Build MSI Installer
         shell: msys2 {0}
         run: |
