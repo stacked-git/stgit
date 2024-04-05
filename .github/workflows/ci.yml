@@ -228,6 +228,10 @@ jobs:
           update: true
           install: diffutils make
           path-type: inherit
+      - name: Pre-test Check
+        shell: msys2 {0}
+        run: |
+          cargo --locked --quiet run --profile=release -- version
       # - name: Test
       #   shell: msys2 {0}
       #   env:
