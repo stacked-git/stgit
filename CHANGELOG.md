@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.6 2024-04-07
+
+### Fixed
+- fix(bash): fix completion for "committish"
+
+### Changed
+- docs: Update copyright year
+- chore: update gix to 0.61.1
+- ci: update to wix 4.0.5
+
+
 ## 2.4.5 2024-02-18
 
 ### Fixed
