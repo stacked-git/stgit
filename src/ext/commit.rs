@@ -21,11 +21,6 @@ pub(crate) trait CommitExtended<'a> {
     /// guaranteed to have valid UTF-8 name and email strings.
     fn author_strict(&self) -> Result<gix::actor::Signature>;
 
-    /// Get committer signature, strictly.
-    ///
-    /// See [`CommitExtended::author_strict()`].
-    fn committer_strict(&self) -> Result<gix::actor::Signature>;
-
     /// Get commit message with extended capabilities.
     fn message_ex(&self) -> Message;
 
@@ -70,46 +65,6 @@ impl<'a> CommitExtended<'a> for gix::Commit<'a> {
         } else {
             Err(anyhow!(
                 "could not decode author name as `{}` for commit `{}`",
-                encoding.name(),
-                self.id,
-            ))
-        }
-    }
-
-    fn committer_strict(&self) -> Result<gix::actor::Signature> {
-        let commit_ref = self.decode()?;
-        let sig = commit_ref.committer();
-        let encoding = if let Some(encoding_name) = commit_ref.encoding {
-            encoding_rs::Encoding::for_label(encoding_name).ok_or_else(|| {
-                anyhow!(
-                    "unhandled commit encoding `{}` in commit `{}`",
-                    encoding_name.to_str_lossy(),
-                    self.id,
-                )
-            })?
-        } else {
-            encoding_rs::UTF_8
-        };
-
-        if let Some(name) = encoding.decode_without_bom_handling_and_without_replacement(sig.name) {
-            if let Some(email) =
-                encoding.decode_without_bom_handling_and_without_replacement(sig.email)
-            {
-                Ok(gix::actor::Signature {
-                    name: BString::from(name.as_ref()),
-                    email: BString::from(email.as_ref()),
-                    time: sig.time,
-                })
-            } else {
-                Err(anyhow!(
-                    "could not decode committer email as `{}` for commit `{}`",
-                    encoding.name(),
-                    self.id,
-                ))
-            }
-        } else {
-            Err(anyhow!(
-                "could not decode committer name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id,
             ))

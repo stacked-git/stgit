@@ -114,11 +114,6 @@ pub(crate) trait StackStateAccess<'repo> {
         BothPatches::new(self.applied(), self.unapplied())
     }
 
-    /// Iterator over unapplied and hidden patch names.
-    fn unapplied_and_hidden(&self) -> BothPatches<'_> {
-        BothPatches::new(self.unapplied(), self.hidden())
-    }
-
     /// Return absolute index of patch in stack.
     fn index_of(&self, patchname: &PatchName) -> usize {
         self.all_patches()
