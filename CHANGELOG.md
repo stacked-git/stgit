@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.7 2024-05-05
+
+### Fixed
+- docs(pop): clarify --spill behavior (#445)
+- fix(branch): disallow branch before subcommand (#447)
+
+### Changed
+- refactor: get gix-command via gix with command feature
+- Update gix to version 0.62
+
+
 ## 2.4.6 2024-04-07
 
 ### Fixed
