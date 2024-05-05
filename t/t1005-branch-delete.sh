@@ -29,6 +29,15 @@ test_expect_success 'Attempt to delete branch with patches' '
     grep -e "delete not permitted: the series still contains patches" err
 '
 
+test_expect_success 'Delete subcommand ordering' '
+    general_error stg branch master --delete --force &&
+    stg branch >out &&
+    cat >expected <<-\EOF &&
+	foo
+	EOF
+    test_cmp expected out
+'
+
 test_expect_success 'Force delete branch with patches' '
     stg branch --delete --force master
 '

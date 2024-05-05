@@ -44,6 +44,7 @@ fn make() -> clap::Command {
              result in an error.",
         )
         .disable_help_subcommand(true)
+        .args_conflicts_with_subcommands(true)
         .override_usage(super::make_usage(
             "stg branch",
             &[

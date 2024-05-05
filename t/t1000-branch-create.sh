@@ -78,7 +78,7 @@ test_expect_success 'Attempt switching to current branch' '
 
 test_expect_success 'Attempt no branch command' '
     general_error stg branch foo bar 2>err &&
-    grep "unexpected argument .bar." err
+    grep "the subcommand .bar. cannot be used with ..branch.." err
 '
 
 test_expect_success 'Invalid num arguments to branch list' '
