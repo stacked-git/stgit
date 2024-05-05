@@ -82,7 +82,7 @@ fn make() -> clap::Command {
             Arg::new("spill")
                 .long("spill")
                 .short('s')
-                .help("Keep patches' modifications in working tree after popping")
+                .help("Keep patches' modifications in index and worktree after popping")
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::keep_arg())
