@@ -90,8 +90,7 @@ test_expect_success TTY 'Subcommand color' '
 test_expect_success TTY 'Subcommand without color' '
     test_terminal stg branch -l --color never | test_decode_color >output &&
     cat output | grep -v "<RESET>" &&
-    test_terminal stg branch --color never -l | test_decode_color >output &&
-    cat output | grep -v "<RESET>" &&
+    general_error stg branch --color never -l &&
     test_terminal stg --color never branch -l | test_decode_color >output &&
     cat output | grep -v "<RESET>" &&
     (
