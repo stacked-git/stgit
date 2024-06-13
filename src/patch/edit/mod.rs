@@ -594,10 +594,10 @@ fn author_from_args(
     matches: &clap::ArgMatches,
     time: Option<gix::date::Time>,
 ) -> Result<Option<gix::actor::Signature>> {
-    let time = if let Some(time) = time {
-        time
-    } else if let Some(authdate) = matches.get_one::<gix::date::Time>("authdate").copied() {
+    let time = if let Some(authdate) = matches.get_one::<gix::date::Time>("authdate").copied() {
         authdate
+    } else if let Some(time) = time {
+        time
     } else {
         return Ok(None);
     };

@@ -331,6 +331,12 @@ test_expect_success 'Fail to set invalid author date' '
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
+test_expect_success 'Set author date and author' '
+    stg edit p2 --authdate "2000-01-28 22:30:00 -0300" --author "Elizabeth Bennet <ebennet@example.com>" &&
+    test "$(adate HEAD)" = "2000-01-28 22:30:00 -0300" &&
+    test "$(auth HEAD)" = "Elizabeth Bennet, ebennet@example.com"
+'
+
 test_expect_success 'Set author date to "now"' '
     before=$(date "+%F %T %z") &&
     stg edit p2 --authdate now &&
