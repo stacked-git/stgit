@@ -366,9 +366,9 @@ dependencies = [
 
 [[package]]
 name = "gix-actor"
-version = "0.31.2"
+version = "0.31.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d69c59d392c7e6c94385b6fd6089d6df0fe945f32b4357687989f3aee253cd7f"
+checksum = "e0f52455500a0fac1fd62a1cf42d9121cfddef8cb3ded2f9e7adb5775deb1fc9"
 dependencies = [
  "bstr",
  "gix-date",
