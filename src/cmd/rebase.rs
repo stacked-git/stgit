@@ -497,7 +497,10 @@ fn make_instructions_template(stack: &Stack, previously_applied: &[PatchName]) -
         let subject = commit
             .message()
             .map(|message_ref| message_ref.title.to_str_lossy())
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .replace(['\r', '\n'], " ")
+            .trim()
+            .to_owned();
         writeln!(template, "keep {patchname:name_width$} # {subject}").unwrap();
     }
     if !found_apply_boundary {
