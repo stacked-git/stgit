@@ -148,10 +148,18 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         if let Some(context_lines) = context_lines {
             command.arg(format!("-C{context_lines}"));
         }
+        let error_threshold = if reject {
+            // When allowing rejects "git apply" returns exit code 1 when it can't
+            // apply patch in its entirety. Exit code 128 is a hard error.
+            128
+        } else {
+            // Any non-zero error code is considered an error.
+            1
+        };
         command
             .stdout(Stdio::null())
             .in_and_out(diff)?
-            .require_success("apply --index")?;
+            .require_code_less_than("apply --index", error_threshold)?;
         Ok(())
     }
 

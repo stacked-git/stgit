@@ -44,8 +44,10 @@ fn make() -> clap::Command {
              allows the patches source to be fetched from a url instead of from a \
              local file.\n\
              \n\
-             If a patch does not apply cleanly, the failed diff is written to a \
-             .stgit-failed.patch file and an empty patch is added to the stack.\n\
+             If a patch does not apply cleanly import is aborted unless '--reject' \
+             is specified, in which case it will apply to the work tree the parts \
+             of the patch that are  applicable, leave the rejected hunks in \
+             corresponding *.rej files, and add an empty patch to the stack.\n\
              \n\
              The patch description must be separated from the diff with a \"---\" line.",
         )

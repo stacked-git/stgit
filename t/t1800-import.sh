@@ -366,6 +366,16 @@ test_expect_success 'Import series from stdin' '
     stg delete --top
 '
 
+test_expect_success 'Import patch that does not apply cleanly with --reject' '
+    stg import --reject "$TEST_DIRECTORY"/t1800/diff-with-rejects &&
+    git log -1 --pretty=format:%b >body &&
+    test_when_finished "rm foo.txt.rej body" &&
+    test "$(echo $(stg top))" = "diff-with-rejects" &&
+    test_line_count = 0 body &&
+    stg reset --hard &&
+    stg delete --top
+'
+
 test_expect_success STG_IMPORT_URL 'Attempt url' '
     general_error stg import --url 2>err &&
     grep -e "required arguments were not provided" err
