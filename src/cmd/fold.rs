@@ -11,6 +11,7 @@ use clap::{Arg, ArgGroup};
 use crate::{
     ext::{CommitExtended, RepositoryExtended},
     patch::SingleRevisionSpec,
+    print_info_message,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -124,7 +125,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let orig_head_tree_id = stack.get_branch_head().tree_id()?.detach();
         let base_tree_id = base_commit.tree_id()?.detach();
         stupid.read_tree_checkout(orig_head_tree_id, base_tree_id)?;
-        if let Err(e) = stupid.apply_to_worktree_and_index(
+        let applied_cleanly = match stupid.apply_to_worktree_and_index(
             diff.as_ref(),
             reject_flag,
             false,
@@ -132,24 +133,42 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             None,
             context_lines,
         ) {
-            stupid.read_tree_checkout_hard(orig_head_tree_id)?;
-            return Err(e);
-        }
+            Ok(None) => true,
+            Ok(Some(output)) => {
+                // If patch applied with conflicts print output of "git apply".
+                print_info_message(matches, &output);
+                false
+            }
+            Err(e) => {
+                // Reset the work tree on failure.
+                stupid.read_tree_checkout_hard(orig_head_tree_id)?;
+                return Err(e);
+            }
+        };
         let applied_tree_id = stupid.write_tree()?;
         stupid.read_tree_checkout(applied_tree_id, orig_head_tree_id)?;
-        if stupid.merge_recursive(base_tree_id, orig_head_tree_id, applied_tree_id)? {
-            Ok(())
-        } else {
-            Err(super::Error::CausedConflicts("merge conflicts".to_string()).into())
+        if !stupid.merge_recursive(base_tree_id, orig_head_tree_id, applied_tree_id)? {
+            return Err(super::Error::CausedConflicts("merge conflicts".to_string()).into());
         }
+        if !applied_cleanly {
+            return Err(super::Error::CausedConflicts("patch conflicts".to_string()).into());
+        }
+        Ok(())
     } else {
-        stupid.apply_to_worktree_and_index(
+        match stupid.apply_to_worktree_and_index(
             diff.as_ref(),
             reject_flag,
             false,
             strip_level,
             None,
             context_lines,
-        )
+        ) {
+            Ok(None) => Ok(()),
+            Ok(Some(output)) => {
+                print_info_message(matches, &output);
+                Err(super::Error::CausedConflicts("patch conflicts".to_string()).into())
+            }
+            Err(e) => Err(e),
+        }
     }
 }

@@ -15,6 +15,7 @@ use crate::{
     color::get_color_stdout,
     ext::{RepositoryExtended, TimeExtended},
     patch::{patchedit, PatchName},
+    print_info_message,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -44,8 +45,10 @@ fn make() -> clap::Command {
              allows the patches source to be fetched from a url instead of from a \
              local file.\n\
              \n\
-             If a patch does not apply cleanly, the failed diff is written to a \
-             .stgit-failed.patch file and an empty patch is added to the stack.\n\
+             If a patch does not apply cleanly import is aborted unless '--reject' \
+             is specified, in which case it will apply to the work tree the parts \
+             of the patch that are  applicable, leave the rejected hunks in \
+             corresponding *.rej files, and add an empty patch to the stack.\n\
              \n\
              The patch description must be separated from the diff with a \"---\" line.",
         )
@@ -603,15 +606,15 @@ fn create_patch<'repo>(
         }
     };
 
+    let stupid = stack.repo.stupid();
     let strip_level = strip_level.or_else(|| matches.get_one::<usize>("strip").copied());
 
     let trimmed_diff = diff.trim_end_with(|c| c.is_ascii_whitespace());
 
-    let tree_id = if trimmed_diff.is_empty() || trimmed_diff == b"---" {
-        stack.get_branch_head().tree_id()?.detach()
+    let applied_cleanly = if trimmed_diff.is_empty() || trimmed_diff == b"---" {
+        true
     } else {
-        let stupid = stack.repo.stupid();
-        stupid.apply_to_worktree_and_index(
+        match stupid.apply_to_worktree_and_index(
             diff,
             matches.get_flag("reject"),
             matches.get_flag("3way"),
@@ -620,10 +623,18 @@ fn create_patch<'repo>(
                 .get_one::<PathBuf>("directory")
                 .map(|path_buf| path_buf.as_path()),
             matches.get_one::<usize>("context-lines").copied(),
-        )?;
-
-        stupid.write_tree()?
+        ) {
+            Ok(None) => true,
+            Ok(Some(output)) => {
+                print_info_message(matches, &output);
+                false
+            }
+            Err(e) => return Err(e),
+        }
     };
+
+    // If the patch was empty this will not create a new tree object.
+    let tree_id = stupid.write_tree()?;
 
     let (new_patchname, commit_id) = match crate::patch::edit::EditBuilder::default()
         .original_patchname(Some(&patchname))
@@ -647,7 +658,7 @@ fn create_patch<'repo>(
         ),
     };
 
-    stack
+    let stack = stack
         .setup_transaction()
         .with_output_stream(get_color_stdout(matches))
         .use_index_and_worktree(false)
@@ -658,7 +669,13 @@ fn create_patch<'repo>(
             }
             trans.new_applied(&new_patchname, commit_id)
         })
-        .execute(&format!("import: {new_patchname}"))
+        .execute(&format!("import: {new_patchname}"))?;
+
+    if !applied_cleanly {
+        return Err(super::Error::CausedConflicts("patch conflicts".to_string()).into());
+    }
+
+    Ok(stack)
 }
 
 fn stripname(name: &str) -> &str {
