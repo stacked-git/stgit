@@ -277,4 +277,13 @@ test_expect_success 'No patches exits early' '
     stg rebase --interactive
 '
 
+test_expect_success 'Patches with multi-line subject' '
+    printf "p0: line 1\nline 2\n" | stg new -f - p0 &&
+    printf "p1: line 1\nline 2\n" | stg new -f - p1 &&
+    test_set_editor cat &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    test "$(stg series --applied -c)" = "2"
+'
+
 test_done
