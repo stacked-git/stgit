@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.8 2024-07-21
+
+### Fixed
+
+- fix(refresh): handle edited message and patch name (#470)
+- fix: harden "stg rebase -i" against patches with multi-line subjects
+- fix: prefer --authdate over patch time with author
+
+### Changed
+- updated dependencies
+
+
 ## 2.4.7 2024-05-05
 
 ### Fixed
