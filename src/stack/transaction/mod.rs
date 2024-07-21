@@ -834,11 +834,13 @@ impl<'repo> StackTransaction<'repo> {
             // The renamed patch may have been previously updated in this transaction.
             // This can happen, for example, for `stg refresh`.
             self.updated_patches.insert(old_patchname.clone(), None);
-            self.updated_patches.insert(new_patchname.clone(), Some(patch_state));
+            self.updated_patches
+                .insert(new_patchname.clone(), Some(patch_state));
         } else {
             let patch_state = self.stack.get_patch(old_patchname).clone();
             self.updated_patches.insert(old_patchname.clone(), None);
-            self.updated_patches.insert(new_patchname.clone(), Some(patch_state));
+            self.updated_patches
+                .insert(new_patchname.clone(), Some(patch_state));
         }
 
         self.ui.print_rename(old_patchname, new_patchname)
