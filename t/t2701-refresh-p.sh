@@ -11,7 +11,7 @@ test_expect_success 'Initialize StGit stack' '
 	files*.txt
 	status*.txt
 	EOF
-    for i in 1 2; do
+    for i in 1 2 3; do
         echo x >$i.txt &&
         stg add $i.txt &&
         stg new p$i -m "Patch $i" &&
@@ -20,6 +20,7 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'Add new file to non-top patch' '
+    stg goto p2 &&
     stg status >status1.txt &&
     test_must_be_empty status1.txt &&
     echo y >new.txt &&
@@ -38,6 +39,46 @@ test_expect_success 'Add new file to non-top patch' '
 	A 2.txt
 	EOF
     test_cmp expected.txt files2.txt
+'
+
+test_expect_success 'Add new file to unapplied patch' '
+    echo something >another-new.txt &&
+    stg add another-new.txt &&
+    stg refresh -p p3 &&
+    stg files p3 >files3.txt &&
+    cat >expected.txt <<-\EOF &&
+	A 3.txt
+	A another-new.txt
+	EOF
+    test_cmp expected.txt files3.txt &&
+    stg files p2 >files2.txt &&
+    cat >expected.txt <<-\EOF &&
+	A 2.txt
+	EOF
+    test_cmp expected.txt files2.txt
+'
+
+test_expect_success 'Refresh change to unapplied patch' '
+    echo for-p3 >>2.txt &&
+    stg refresh -p p3 &&
+    stg files p3 >files3.txt &&
+    cat >expected.txt <<-\EOF &&
+	M 2.txt
+	A 3.txt
+	A another-new.txt
+	EOF
+    test_cmp expected.txt files3.txt &&
+    stg files p2 >files2.txt &&
+    cat >expected.txt <<-\EOF &&
+	A 2.txt
+	EOF
+    test_cmp expected.txt files2.txt &&
+    stg goto p3 &&
+    cat >expected.txt <<-\EOF &&
+	x
+	for-p3
+	EOF
+    test_cmp expected.txt 2.txt
 '
 
 test_done
