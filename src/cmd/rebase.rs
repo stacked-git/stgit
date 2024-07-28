@@ -101,8 +101,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
 
     let target_commit =
-        if let Some(committish) = matches.get_one::<SingleRevisionSpec>("committish") {
-            committish.resolve(&repo, Some(&stack))?.commit
+        if let Some(target_rev_spec) = matches.get_one::<SingleRevisionSpec>("committish") {
+            target_rev_spec.resolve(&repo, Some(&stack))?.commit
         } else {
             stack.base().clone()
         };
@@ -176,7 +176,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .or_else(|| config.string("stgit.rebasecmd"))
         .and_then(|bs| bs.to_str().map(str::to_string).ok())
         .unwrap_or_else(|| "git reset --hard".to_string());
-    print_info_message(matches, &format!("Rebasing to `{}`", target_commit.id()));
+    print_info_message(
+        matches,
+        &format!(
+            "Rebasing to {}",
+            formatted_target_id_and_ref(&repo, std::rc::Rc::clone(&target_commit))
+        ),
+    );
     stupid.user_rebase(&rebase_cmd, target_commit.id)?;
 
     let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
@@ -219,6 +225,67 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+fn formatted_target_id_and_ref(
+    repo: &gix::Repository,
+    target_commit: std::rc::Rc<gix::Commit>,
+) -> String {
+    let mut id_and_ref = if let Some(abbrev) = repo
+        .config_snapshot()
+        .integer("core.abbrev")
+        .map(|i| i as usize)
+    {
+        format!("`{}`", target_commit.id.to_hex_with_len(abbrev))
+    } else {
+        format!("`{}`", target_commit.id.to_hex())
+    };
+
+    let platform = repo.references().ok();
+    if let Some(platform) = platform {
+        let mut names: std::collections::BTreeSet<gix::refs::FullName> =
+            std::collections::BTreeSet::new();
+
+        if let Ok(local_branches) = platform.local_branches() {
+            names.extend(
+                local_branches
+                    .filter_map(Result::ok)
+                    .filter(|branch| {
+                        branch.clone().into_fully_peeled_id().ok() == Some(target_commit.id())
+                    })
+                    .map(|branch| branch.name().to_owned()),
+            )
+        }
+        if let Ok(remote_branches) = platform.remote_branches() {
+            names.extend(
+                remote_branches
+                    .filter_map(Result::ok)
+                    .filter(|branch| {
+                        branch.clone().into_fully_peeled_id().ok() == Some(target_commit.id())
+                    })
+                    .map(|branch| branch.name().to_owned()),
+            )
+        }
+
+        let mut short_names: Vec<(gix::refs::Category, &bstr::BStr)> = names
+            .iter()
+            .filter_map(|full_name| full_name.category_and_short_name())
+            .collect();
+
+        if !short_names.is_empty() {
+            short_names.sort();
+            id_and_ref.push_str(" (");
+            for (i, (_, name)) in short_names.iter().enumerate() {
+                if i > 0 {
+                    id_and_ref.push(' ')
+                }
+                id_and_ref.push_str(&name.to_str_lossy());
+            }
+            id_and_ref.push(')');
+        }
+    }
+
+    id_and_ref
 }
 
 const INTERACTIVE_APPLY_LINE: &str = "# --- APPLY_LINE ---";
