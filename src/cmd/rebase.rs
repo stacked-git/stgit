@@ -118,7 +118,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         true
     } else {
         config
-            .plumbing()
             .boolean_by(
                 "branch",
                 Some(format!("{branch_name}.stgit").as_str().into()),
@@ -169,7 +168,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .execute("rebase (pop)")?;
 
     let rebase_cmd = config
-        .plumbing()
         .string_by(
             "branch",
             Some(format!("{branch_name}.stgit").as_str().into()),

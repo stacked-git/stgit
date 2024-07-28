@@ -238,7 +238,6 @@ impl<'repo> Stack<'repo> {
     /// Check whether the stack is marked as protected in the config.
     pub(crate) fn is_protected(&self, config: &gix::config::Snapshot) -> bool {
         config
-            .plumbing()
             .boolean_by(
                 "branch",
                 Some(format!("{}.stgit", self.branch_name).as_str().into()),

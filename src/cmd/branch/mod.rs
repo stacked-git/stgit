@@ -171,7 +171,6 @@ fn set_description(
 
 fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &PartialRefName) -> Option<String> {
     config
-        .plumbing()
         .string_by(
             "branch",
             Some(format!("{branchname}.stgit").as_str().into()),

@@ -101,7 +101,6 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
         stdout.set_color(&color_spec)?;
 
         let description = config
-            .plumbing()
             .string_by("branch", Some(branchname.into()), "description")
             .unwrap_or_default();
         if description.is_empty() {

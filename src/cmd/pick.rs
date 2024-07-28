@@ -297,10 +297,7 @@ fn pick_picks(
                  {body}"
             )
         } else if matches.get_flag("expose") {
-            let expose_format =
-                config
-                    .plumbing()
-                    .string_by("stgit", Some("pick".into()), "expose-format");
+            let expose_format = config.string_by("stgit", Some("pick".into()), "expose-format");
             let expose_format = expose_format
                 .as_ref()
                 .map(|bs| bs.to_str().ok())
