@@ -1223,7 +1223,7 @@ dependencies = [
 
 [[package]]
 name = "stgit"
-version = "2.4.8"
+version = "2.4.9"
 dependencies = [
  "anstyle",
  "anyhow",

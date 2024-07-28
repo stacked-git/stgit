@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.9 2024-07-28
+
+## Changed
+
+- feat(rebase): do not rebase to same base
+- feat(rebase): show ref names of rebase target
+- chore: update gix to 0.64.0
+
+
 ## 2.4.8 2024-07-21
 
 ### Fixed
