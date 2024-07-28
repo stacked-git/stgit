@@ -36,4 +36,11 @@ test_expect_success 'Check patches were re-applied' '
     test $(stg series --applied -c) = 1
 '
 
+test_expect_success 'Rebase to same base message' '
+    stg rebase master 2>out &&
+    grep "info: Rebasing to .*(master)" out &&
+    stg rebase master 2>out &&
+    grep "info: Already based on .*(master)" out
+'
+
 test_done
