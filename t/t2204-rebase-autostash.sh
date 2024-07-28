@@ -5,18 +5,15 @@ test_description='test rebase --autostash'
 . ./test-lib.sh
 
 test_expect_success 'Setup a multi-commit branch and fork an stgit stack' '
-    echo foo >file1 &&
-    stg add file1 &&
-    git commit -m a &&
-    echo foo >file2 &&
-    stg add file2 &&
-    git commit -m b &&
+    test_commit_bulk --filename="file%s" --contents="foo" 2 &&
+
+    stg branch --create intervening &&
+    stg new -m "intervening-patch" &&
 
     stg branch --create stack &&
-    stg new p -m . &&
-    git notes add -m note &&
     echo bar >>file1 &&
-    stg refresh
+    stg new -rm "p" &&
+    git notes add -m note
 '
 
 test_expect_success 'dirty workdir aborts rebase' '
