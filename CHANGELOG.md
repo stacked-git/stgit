@@ -2,7 +2,7 @@
 
 ## 2.4.9 2024-07-28
 
-## Changed
+### Changed
 
 - feat(rebase): do not rebase to same base
 - feat(rebase): show ref names of rebase target
