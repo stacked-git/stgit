@@ -102,7 +102,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let policy = PullPolicy::from_str(
         &config
             .plumbing()
-            .string(
+            .string_by(
                 "branch",
                 Some(format!("{branch_name}.stgit").as_str().into()),
                 "pull-policy",
@@ -127,7 +127,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         PullPolicy::Pull | PullPolicy::FetchRebase => {
             parent_remote = config
                 .plumbing()
-                .string("branch", Some(branch_name.as_str().into()), "remote")
+                .string_by("branch", Some(branch_name.as_str().into()), "remote")
                 .and_then(|bs| bs.to_str().map(str::to_string).ok());
             let remote_name = matches
                 .get_one::<String>("repository")
@@ -166,7 +166,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         PullPolicy::Pull => {
             let pull_cmd = config
                 .plumbing()
-                .string(
+                .string_by(
                     "branch",
                     Some(format!("{branch_name}.stgit").as_str().into()),
                     "pullcmd",
@@ -187,7 +187,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         PullPolicy::FetchRebase => {
             let fetch_cmd = config
                 .plumbing()
-                .string(
+                .string_by(
                     "branch",
                     Some(format!("{branch_name}.stgit").as_str().into()),
                     "fetchcmd",
@@ -212,7 +212,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             Some(target_id)
         }
         PullPolicy::Rebase => {
-            let parent_branch_name = config.plumbing().string(
+            let parent_branch_name = config.plumbing().string_by(
                 "branch",
                 Some(format!("{branch_name}.stgit").as_str().into()),
                 "parentbranch",
@@ -237,7 +237,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     if let Some(rebase_target) = rebase_target {
         let rebase_cmd = config
             .plumbing()
-            .string(
+            .string_by(
                 "branch",
                 Some(format!("{branch_name}.stgit").as_str().into()),
                 "rebasecmd",

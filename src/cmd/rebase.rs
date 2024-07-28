@@ -119,7 +119,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else {
         config
             .plumbing()
-            .boolean(
+            .boolean_by(
                 "branch",
                 Some(format!("{branch_name}.stgit").as_str().into()),
                 "autostash",
@@ -170,7 +170,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let rebase_cmd = config
         .plumbing()
-        .string(
+        .string_by(
             "branch",
             Some(format!("{branch_name}.stgit").as_str().into()),
             "rebasecmd",

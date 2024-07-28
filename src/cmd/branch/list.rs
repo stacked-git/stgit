@@ -102,7 +102,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
 
         let description = config
             .plumbing()
-            .string("branch", Some(branchname.into()), "description")
+            .string_by("branch", Some(branchname.into()), "description")
             .unwrap_or_default();
         if description.is_empty() {
             writeln!(stdout)?;

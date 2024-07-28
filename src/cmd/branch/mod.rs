@@ -146,7 +146,7 @@ fn set_description(
     let mut local_config_file = repo.local_config_file()?;
     if description.is_empty() {
         if let Ok(mut value) =
-            local_config_file.raw_value_mut("branch", Some(branchname.into()), "description")
+            local_config_file.raw_value_mut_by("branch", Some(branchname.into()), "description")
         {
             value.delete();
         }
@@ -156,7 +156,7 @@ fn set_description(
             }
         }
     } else {
-        local_config_file.set_raw_value(
+        local_config_file.set_raw_value_by(
             "branch",
             Some(branchname.into()),
             "description",
@@ -172,7 +172,7 @@ fn set_description(
 fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &PartialRefName) -> Option<String> {
     config
         .plumbing()
-        .string(
+        .string_by(
             "branch",
             Some(format!("{branchname}.stgit").as_str().into()),
             "parentbranch",
@@ -188,14 +188,14 @@ fn set_stgit_parent(
     let subsection = format!("{branchname}.stgit");
     let mut local_config_file = repo.local_config_file()?;
     if let Some(parent_branchname) = parent_branchname {
-        local_config_file.set_raw_value(
+        local_config_file.set_raw_value_by(
             "branch",
             Some(subsection.as_str().into()),
             "parentbranch",
             parent_branchname.as_ref(),
         )?;
     } else {
-        if let Ok(mut value) = local_config_file.raw_value_mut(
+        if let Ok(mut value) = local_config_file.raw_value_mut_by(
             "branch",
             Some(subsection.as_str().into()),
             "parentbranch",

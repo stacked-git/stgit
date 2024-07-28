@@ -99,16 +99,16 @@ where
             for section in sections
                 .filter(|section| section.header().subsection_name() == Some("alias".into()))
             {
-                for key in section.keys() {
-                    let name = key.to_str().map_err(|_| {
+                for value_name in section.value_names() {
+                    let name = value_name.to_str().map_err(|_| {
                         anyhow!(
                             "alias name `{}` in {} is not valid UTF-8",
-                            key.to_str_lossy(),
+                            value_name.to_str_lossy(),
                             config_source_str(section.meta().source),
                         )
                     })?;
                     if let Some(value) = section
-                        .value(key)
+                        .value(value_name)
                         .and_then(|v| (!v.is_empty()).then_some(v))
                     {
                         if !exclude(name) {

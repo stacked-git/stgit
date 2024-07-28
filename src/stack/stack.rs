@@ -239,7 +239,7 @@ impl<'repo> Stack<'repo> {
     pub(crate) fn is_protected(&self, config: &gix::config::Snapshot) -> bool {
         config
             .plumbing()
-            .boolean(
+            .boolean_by(
                 "branch",
                 Some(format!("{}.stgit", self.branch_name).as_str().into()),
                 "protect",
@@ -257,10 +257,10 @@ impl<'repo> Stack<'repo> {
         let mut local_config_file = self.repo.local_config_file()?;
 
         if protect {
-            local_config_file.set_raw_value(section, Some(subsection.into()), "protect", "true")?;
+            local_config_file.set_raw_value_by(section, Some(subsection.into()), "protect", "true")?;
         } else {
             if let Ok(mut value) =
-                local_config_file.raw_value_mut(section, Some(subsection.into()), "protect")
+                local_config_file.raw_value_mut_by(section, Some(subsection.into()), "protect")
             {
                 value.delete();
             }

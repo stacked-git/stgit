@@ -201,13 +201,13 @@ fn set_upstream(
                 let merge_name = gix::refs::FullName::try_from(merge.as_bstr())?;
                 let merge_short_name = merge_name.shorten();
                 let mut local_config_file = repo.local_config_file()?;
-                local_config_file.set_raw_value(
+                local_config_file.set_raw_value_by(
                     "branch",
                     Some(to_short_name),
                     "remote",
                     remote.as_bstr(),
                 )?;
-                local_config_file.set_raw_value(
+                local_config_file.set_raw_value_by(
                     "branch",
                     Some(to_short_name),
                     "merge",
@@ -225,13 +225,13 @@ fn set_upstream(
             let (remote_name, remote_branch_name) = from_short_name
                 .split_once_str(b"/")
                 .expect("remote branch short name has form <remote>/<branch>");
-            local_config_file.set_raw_value(
+            local_config_file.set_raw_value_by(
                 "branch",
                 Some(to_short_name),
                 "remote",
                 remote_name,
             )?;
-            local_config_file.set_raw_value(
+            local_config_file.set_raw_value_by(
                 "branch",
                 Some(to_short_name),
                 "merge",

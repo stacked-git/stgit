@@ -300,7 +300,7 @@ fn pick_picks(
             let expose_format =
                 config
                     .plumbing()
-                    .string("stgit", Some("pick".into()), "expose-format");
+                    .string_by("stgit", Some("pick".into()), "expose-format");
             let expose_format = expose_format
                 .as_ref()
                 .map(|bs| bs.to_str().ok())

@@ -318,7 +318,7 @@ fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()
     let mut local_config_file = repo.local_config_file()?;
 
     if let Ok(mut value) =
-        local_config_file.raw_value_mut(section, Some(subsection.into()), "stackformatversion")
+        local_config_file.raw_value_mut_by(section, Some(subsection.into()), "stackformatversion")
     {
         value.delete();
     }
@@ -342,7 +342,7 @@ fn set_protected(repo: &gix::Repository, branch_name: &str) -> Result<()> {
 
     let mut local_config_file = repo.local_config_file()?;
 
-    local_config_file.set_raw_value(section, Some(subsection.into()), "protect", "true")?;
+    local_config_file.set_raw_value_by(section, Some(subsection.into()), "protect", "true")?;
 
     repo.write_local_config(local_config_file)?;
     Ok(())
