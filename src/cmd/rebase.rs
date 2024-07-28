@@ -107,6 +107,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
             stack.base().clone()
         };
 
+    if !matches.get_flag("interactive") && target_commit.id == stack.base().id {
+        print_info_message(
+            matches,
+            &format!(
+                "Already based on {}",
+                formatted_target_id_and_ref(&repo, std::rc::Rc::clone(&target_commit))
+            ),
+        );
+        return Ok(());
+    }
+
     if stack.is_protected(&config) {
         return Err(anyhow!("this branch is protected; rebase is not permitted"));
     }
