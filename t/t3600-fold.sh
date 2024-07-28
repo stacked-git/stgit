@@ -91,7 +91,7 @@ test_expect_success 'Attempt to fold conflicting patch with rejects' '
     echo "hello" >foo.txt &&
     echo "from p2" >>foo.txt &&
     stg refresh &&
-    command_error stg fold --reject fold1.diff 2>err &&
+    conflict stg fold --reject fold1.diff 2>err &&
     grep "patch failed" err &&
     test -z "$(echo $(stg status --porcelain foo.txt))" &&
     test -e foo.txt.rej &&

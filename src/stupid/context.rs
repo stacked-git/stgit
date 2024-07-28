@@ -121,6 +121,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(())
     }
 
+    /// Apply a patch (diff) to both the index and the working tree.
+    ///
+    /// Returns `None` if the patch applies cleanly or output of the `git apply`
+    /// command if the patch does not apply and caller indicated that rejects
+    /// are allowed.
     pub(crate) fn apply_to_worktree_and_index(
         &self,
         diff: &BStr,
@@ -129,7 +134,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         strip_level: Option<usize>,
         directory: Option<&Path>,
         context_lines: Option<usize>,
-    ) -> Result<()> {
+    ) -> Result<Option<String>> {
         let mut command = self.git_in_work_root()?;
         command.args(["apply", "--index"]);
         if reject {
@@ -148,11 +153,17 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         if let Some(context_lines) = context_lines {
             command.arg(format!("-C{context_lines}"));
         }
-        command
-            .stdout(Stdio::null())
-            .in_and_out(diff)?
-            .require_success("apply --index")?;
-        Ok(())
+        let apply_output = command.stdout(Stdio::null()).in_and_out(diff)?;
+        if apply_output.status.success() {
+            Ok(None)
+        } else {
+            let err = git_command_error("apply --index", &apply_output.stderr);
+            if reject && apply_output.status.code() == Some(1) {
+                Ok(Some(format!("{err:#}")))
+            } else {
+                Err(err)
+            }
+        }
     }
 
     /// Apply diff between two trees to specified index.

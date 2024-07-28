@@ -1,0 +1,29 @@
+test patch with rejects
+
+---
+
+ t/t1800/foo.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/t/t1800/foo.txt b/t/t1800/foo.txt
+index ad01662f..d609de80 100644
+--- a/foo.txt
++++ b/foo.txt
+@@ -6,7 +6,7 @@ dobidim
+ dobidum
+ dobodam
+ dobodim
+-dobodum
++dObodum
+ dibedam
+ dibedim
+ dibedum
+@@ -18,7 +18,7 @@ dibodim
+ dibodum
+ dabedam
+ dabedim
+-Dabedum
++dAbedum
+ dabidam
+ dabidim
+ dabidum
