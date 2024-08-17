@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.10 2024-08-17
+
+### Fixed
+
+- fix(import): --reject should create empty commit (#471)
+- docs(changelog): repair heading
+
+### Changed
+
+- updated dependencies
+
+
 ## 2.4.9 2024-07-28
 
 ### Changed
