@@ -2,48 +2,49 @@
 
 //! Parsing support for numbers.
 
-use nom::{
-    branch::alt,
-    character::complete::{char as the_char, digit1},
-    combinator::{map, map_res, opt, recognize},
-    sequence::tuple,
+use winnow::{
+    ascii::digit1,
+    combinator::{alt, opt},
+    PResult, Parser,
 };
 
 use super::Sign;
 
 /// Parse a sign character, i.e. `-` or `+`.
-pub(super) fn sign(input: &str) -> nom::IResult<&str, Sign> {
-    alt((
-        map(the_char('-'), |_| Sign::Minus),
-        map(the_char('+'), |_| Sign::Plus),
-    ))(input)
+pub(super) fn sign(input: &mut &str) -> PResult<Sign> {
+    alt(('-'.map(|_| Sign::Minus), '+'.map(|_| Sign::Plus))).parse_next(input)
 }
 
 /// Parse unsigned int.
 ///
 /// Although the returned value is a [`usize`], it is validated as an [`isize`]. This
 /// ensures that potential sign conversions are more likely to succeed.
-pub(super) fn unsigned_int(input: &str) -> nom::IResult<&str, usize> {
-    map_res(digit1, |s: &str| s.parse::<isize>().map(|n| n as usize))(input)
+pub(super) fn unsigned_int(input: &mut &str) -> PResult<usize> {
+    digit1
+        .try_map(|s: &str| s.parse::<isize>().map(|n| n as usize))
+        .parse_next(input)
 }
 
 /// Parse a negative int. I.e. an int with a leading `-` sign.
-pub(super) fn negative_int(input: &str) -> nom::IResult<&str, isize> {
-    map_res(recognize(tuple((the_char('-'), digit1))), |s: &str| {
-        s.parse::<isize>()
-    })(input)
+pub(super) fn negative_int(input: &mut &str) -> PResult<isize> {
+    ('-', digit1)
+        .take()
+        .try_map(|s: &str| s.parse::<isize>())
+        .parse_next(input)
 }
 
 /// Parse a positive int with a leading `+` sign.
-pub(super) fn plusative_int(input: &str) -> nom::IResult<&str, isize> {
-    map_res(recognize(tuple((the_char('+'), digit1))), |s: &str| {
-        s.parse::<isize>()
-    })(input)
+pub(super) fn plusative_int(input: &mut &str) -> PResult<isize> {
+    ('+', digit1)
+        .take()
+        .try_map(|s: &str| s.parse::<isize>())
+        .parse_next(input)
 }
 
 /// Parse a signed int, but disallow an explicit `+` sign.
-pub(super) fn nonplussed_int(input: &str) -> nom::IResult<&str, isize> {
-    map_res(recognize(tuple((opt(the_char('-')), digit1))), |s: &str| {
-        s.parse::<isize>()
-    })(input)
+pub(super) fn nonplussed_int(input: &mut &str) -> PResult<isize> {
+    (opt('-'), digit1)
+        .take()
+        .try_map(|s: &str| s.parse::<isize>())
+        .parse_next(input)
 }

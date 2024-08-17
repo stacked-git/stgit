@@ -2,6 +2,12 @@
 
 use std::str::FromStr;
 
+use winnow::{
+    error::{ContextError, ErrMode, ErrorKind, ParserError},
+    stream::Stream,
+    PResult, Parser,
+};
+
 /// A partial git reference name.
 ///
 /// A partial reference name does not have to include the "refs/" prefix which a
@@ -41,21 +47,18 @@ impl FromStr for PartialRefName {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(partial_ref_name))(s)
-            .map(|(_, partial_name_ref)| partial_name_ref)
-            .map_err(|e| anyhow::anyhow!("{e}"))
+        partial_ref_name
+            .parse(s)
+            .map_err(|e| anyhow::format_err!("{e}"))
     }
 }
 
-pub(crate) fn partial_ref_name(input: &str) -> nom::IResult<&str, PartialRefName> {
-    use nom::error::{Error, ErrorKind};
-
-    let mut iter = input.char_indices().peekable();
+pub(crate) fn partial_ref_name(input: &mut &str) -> PResult<PartialRefName> {
+    let mut iter = input.iter_offsets().peekable();
     let mut start_index = 0;
     let mut prev = None;
 
-    let split_index = loop {
+    let mut split_offset = loop {
         if let Some((i, c)) = iter.next() {
             let mut peek_next = || iter.peek().map(|(_, c)| *c);
             if c == '\\' {
@@ -88,35 +91,66 @@ pub(crate) fn partial_ref_name(input: &str) -> nom::IResult<&str, PartialRefName
         }
     };
 
-    let (name, rest) = (&input[start_index..split_index], &input[split_index..]);
-    let (name, rest) = name
-        .ends_with(|c| matches!(c, '.' | '/'))
-        .then(|| {
-            (
-                &input[start_index..split_index - 1],
-                &input[split_index - 1..],
-            )
-        })
-        .unwrap_or((name, rest));
+    if start_index == 1 {
+        input.next_token();
+        split_offset -= 1;
+    }
+    if input[..split_offset].ends_with(|c| matches!(c, '.' | '/')) {
+        split_offset -= 1;
+    }
+
+    let name = input.next_slice(split_offset);
 
     if name.is_empty() {
-        Err(nom::Err::Error(Error {
+        Err(ErrMode::Backtrack(ContextError::from_error_kind(
             input,
-            code: ErrorKind::Eof,
-        }))
+            ErrorKind::Eof,
+        )))
     } else if name == "-" {
-        Err(nom::Err::Error(Error {
+        Err(ErrMode::Backtrack(ContextError::from_error_kind(
             input,
-            code: ErrorKind::Verify,
-        }))
+            ErrorKind::Verify,
+        )))
     } else if name.ends_with(".lock") {
         // Names ending with ".lock" are invalid and there is no recovery.
-        Err(nom::Err::Failure(Error {
+        Err(ErrMode::Cut(ContextError::from_error_kind(
             input,
-            code: ErrorKind::Verify,
-        }))
+            ErrorKind::Verify,
+        )))
     } else {
         gix::refs::PartialName::try_from(name).expect("parser only allows valid names");
-        Ok((rest, PartialRefName(name.to_string())))
+        Ok(PartialRefName(name.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use winnow::Parser;
+
+    use super::*;
+
+    #[test]
+    fn test_partial_ref_name() {
+        assert!(partial_ref_name.parse_peek("abc.lock").is_err());
+        assert_eq!(
+            partial_ref_name.parse_peek("abc"),
+            Ok(("", PartialRefName(String::from("abc"))))
+        );
+        assert_eq!(
+            partial_ref_name.parse_peek("abc^^^"),
+            Ok(("^^^", PartialRefName(String::from("abc"))))
+        );
+        assert_eq!(
+            partial_ref_name.parse_peek("abc."),
+            Ok((".", PartialRefName(String::from("abc"))))
+        );
+        assert_eq!(
+            partial_ref_name.parse_peek("abc.def"),
+            Ok(("", PartialRefName(String::from("abc.def"))))
+        );
+        assert_eq!(
+            partial_ref_name.parse_peek("abc.def/"),
+            Ok(("/", PartialRefName(String::from("abc.def"))))
+        );
     }
 }

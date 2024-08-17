@@ -4,6 +4,8 @@
 
 use std::{fmt::Write, str::FromStr};
 
+use winnow::Parser;
+
 use super::{PatchOffsetAtom, PatchOffsets};
 
 #[derive(thiserror::Error, Debug)]
@@ -36,9 +38,9 @@ impl FromStr for PatchOffsets {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(super::parse::patch_offsets))(s)
-            .map(|(_, offsets)| offsets)
+        use winnow::Parser;
+        super::parse::patch_offsets
+            .parse(s)
             .map_err(|_| Error::InvalidPatchOffsets(s.to_string()))
     }
 }
@@ -62,7 +64,8 @@ impl PatchOffsets {
 
     /// Construct constituent [`PatchOffsetAtom`] instances.
     pub(super) fn atoms(&self) -> Vec<PatchOffsetAtom> {
-        super::parse::patch_offset_atoms(&self.0)
+        super::parse::patch_offset_atoms
+            .parse_peek(&self.0)
             .expect("previously validated")
             .1
     }

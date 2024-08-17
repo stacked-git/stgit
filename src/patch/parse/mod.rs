@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Parsers for patch and revision specifications using [`nom`].
+//! Parsers for patch and revision specifications using [`winnow`].
 
 mod locator;
 mod name;

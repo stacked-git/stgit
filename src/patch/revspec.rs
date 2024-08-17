@@ -55,9 +55,9 @@ impl FromStr for RangeRevisionSpec {
     type Err = Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(super::parse::range_revision_spec))(s)
-            .map(|(_, spec)| spec)
+        use winnow::Parser;
+        super::parse::range_revision_spec
+            .parse(s)
             .map_err(|e| Error::InvalidRevision(s.to_string(), e.to_string()))
     }
 }
@@ -66,9 +66,9 @@ impl FromStr for SingleRevisionSpec {
     type Err = Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(super::parse::single_revision_spec))(s)
-            .map(|(_, spec)| spec)
+        use winnow::Parser;
+        super::parse::single_revision_spec
+            .parse(s)
             .map_err(|e| Error::InvalidRevision(s.to_string(), e.to_string()))
     }
 }
@@ -77,9 +77,9 @@ impl FromStr for PatchLikeSpec {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(super::parse::patch_like_spec))(s)
-            .map(|(_, patch_like)| patch_like)
+        use winnow::Parser;
+        super::parse::patch_like_spec
+            .parse(s)
             .map_err(|e| e.to_string())
     }
 }

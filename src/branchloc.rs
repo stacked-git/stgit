@@ -36,9 +36,9 @@ impl FromStr for BranchLocator {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(crate::patch::parse::branch_locator))(s)
-            .map(|(_, loc)| loc)
+        use winnow::Parser;
+        crate::patch::parse::branch_locator
+            .parse(s)
             .map_err(|_| anyhow::anyhow!("invalid branch locator `{s}`"))
     }
 }

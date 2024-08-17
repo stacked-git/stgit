@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use winnow::Parser;
+
 use super::{super::patch_range, name, offsets};
 use crate::patch::{PatchId, PatchLocator, PatchRange, PatchRangeBounds};
 
 #[test]
 fn range_parsing() {
     assert_eq!(
-        patch_range("patch").unwrap(),
+        patch_range.parse_peek("patch").unwrap(),
         (
             "",
             PatchRange::Single(PatchLocator {
@@ -16,7 +18,7 @@ fn range_parsing() {
         )
     );
     assert_eq!(
-        patch_range("patch~3").unwrap(),
+        patch_range.parse_peek("patch~3").unwrap(),
         (
             "",
             PatchRange::Single(PatchLocator {
@@ -26,7 +28,7 @@ fn range_parsing() {
         )
     );
     assert_eq!(
-        patch_range("~3").unwrap(),
+        patch_range.parse_peek("~3").unwrap(),
         (
             "",
             PatchRange::Single(PatchLocator {
@@ -36,7 +38,7 @@ fn range_parsing() {
         )
     );
     assert_eq!(
-        patch_range("patch~3..patch").unwrap(),
+        patch_range.parse_peek("patch~3..patch").unwrap(),
         (
             "",
             PatchRange::Range(PatchRangeBounds {
@@ -52,7 +54,7 @@ fn range_parsing() {
         )
     );
     assert_eq!(
-        patch_range("@~~~..").unwrap(),
+        patch_range.parse_peek("@~~~..").unwrap(),
         (
             "",
             PatchRange::Range(PatchRangeBounds {
@@ -65,7 +67,7 @@ fn range_parsing() {
         )
     );
     assert_eq!(
-        patch_range("@~~~..patch{17}").unwrap(),
+        patch_range.parse_peek("@~~~..patch{17}").unwrap(),
         (
             "",
             PatchRange::Range(PatchRangeBounds {
@@ -81,7 +83,7 @@ fn range_parsing() {
         )
     );
     assert_eq!(
-        patch_range("^3..^").unwrap(),
+        patch_range.parse_peek("^3..^").unwrap(),
         (
             "",
             PatchRange::Range(PatchRangeBounds {

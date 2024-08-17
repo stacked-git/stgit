@@ -56,9 +56,9 @@ impl FromStr for PatchLocator {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(super::parse::patch_locator))(s)
-            .map(|(_, location)| location)
+        use winnow::Parser;
+        super::parse::patch_locator
+            .parse(s)
             .map_err(|_| Error::InvalidPatchLocator(s.to_string()))
     }
 }
@@ -412,32 +412,12 @@ impl PatchLocator {
                 offsets: self.offsets.clone(),
             },
             PatchId::Name(patchname) => {
-                use nom::combinator::{all_consuming, complete};
-                let patch_offsets = |s| {
-                    complete(all_consuming(super::parse::patch_offsets))(s)
-                        .map(|(_, output)| output)
-                        .ok()
-                };
-                let oid_prefix_offsets = |s| {
-                    complete(all_consuming(super::parse::oid_prefix_offsets))(s)
-                        .map(|(_, output)| output)
-                        .ok()
-                };
-                let sign_number_offsets = |s| {
-                    complete(all_consuming(super::parse::sign_number_offsets))(s)
-                        .map(|(_, output)| output)
-                        .ok()
-                };
-                let patch_locator_top = |s| {
-                    complete(all_consuming(super::parse::patch_locator_top))(s)
-                        .map(|(_, output)| output)
-                        .ok()
-                };
-                let patch_locator_base = |s| {
-                    complete(all_consuming(super::parse::patch_locator_base))(s)
-                        .map(|(_, output)| output)
-                        .ok()
-                };
+                use winnow::Parser;
+                let patch_offsets = |s| super::parse::patch_offsets.parse(s).ok();
+                let oid_prefix_offsets = |s| super::parse::oid_prefix_offsets.parse(s).ok();
+                let sign_number_offsets = |s| super::parse::sign_number_offsets.parse(s).ok();
+                let patch_locator_top = |s| super::parse::patch_locator_top.parse(s).ok();
+                let patch_locator_base = |s| super::parse::patch_locator_base.parse(s).ok();
 
                 let name: &str = patchname.as_ref();
 

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use winnow::{error::ErrMode, Parser};
+
 use super::{
     super::{
         oid_prefix_offsets, patch_locator, patch_offset_atom, patch_offset_atoms, patch_offsets,
@@ -9,7 +11,7 @@ use super::{
 use crate::patch::{PatchId, PatchLocator, PatchOffsetAtom, PatchOffsets};
 
 fn good_locator(s: &str) -> (&str, PatchLocator) {
-    patch_locator(s).expect("valid patch locator")
+    patch_locator.parse_peek(s).expect("valid patch locator")
 }
 
 fn complete_locator(s: &str) -> PatchLocator {
@@ -21,18 +23,18 @@ fn complete_locator(s: &str) -> PatchLocator {
 #[test]
 fn offset_parsing() {
     assert_eq!(
-        patch_offset_atom("+1~2"),
+        patch_offset_atom.parse_peek("+1~2"),
         Ok(("~2", PatchOffsetAtom::Plus(Some(1)))),
     );
     assert_eq!(
-        patch_offset_atoms("+~"),
+        patch_offset_atoms.parse_peek("+~"),
         Ok((
             "",
             vec![PatchOffsetAtom::Plus(None), PatchOffsetAtom::Tilde(None)]
         )),
     );
     assert_eq!(
-        patch_offset_atoms("+2~3++~4~"),
+        patch_offset_atoms.parse_peek("+2~3++~4~"),
         Ok((
             "",
             vec![
@@ -46,37 +48,64 @@ fn offset_parsing() {
         ))
     );
     assert_eq!(
-        patch_offsets("+2~3"),
+        patch_offsets.parse_peek("+2~3"),
         Ok(("", PatchOffsets("+2~3".to_string())))
     );
-    assert_eq!(patch_offsets(""), Ok(("", PatchOffsets("".to_string()))));
+    assert_eq!(
+        patch_offsets.parse_peek(""),
+        Ok(("", PatchOffsets("".to_string())))
+    );
 }
 
 #[test]
 fn locator_errors() {
-    assert!(matches!(patch_locator(".patch"), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator(".."), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator("..patch"), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator("*patch"), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator("[patch"), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator("/patch"), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator("?patch"), Err(nom::Err::Error(_))));
-    assert!(matches!(patch_locator(" patch"), Err(nom::Err::Error(_))));
+    assert!(matches!(
+        patch_locator.parse_peek(".patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek(".."),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek("..patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek("*patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek("[patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek("/patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek("?patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
+    assert!(matches!(
+        patch_locator.parse_peek(" patch"),
+        Err(ErrMode::Backtrack(_))
+    ));
 }
 
 #[test]
 fn locator_failures() {
     assert!(matches!(
-        patch_locator("patch.lock"),
-        Err(nom::Err::Failure(_))
+        patch_locator.parse_peek("patch.lock"),
+        Err(ErrMode::Cut(_))
     ));
     assert!(matches!(
-        patch_locator("patch.lock~"),
-        Err(nom::Err::Failure(_))
+        patch_locator.parse_peek("patch.lock~"),
+        Err(ErrMode::Cut(_))
     ));
     assert!(matches!(
-        patch_locator("patch.lock@{-3}"),
-        Err(nom::Err::Failure(_))
+        patch_locator.parse_peek("patch.lock@{-3}"),
+        Err(ErrMode::Cut(_))
     ));
 }
 
@@ -418,28 +447,35 @@ fn non_ascii_locators() {
 fn oid_prefix_parsing() {
     let prefix = |s| gix::hash::Prefix::from_hex(s).expect("valid hex hash prefix");
     assert_eq!(
-        oid_prefix_offsets("abc123").unwrap(),
+        oid_prefix_offsets.parse_peek("abc123").unwrap(),
         ("", (prefix("abc123"), offsets("")))
     );
     assert_eq!(
-        oid_prefix_offsets("abc123FEDCBA00").unwrap(),
+        oid_prefix_offsets.parse_peek("abc123FEDCBA00").unwrap(),
         ("", (prefix("abc123fedcba00"), offsets("")))
     );
     assert_ne!(
-        oid_prefix_offsets("abc123FEDCBA000").unwrap().1 .0,
+        oid_prefix_offsets
+            .parse_peek("abc123FEDCBA000")
+            .unwrap()
+            .1
+             .0,
         prefix("abc123fedcba")
     );
     assert_eq!(
-        oid_prefix_offsets("123abc~~++").unwrap(),
+        oid_prefix_offsets.parse_peek("123abc~~++").unwrap(),
         ("", (prefix("123abc"), offsets("~~++")))
     );
     assert_eq!(
-        oid_prefix_offsets("123abc..987defg").unwrap(),
+        oid_prefix_offsets.parse_peek("123abc..987defg").unwrap(),
         ("..987defg", (prefix("123abc"), offsets("")))
     );
-    assert!(matches!(oid_prefix_offsets("123"), Err(nom::Err::Error(_)),));
     assert!(matches!(
-        oid_prefix_offsets("0123456789012345678901234567890123456789eeee"),
-        Err(nom::Err::Error(_)),
+        oid_prefix_offsets.parse_peek("123"),
+        Err(ErrMode::Backtrack(_)),
+    ));
+    assert!(matches!(
+        oid_prefix_offsets.parse_peek("0123456789012345678901234567890123456789eeee"),
+        Err(ErrMode::Backtrack(_)),
     ));
 }

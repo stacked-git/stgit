@@ -2,15 +2,19 @@
 
 //! Parsing support for [`PatchName`].
 
-use nom::error::{Error, ErrorKind};
+use winnow::{
+    error::{ContextError, ErrMode, ErrorKind, ParserError},
+    stream::Stream,
+    PResult,
+};
 
 use crate::patch::PatchName;
 
-pub(super) fn patch_name(input: &str) -> nom::IResult<&str, PatchName> {
+pub(super) fn patch_name(input: &mut &str) -> PResult<PatchName> {
     let mut iter = input.char_indices().peekable();
     let mut start_index = 0;
 
-    let split_index = loop {
+    let mut split_offset = loop {
         if let Some((i, c)) = iter.next() {
             let mut peek_next = || iter.peek().map(|(_, c)| *c);
             if c == '\\' {
@@ -35,36 +39,35 @@ pub(super) fn patch_name(input: &str) -> nom::IResult<&str, PatchName> {
         }
     };
 
-    let (name, rest) = (&input[start_index..split_index], &input[split_index..]);
-    let (name, rest) = name
-        .ends_with('.')
-        .then(|| {
-            (
-                &input[start_index..split_index - 1],
-                &input[split_index - 1..],
-            )
-        })
-        .unwrap_or((name, rest));
+    if start_index == 1 {
+        input.next_token();
+        split_offset -= 1;
+    }
+    if input[..split_offset].ends_with('.') {
+        split_offset -= 1;
+    }
+
+    let name = input.next_slice(split_offset);
 
     if name.is_empty() {
-        Err(nom::Err::Error(Error {
+        Err(ErrMode::Backtrack(ContextError::from_error_kind(
             input,
-            code: ErrorKind::Eof,
-        }))
+            ErrorKind::Eof,
+        )))
     } else if name.ends_with(".lock") {
         // Names ending with ".lock" are invalid and there is no recovery.
-        Err(nom::Err::Failure(Error {
+        Err(ErrMode::Cut(ContextError::from_error_kind(
             input,
-            code: ErrorKind::Verify,
-        }))
+            ErrorKind::Verify,
+        )))
     } else if name == "@" || name == "{base}" {
-        Err(nom::Err::Error(Error {
+        Err(ErrMode::Backtrack(ContextError::from_error_kind(
             input,
-            code: ErrorKind::Verify,
-        }))
+            ErrorKind::Verify,
+        )))
     } else {
         // This should be detected above.
         debug_assert!(!name.ends_with('.'));
-        Ok((rest, PatchName(String::from(name))))
+        Ok(PatchName(String::from(name)))
     }
 }

@@ -2,26 +2,24 @@
 
 //! Parsing support for [`PatchRange`] and [`PatchRangeBounds`].
 
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    combinator::{map, opt},
-    sequence::separated_pair,
+use winnow::{
+    combinator::{alt, opt, separated_pair},
+    PResult, Parser,
 };
 
 use super::patch_locator;
 use crate::patch::{PatchRange, PatchRangeBounds};
 
-pub(in super::super) fn patch_range(input: &str) -> nom::IResult<&str, PatchRange> {
+pub(in super::super) fn patch_range(input: &mut &str) -> PResult<PatchRange> {
     alt((
-        map(patch_range_bounds, PatchRange::Range),
-        map(patch_locator, PatchRange::Single),
-    ))(input)
+        patch_range_bounds.map(PatchRange::Range),
+        patch_locator.map(PatchRange::Single),
+    ))
+    .parse_next(input)
 }
 
-pub(super) fn patch_range_bounds(input: &str) -> nom::IResult<&str, PatchRangeBounds> {
-    map(
-        separated_pair(opt(patch_locator), tag(".."), opt(patch_locator)),
-        |(begin, end)| PatchRangeBounds { begin, end },
-    )(input)
+pub(super) fn patch_range_bounds(input: &mut &str) -> PResult<PatchRangeBounds> {
+    separated_pair(opt(patch_locator), "..", opt(patch_locator))
+        .map(|(begin, end)| PatchRangeBounds { begin, end })
+        .parse_next(input)
 }

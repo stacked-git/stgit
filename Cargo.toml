@@ -40,7 +40,6 @@ flate2 = "1"
 gix = { version = "0.64", default-features = false, features = ["command", "revision"] }
 indexmap = "2.1"
 is-terminal = "0.4"
-nom = { version = "7", default-features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 strsim = "0.11"
@@ -54,6 +53,7 @@ time = { version = "0.3.31", default-features = false, features = [
   "macros",
   "parsing",
 ] }
+winnow = "0.6.18"
 
 curl = { version = "0.4", optional = true }
 

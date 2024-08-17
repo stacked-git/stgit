@@ -47,9 +47,9 @@ impl FromStr for PatchRange {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use nom::combinator::{all_consuming, complete};
-        complete(all_consuming(super::parse::patch_range))(s)
-            .map(|(_, range)| range)
+        use winnow::Parser;
+        super::parse::patch_range
+            .parse(s)
             .map_err(|_| Error::InvalidPatchRange(s.to_string()))
     }
 }
