@@ -3,7 +3,7 @@ name = "stgit"
 version = "2.4.10"
 description = "Stack-based patch management for Git"
 edition = "2021"
-rust-version = "1.67.1"
+rust-version = "1.70"
 authors = [
   "Catalin Marinas <catalin.marinas@gmail.com>",
   "Peter Grayson <pete@jpgrayson.net>",
@@ -40,6 +40,7 @@ flate2 = "1"
 gix = { version = "0.64", default-features = false, features = ["command", "revision"] }
 indexmap = "2.1"
 is-terminal = "0.4"
+jiff = "0.1.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 strsim = "0.11"

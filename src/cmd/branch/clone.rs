@@ -45,9 +45,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<(
     let new_branchname = if let Some(name) = matches.get_one::<PartialRefName>("new-branch") {
         name
     } else {
-        let suffix = gix::date::Time::now_local_or_utc().format(time::macros::format_description!(
-            "[year][month][day]-[hour][minute][second]"
-        ));
+        let suffix = jiff::Zoned::now().strftime("%Y%m%d-%H%M%S");
         generated_branchname = PartialRefName::from_str(&format!("{current_branchname}-{suffix}"))
             .expect("valid partial reference name");
         &generated_branchname
