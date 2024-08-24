@@ -115,12 +115,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let simplified_parent_id = stack
             .repo
             .find_reference(stack.get_stack_refname())?
-            .into_fully_peeled_id()?
-            .object()?
-            .to_commit_ref()
-            .parents()
+            .peel_to_commit()?
+            .parent_ids()
             .next()
-            .ok_or_else(|| anyhow!("`{}` does not have any parents", stack.get_stack_refname()))?;
+            .ok_or_else(|| anyhow!("`{}` does not have any parents", stack.get_stack_refname()))?
+            .detach();
 
         let stupid = repo.stupid();
 

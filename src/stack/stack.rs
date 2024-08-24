@@ -309,9 +309,7 @@ impl<'repo> Stack<'repo> {
         let prev_state_commit = self
             .repo
             .find_reference(&self.stack_refname)?
-            .into_fully_peeled_id()?
-            .object()?
-            .try_into_commit()?;
+            .peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id;
         let state = self
             .state

@@ -194,15 +194,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
             let remote_name = remote_name.unwrap();
             print_info_message(matches, &format!("Fetching from `{remote_name}`"));
             stupid.user_fetch(&fetch_cmd, &remote_name)?;
-            let fetch_head = repo
+            let target_id = repo
                 .find_reference("FETCH_HEAD")
-                .context("finding `FETCH_HEAD`")?;
-            let target_id = fetch_head
-                .into_fully_peeled_id()
-                .map_err(anyhow::Error::from)
-                .and_then(|id| id.object().map_err(anyhow::Error::from))
-                .and_then(|object| object.peel_tags_to_end().map_err(anyhow::Error::from))
-                .and_then(|object| object.try_into_commit().map_err(anyhow::Error::from))
+                .context("finding `FETCH_HEAD`")?
+                .peel_to_commit()
                 .context("peeling `FETCH_HEAD` to commit")?
                 .id;
             Some(target_id)

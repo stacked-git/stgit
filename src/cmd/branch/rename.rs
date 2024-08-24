@@ -60,9 +60,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
         let state_commit = repo
             .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference")
-            .into_fully_peeled_id()?
-            .object()?
-            .try_into_commit()?;
+            .peel_to_commit()?;
         repo.edit_reference(gix::refs::transaction::RefEdit {
             change: gix::refs::transaction::Change::Update {
                 log: gix::refs::transaction::LogChange {

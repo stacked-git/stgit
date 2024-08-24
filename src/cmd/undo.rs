@@ -83,10 +83,7 @@ pub(super) fn find_undo_state<'repo>(
         stack
             .repo
             .find_reference(stack.get_stack_refname())?
-            .into_fully_peeled_id()?
-            .object()?
-            .peel_tags_to_end()?
-            .try_into_commit()?,
+            .peel_to_commit()?,
     );
     loop {
         let state = StackState::from_commit(stack.repo, &state_commit)?;

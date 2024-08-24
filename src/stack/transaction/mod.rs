@@ -213,12 +213,10 @@ impl<'repo> ExecuteContext<'repo> {
             } else {
                 reflog_msg
             };
-            let stack_ref = repo.find_reference(stack.get_stack_refname())?;
             let branch_ref_name = stack.get_branch_refname().to_owned();
-            let prev_state_commit = stack_ref
-                .into_fully_peeled_id()?
-                .object()?
-                .try_into_commit()?;
+            let prev_state_commit = repo
+                .find_reference(stack.get_stack_refname())?
+                .peel_to_commit()?;
             let state = stack.state_mut();
             for (patchname, maybe_patch) in &updated_patches {
                 if let Some(patch) = maybe_patch {
