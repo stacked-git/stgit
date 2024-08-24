@@ -285,12 +285,12 @@ test_expect_success 'Import with author options' '
     git checkout jabberwocky.txt &&
     stg import --authname "Some Author" \
                --authemail "some@example.com" \
-               --authdate 2005-04-07T22:13:13 \
+               --authdate "2005-04-07T22:13:13-05:00" \
                --stripname \
                -C5 \
                some.patch &&
     stg show | grep -e "Author: Some Author <some@example.com>" &&
-    stg show | grep -E "Date: +Thu Apr 7 22:13:13 2005 \+0000" &&
+    stg show | grep -E "Date: +Thu Apr 7 22:13:13 2005 -0500" &&
     stg delete --top
 '
 

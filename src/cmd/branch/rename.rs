@@ -71,7 +71,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
                     message: format!("rename {old_branchname} to {new_branchname}").into(),
                 },
                 expected: gix::refs::transaction::PreviousValue::MustNotExist,
-                new: gix::refs::Target::Peeled(state_commit.id),
+                new: gix::refs::Target::Object(state_commit.id),
             },
             name: gix::refs::FullName::try_from(state_refname_from_branch_name(
                 new_branchname.as_ref(),

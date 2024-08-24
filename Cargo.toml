@@ -37,7 +37,7 @@ clap = { version = "~4.5", default-features = false, features = [
 ctrlc = "3.4"
 encoding_rs = "0.8"
 flate2 = "1"
-gix = { version = "0.64", default-features = false, features = ["command", "revision"] }
+gix = { version = "0.66", default-features = false, features = ["command", "revision"] }
 indexmap = "2.1"
 is-terminal = "0.4"
 jiff = "0.1.10"
@@ -48,12 +48,6 @@ tar = "0.4"
 tempfile = "3"
 termcolor = "1.4"
 thiserror = "~1.0"
-time = { version = "0.3.31", default-features = false, features = [
-  "local-offset",
-  "formatting",
-  "macros",
-  "parsing",
-] }
 winnow = "0.6.18"
 
 curl = { version = "0.4", optional = true }

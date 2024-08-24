@@ -47,18 +47,6 @@ pub(crate) trait RepositoryExtended {
     /// Write repository-local config file.
     fn write_local_config(&self, file: gix::config::File) -> Result<()>;
 
-    /// Find [`gix::Tree`] by its object id.
-    ///
-    /// The provided object id must point to a tree object. I.e. this will not peel a
-    /// commit to a tree.
-    fn find_tree(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Tree<'_>>;
-
-    /// Find [`gix::Commit`] by its object id.
-    ///
-    /// The provided object id must point to a commit object. An id pointing to a tag
-    /// will not be peeled to a commit.
-    fn find_commit(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Commit<'_>>;
-
     /// Create a new commit object in the repository, with extended features.
     ///
     /// The extended features versus [`gix::Repository::commit()`] include:
@@ -205,14 +193,6 @@ impl RepositoryExtended for gix::Repository {
                 .open(local_config_path)?,
         )?;
         Ok(())
-    }
-
-    fn find_tree(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Tree<'_>> {
-        Ok(self.find_object(id)?.try_into_tree()?)
-    }
-
-    fn find_commit(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Commit<'_>> {
-        Ok(self.find_object(id)?.try_into_commit()?)
     }
 
     fn commit_ex<'a>(

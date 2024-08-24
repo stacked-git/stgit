@@ -19,63 +19,29 @@ pub(crate) trait TimeExtended {
     /// | `gitoxide default`| `Thu Jan 6 2022 09:32:07 -0500`  |
     fn parse_time(time_str: &str) -> Result<gix::date::Time> {
         let time_str = time_str.trim();
+        let now = std::time::SystemTime::now();
+        let zoned_now = jiff::Zoned::try_from(now).unwrap_or_else(|_| jiff::Zoned::now());
 
         if time_str == "now" {
-            return Ok(gix::date::Time::now_local_or_utc());
+            Ok(gix::date::Time::new(
+                zoned_now.timestamp().as_second(),
+                zoned_now.offset().seconds(),
+            ))
+        } else if let Ok(time) = gix::date::parse(time_str, Some(now)) {
+            Ok(time)
+        } else if let Ok(time) = gix::date::parse(
+            &format!("{time_str} {}", zoned_now.strftime("%z")),
+            Some(now),
+        ) {
+            Ok(time)
+        } else if let Ok(time) = gix::date::parse(
+            &format!("{time_str}{}", zoned_now.strftime("%:z")),
+            Some(now),
+        ) {
+            Ok(time)
+        } else {
+            Err(anyhow!("invalid date `{time_str}`"))
         }
-
-        if let Ok(time) = gix::date::parse(time_str, Some(std::time::SystemTime::now())) {
-            return Ok(time);
-        }
-
-        // Datetime strings without timezone offset
-        for format_desc in [
-            // Git default without tz offset
-            time::macros::format_description!(
-                "[weekday repr:short] [month repr:short] [day padding:none] [hour]:[minute]:[second] [year]"
-            ),
-
-            // RFC-2822 without tz offset
-            time::macros::format_description!(
-                "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second]"
-            ),
-
-            // ISO8601 without tz offset
-            time::macros::format_description!(
-                "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute]"
-            ),
-
-            // Strict ISO8601 without tz offset
-            time::macros::format_description!(
-                "[year]-[month]-[day]T[hour]:[minute]:[second]"
-            ),
-
-            // Gitoxide default without tz offset
-            time::macros::format_description!(
-                "[weekday repr:short] [month repr:short] [day] [year] [hour]:[minute]:[second]"
-            ),
-        ] {
-            if let Ok(primitive_dt) = time::PrimitiveDateTime::parse(time_str, format_desc) {
-                let offset = time::UtcOffset::from_whole_seconds(
-                    gix::date::Time::now_local_or_utc().offset,
-                )?;
-                let offset_dt = primitive_dt.assume_offset(offset);
-                return Ok(gix::date::Time::new(
-                    offset_dt.unix_timestamp(),
-                    offset_dt.offset().whole_seconds(),
-                ));
-            }
-        }
-
-        if let Ok(seconds) = time_str.parse::<u32>() {
-            let offset_dt = time::OffsetDateTime::from_unix_timestamp(seconds.into())?;
-            return Ok(gix::date::Time::new(
-                offset_dt.unix_timestamp(),
-                offset_dt.offset().whole_seconds(),
-            ));
-        }
-
-        Err(anyhow!("invalid date `{time_str}`"))
     }
 }
 
@@ -120,12 +86,9 @@ mod tests {
     fn parse_8601_without_tz() {
         let time_str = "2005-04-07T22:13:09";
         let time = Time::parse_time(time_str).unwrap();
-        assert_eq!(
-            time.format(gix::date::time::format::ISO8601_STRICT)
-                .strip_suffix("+00:00")
-                .unwrap(),
-            time_str,
-        );
+        assert!(time
+            .format(gix::date::time::format::ISO8601_STRICT)
+            .starts_with(time_str));
     }
 
     #[test]

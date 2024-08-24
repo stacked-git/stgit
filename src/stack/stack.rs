@@ -334,9 +334,9 @@ impl<'repo> Stack<'repo> {
                     message: reflog_msg.into(),
                 },
                 expected: gix::refs::transaction::PreviousValue::ExistingMustMatch(
-                    gix::refs::Target::Peeled(prev_state_commit_id),
+                    gix::refs::Target::Object(prev_state_commit_id),
                 ),
-                new: gix::refs::Target::Peeled(state_commit_id),
+                new: gix::refs::Target::Object(state_commit_id),
             },
             name: gix::refs::FullName::try_from(self.stack_refname.as_str())?,
             deref: false,
@@ -495,7 +495,7 @@ fn ensure_patch_refs(repo: &gix::Repository, branch_name: &str, state: &StackSta
                                 expected: gix::refs::transaction::PreviousValue::ExistingMustMatch(
                                     existing_ref.target().into_owned(),
                                 ),
-                                new: gix::refs::Target::Peeled(patchdesc.commit.id),
+                                new: gix::refs::Target::Object(patchdesc.commit.id),
                             },
                             name: existing_ref.name().into(),
                             deref: false,
@@ -526,7 +526,7 @@ fn ensure_patch_refs(repo: &gix::Repository, branch_name: &str, state: &StackSta
                     message: "fixup missing patch ref".into(),
                 },
                 expected: gix::refs::transaction::PreviousValue::MustNotExist,
-                new: gix::refs::Target::Peeled(patchdesc.commit.id),
+                new: gix::refs::Target::Object(patchdesc.commit.id),
             },
             name: gix::refs::FullName::try_from(get_patch_refname(
                 branch_name,

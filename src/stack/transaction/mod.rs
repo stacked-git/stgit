@@ -248,7 +248,7 @@ impl<'repo> ExecuteContext<'repo> {
                     gix::refs::transaction::Change::Update {
                         log: log.clone(),
                         expected: gix::refs::transaction::PreviousValue::Any, // TODO?
-                        new: gix::refs::Target::Peeled(patch.commit.id),
+                        new: gix::refs::Target::Object(patch.commit.id),
                     }
                 } else {
                     gix::refs::transaction::Change::Delete {
@@ -269,12 +269,12 @@ impl<'repo> ExecuteContext<'repo> {
                     log: log.clone(),
                     expected: if let Some(prev_state_commit) = stack.state_mut().prev.as_ref() {
                         gix::refs::transaction::PreviousValue::ExistingMustMatch(
-                            gix::refs::Target::Peeled(prev_state_commit.id),
+                            gix::refs::Target::Object(prev_state_commit.id),
                         )
                     } else {
                         gix::refs::transaction::PreviousValue::MustNotExist
                     },
-                    new: gix::refs::Target::Peeled(state_commit_id),
+                    new: gix::refs::Target::Object(state_commit_id),
                 },
                 name: gix::refs::FullName::try_from(stack.get_stack_refname())
                     .expect("stack reference name is valid"),
@@ -286,7 +286,7 @@ impl<'repo> ExecuteContext<'repo> {
                     change: gix::refs::transaction::Change::Update {
                         log,
                         expected: gix::refs::transaction::PreviousValue::Any,
-                        new: gix::refs::Target::Peeled(trans_head.id),
+                        new: gix::refs::Target::Object(trans_head.id),
                     },
                     name: branch_ref_name.clone(),
                     deref: false,

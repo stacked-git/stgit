@@ -128,7 +128,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
                 message: format!("branch: Created from {target_name}").into(),
             },
             expected: gix::refs::transaction::PreviousValue::MustNotExist,
-            new: gix::refs::Target::Peeled(target_commit.id),
+            new: gix::refs::Target::Object(target_commit.id),
         },
         name: gix::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?,
         deref: false,
