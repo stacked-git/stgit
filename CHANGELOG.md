@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.11 2024-08-25
+
+### Fixed
+
+- fix(push): report modified patches in output (#464)
+
+### Changed
+
+- feat(push): colorize push status string
+- chore: update gix to 0.66
+- feat: use jiff instead of time
+- feat: use winnow instead of nom
+- updated other dependencies
+
+
 ## 2.4.10 2024-08-17
 
 ### Fixed
