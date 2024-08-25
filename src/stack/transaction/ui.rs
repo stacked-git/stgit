@@ -192,15 +192,22 @@ impl TransactionUserInterface {
         output.reset()?;
 
         let status_str = match status {
-            PushStatus::New => " (new)",
-            PushStatus::AlreadyMerged => " (merged)",
-            PushStatus::Conflict => " (conflict)",
-            PushStatus::Empty => " (empty)",
-            PushStatus::Modified => " (modified)",
+            PushStatus::New => "(new)",
+            PushStatus::AlreadyMerged => "(merged)",
+            PushStatus::Conflict => "(conflict)",
+            PushStatus::Empty => "(empty)",
+            PushStatus::Modified => "(modified)",
             PushStatus::Unmodified => "",
         };
 
-        writeln!(output, "{status_str}")?;
+        if status_str.is_empty() {
+            writeln!(output)?;
+        } else {
+            color_spec.clear();
+            output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+            writeln!(output, " {status_str}")?;
+            output.reset()?;
+        }
         if is_last {
             self.printed_top = true;
         }
