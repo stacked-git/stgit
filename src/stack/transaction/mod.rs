@@ -1090,7 +1090,6 @@ impl<'repo> StackTransaction<'repo> {
                             conflicts: false,
                         })?;
                         self.current_tree_id = tree_id;
-                        push_status = PushStatus::Modified;
                         tree_id
                     }
                     Ok(false) => {
@@ -1131,10 +1130,12 @@ impl<'repo> StackTransaction<'repo> {
                 // execute() performs the checkout. Setting the transaction head
                 // here ensures that the real stack top will be checked-out.
                 self.updated_head = Some(commit.clone());
-            } else if push_status != PushStatus::AlreadyMerged
-                && new_tree_id == new_parent_ref.tree()
-            {
-                push_status = PushStatus::Empty;
+            } else if push_status != PushStatus::AlreadyMerged {
+                if new_tree_id == new_parent_ref.tree() {
+                    push_status = PushStatus::Empty;
+                } else {
+                    push_status = PushStatus::Modified;
+                }
             }
 
             self.updated_patches
