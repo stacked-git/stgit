@@ -38,7 +38,7 @@ ctrlc = "3.4"
 encoding_rs = "0.8"
 flate2 = "1"
 gix = { version = "0.66", default-features = false, features = ["command", "revision"] }
-indexmap = "2.1"
+indexmap = "2.5"
 is-terminal = "0.4"
 jiff = "0.1.10"
 serde = { version = "1.0", features = ["derive"] }
