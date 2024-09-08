@@ -379,7 +379,7 @@ fn execute_shell_alias(
         if user_args.is_empty() {
             command.arg(&alias.command);
         } else {
-            command.arg(&format!("{} \"$@\"", &alias.command));
+            command.arg(format!("{} \"$@\"", &alias.command));
             command.arg(&alias.command);
         }
         command

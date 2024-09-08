@@ -95,7 +95,7 @@ pub(crate) fn partial_ref_name(input: &mut &str) -> PResult<PartialRefName> {
         input.next_token();
         split_offset -= 1;
     }
-    if input[..split_offset].ends_with(|c| matches!(c, '.' | '/')) {
+    if input[..split_offset].ends_with(['.', '/']) {
         split_offset -= 1;
     }
 

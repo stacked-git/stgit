@@ -389,7 +389,7 @@ fn add_options(
 
 fn make_links(text: &str) -> String {
     let mut output = String::new();
-    let mut words = text.split_inclusive(|c| c == ' ' || c == '\n');
+    let mut words = text.split_inclusive([' ', '\n']);
 
     while let Some(word) = words.next() {
         if let Some(remainder) = word.strip_prefix("git-") {
