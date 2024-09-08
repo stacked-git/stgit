@@ -247,7 +247,7 @@ jobs:
           STG_TEST_OPTS: "--verbose-log"
           STG_PROFILE: "release"
         run: |
-          timeout 900s make -C t SHELL_PATH=C:/msys64/usr/bin/bash prove
+          timeout 900s make -C t SHELL_PATH=C:/msys64/usr/bin/bash --jobs=3 test
       - name: Show Failures
         if: ${{ failure() }}
         shell: msys2 {0}
