@@ -79,7 +79,7 @@ jobs:
       - name: Static Build i686
         run: |
           make build-static-i686
-      - name: Build  Build aarch64
+      - name: Static Build aarch64
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
