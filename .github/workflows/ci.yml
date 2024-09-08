@@ -31,7 +31,7 @@ jobs:
           sudo apt-get install quilt gnupg2 libio-pty-perl
       - name: Test
         env:
-          STG_PROVE_OPTS: "--jobs=2"
+          STG_PROVE_OPTS: "--jobs=4"
           STG_TEST_OPTS: "--verbose-log"
           STG_PROFILE: "release"
         run: |
@@ -45,17 +45,17 @@ jobs:
           sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
       - name: Build Docs Asciidoc
         run: |
-          make -j2 doc
+          make -j4 doc
       - name: Build Docs Asciidoctor
         env:
           USE_ASCIIDOCTOR: "1"
         run: |
-          make -j2 doc
+          make -j4 doc
       - name: Install HTML Docs
         env:
           USE_ASCIIDOCTOR: "1"
         run: |
-          make -j2 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+          make -j4 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
       - name: Upload HTML Docs
         uses: actions/upload-artifact@v4
         with:
@@ -140,7 +140,7 @@ jobs:
           sudo cpanm IO::Pty
       - name: Test
         env:
-          STG_PROVE_OPTS: "--jobs=2"
+          STG_PROVE_OPTS: "--jobs=4"
           STG_TEST_OPTS: "--verbose-log"
           STG_PROFILE: ${{ matrix.profile }}
         run: |
@@ -235,7 +235,7 @@ jobs:
       - name: Pre-test Check 2
         shell: msys2 {0}
         env:
-          STG_PROVE_OPTS: "--jobs=2"
+          STG_PROVE_OPTS: "--jobs=4"
           STG_TEST_OPTS: "--verbose-log"
           STG_PROFILE: "release"
         run: |
@@ -247,7 +247,7 @@ jobs:
           STG_TEST_OPTS: "--verbose-log"
           STG_PROFILE: "release"
         run: |
-          timeout 900s make -C t SHELL_PATH=C:/msys64/usr/bin/bash --jobs=3 test
+          timeout 900s make -C t SHELL_PATH=C:/msys64/usr/bin/bash --jobs=4 test
       - name: Show Failures
         if: ${{ failure() }}
         shell: msys2 {0}
