@@ -222,11 +222,17 @@ fn try_squash(
 ) -> Result<Option<(PatchName, gix::ObjectId)>> {
     let repo = trans.repo();
     let base_commit = trans.get_patch_commit(&patchnames[0]);
+    let base_author = base_commit.author()?;
+    let mut use_base_author = true;
     let base_commit_ref = base_commit.decode()?;
     if let Some(tree_id) = repo.stupid().with_temp_index(|stupid_temp| {
         stupid_temp.read_tree(base_commit_ref.tree())?;
         for commit in patchnames[1..].iter().map(|pn| trans.get_patch_commit(pn)) {
             let commit_ref = commit.decode()?;
+            let author = commit.author()?;
+            if author != base_author {
+                use_base_author = false;
+            }
             let parent = commit.get_parent_commit()?;
             let parent_commit_ref = parent.decode()?;
             if parent_commit_ref.tree() != commit_ref.tree()
@@ -259,7 +265,14 @@ fn try_squash(
             .allow_template_save(false)
             .template_patchname(patchname)
             .extra_allowed_patchnames(patchnames)
-            .default_author(repo.get_author()?.override_author(matches))
+            .default_author(
+                if use_base_author {
+                    base_author
+                } else {
+                    repo.get_author()?
+                }
+                .override_author(matches),
+            )
             .default_message(prepare_message(trans, patchnames)?)
             .edit(trans, repo, matches)?
         {

@@ -71,6 +71,54 @@ test_expect_success 'Squash at stack top' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
+test_expect_success 'Squash patches with all non-default author' '
+    echo "a" >>baz.txt &&
+    stg new -rm "a-patch" --author "Other Contributor <another@example.com>" &&
+    echo "b" >>baz.txt &&
+    stg new -rm "b-patch" --author "Other Contributor <another@example.com>" &&
+    echo "c" >>baz.txt &&
+    stg new -rm "c-patch" --author "Other Contributor <another@example.com>" &&
+    stg squash -m "abc-patch" a-patch b-patch c-patch &&
+    test_when_finished "stg delete abc-patch" &&
+    stg show abc-patch | grep "Author:" >out &&
+    cat >expected <<-\EOF &&
+	Author: Other Contributor <another@example.com>
+	EOF
+    test_cmp expected out
+'
+
+test_expect_success 'Squash patches with some non-default author' '
+    echo "a" >>baz.txt &&
+    stg new -rm "a-patch" &&
+    echo "b" >>baz.txt &&
+    stg new -rm "b-patch" --author "Other Contributor <another@example.com>" &&
+    echo "c" >>baz.txt &&
+    stg new -rm "c-patch" &&
+    stg squash -m "abc-patch" a-patch b-patch c-patch &&
+    test_when_finished "stg delete abc-patch" &&
+    stg show abc-patch | grep "Author:" >out &&
+    cat >expected <<-\EOF &&
+	Author: A Ú Thor <author@example.com>
+	EOF
+    test_cmp expected out
+'
+
+test_expect_success 'Squash patches with author override' '
+    echo "a" >>baz.txt &&
+    stg new -rm "a-patch" --author "Other Contributor <another@example.com>" &&
+    echo "b" >>baz.txt &&
+    stg new -rm "b-patch" --author "Other Contributor <another@example.com>" &&
+    echo "c" >>baz.txt &&
+    stg new -rm "c-patch" --author "Other Contributor <another@example.com>" &&
+    stg squash -m "abc-patch" --author "Override Author <override@example.com>" a-patch b-patch c-patch &&
+    test_when_finished "stg delete abc-patch" &&
+    stg show abc-patch | grep "Author:" >out &&
+    cat >expected <<-\EOF &&
+	Author: Override Author <override@example.com>
+	EOF
+    test_cmp expected out
+'
+
 test_expect_success 'Empty commit message aborts the squash' '
     write_script fake-editor <<-\EOF &&
 	echo "" >"$1"
