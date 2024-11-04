@@ -131,8 +131,8 @@ impl RepositoryExtended for gix::Repository {
             gix::reference::find::existing::Error::Find(inner) => {
                 anyhow!("invalid branch name `{branch_name}`: {inner}")
             }
-            gix::reference::find::existing::Error::NotFound => {
-                anyhow!("branch `{branch_name}` not found")
+            gix::reference::find::existing::Error::NotFound { name } => {
+                anyhow!("branch `{}` not found", name.as_ref().as_bstr())
             }
         })?;
 
