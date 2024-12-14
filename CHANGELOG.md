@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.13 2024-12-14
+
+### Fixed
+
+- fix(squash): preserve consensus author
+
+### Changed
+
+- chore: update gix to 0.68
+
+
 ## 2.4.12 2024-09-08
 
 ### Changed
