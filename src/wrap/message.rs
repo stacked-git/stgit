@@ -242,19 +242,19 @@ impl<'a> From<&'a str> for Message<'a> {
     }
 }
 
-impl<'a> From<String> for Message<'a> {
+impl From<String> for Message<'_> {
     fn from(s: String) -> Self {
         Self::String(s)
     }
 }
 
-impl<'a> Default for Message<'a> {
+impl Default for Message<'_> {
     fn default() -> Self {
         Self::Str("")
     }
 }
 
-impl<'a> PartialEq for Message<'a> {
+impl PartialEq for Message<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.raw_bytes() == other.raw_bytes()
     }

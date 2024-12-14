@@ -321,7 +321,7 @@ fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pat
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;
     let series_path = find_series_path(temp_dir.path())?;
-    return import_series(stack, matches, Some(series_path.as_path()));
+    import_series(stack, matches, Some(series_path.as_path()))
 }
 
 fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
@@ -330,7 +330,7 @@ fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pa
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;
     let series_path = find_series_path(temp_dir.path())?;
-    return import_series(stack, matches, Some(series_path.as_path()));
+    import_series(stack, matches, Some(series_path.as_path()))
 }
 
 fn import_tar_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
@@ -339,7 +339,7 @@ fn import_tar_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pat
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;
     let series_path = find_series_path(temp_dir.path())?;
-    return import_series(stack, matches, Some(series_path.as_path()));
+    import_series(stack, matches, Some(series_path.as_path()))
 }
 
 fn import_series(

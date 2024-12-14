@@ -33,7 +33,7 @@ pub(crate) struct StupidContext<'repo, 'index> {
     pub(super) git_version: RefCell<Option<StupidVersion>>,
 }
 
-impl<'repo, 'index> StupidContext<'repo, 'index> {
+impl StupidContext<'_, '_> {
     /// Perform actions with a temporary index file.
     ///
     /// The temporary index file is automatically deleted when this call returns.
@@ -56,7 +56,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 }
 
-impl<'repo, 'index> StupidContext<'repo, 'index> {
+impl StupidContext<'_, '_> {
     fn git(&self) -> Command {
         let mut command = Command::new("git");
         self.setup_git_env(&mut command);
@@ -110,7 +110,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 }
 
-impl<'repo, 'index> StupidContext<'repo, 'index> {
+impl StupidContext<'_, '_> {
     /// Apply a patch (diff) to the specified index using `git apply --cached`.
     pub(crate) fn apply_to_index(&self, diff: &BStr) -> Result<()> {
         self.git_in_work_root()?

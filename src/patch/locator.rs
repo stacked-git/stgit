@@ -100,7 +100,7 @@ enum DisambiguatedId<'a> {
     FromLast(isize),
 }
 
-impl<'a> DisambiguatedId<'a> {
+impl DisambiguatedId<'_> {
     fn string_for_error(&self) -> String {
         match self {
             DisambiguatedId::Name(name) => format!("`{name}`"),

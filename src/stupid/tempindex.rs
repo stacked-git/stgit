@@ -45,7 +45,7 @@ impl<'repo> TempIndex<'repo> {
     }
 }
 
-impl<'repo> Drop for TempIndex<'repo> {
+impl Drop for TempIndex<'_> {
     fn drop(&mut self) {
         let index_path = self.git_dir.join(self.filename());
         assert!(index_path.is_file());

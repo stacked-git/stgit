@@ -188,7 +188,7 @@ impl<'repo> TemporaryMessage<'repo> {
     }
 }
 
-impl<'repo> Drop for TemporaryMessage<'repo> {
+impl Drop for TemporaryMessage<'_> {
     fn drop(&mut self) {
         let msg_path = self.work_dir.join(&self.filename);
         if msg_path.is_file() {

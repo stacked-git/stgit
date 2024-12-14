@@ -396,7 +396,7 @@ impl<'s> Iterator for StatusIter<'s> {
 
 pub(crate) struct StatusHeaders<'s>(&'s Statuses);
 
-impl<'s> StatusHeaders<'s> {
+impl StatusHeaders<'_> {
     /// Get branch object id header.
     ///
     /// Returns `None` if the initial commit has not been made for the branch.
