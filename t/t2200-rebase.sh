@@ -43,4 +43,9 @@ test_expect_success 'Rebase to same base message' '
     grep "info: Already based on .*(master)" out
 '
 
+test_expect_success 'Rebase without argument' '
+    test_must_fail stg rebase 2>out &&
+    grep -q "error: the following required arguments were not provided" out
+'
+
 test_done
