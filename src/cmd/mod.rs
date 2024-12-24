@@ -25,6 +25,7 @@ pub(crate) mod id;
 pub(crate) mod import;
 pub(crate) mod init;
 pub(crate) mod log;
+pub(crate) mod name;
 pub(crate) mod new;
 pub(crate) mod next;
 pub(crate) mod patches;
@@ -101,6 +102,7 @@ pub(crate) const STGIT_COMMANDS: &[StGitCommand] = &[
     import::STGIT_COMMAND,
     init::STGIT_COMMAND,
     log::STGIT_COMMAND,
+    name::STGIT_COMMAND,
     new::STGIT_COMMAND,
     next::STGIT_COMMAND,
     patches::STGIT_COMMAND,
