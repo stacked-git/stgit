@@ -45,7 +45,20 @@ test_expect_success 'Rebase to same base message' '
 
 test_expect_success 'Rebase without argument' '
     test_must_fail stg rebase 2>out &&
-    grep -q "error: the following required arguments were not provided" out
+    grep -q "error: there is no tracking information for the current branch" out &&
+    git checkout master &&
+    echo bar >>file2 &&
+    git add file2 &&
+    git commit -m c &&
+    git remote add origin "file://$(pwd)" &&
+    git fetch origin &&
+    git checkout stack &&
+    git branch --set-upstream-to=origin/master &&
+    stg rebase 2>out &&
+    grep "info: Rebasing to .*(master origin/master)" out &&
+    test $(stg series --applied -c) = 1 &&
+    grep bar file1 &&
+    grep bar file2
 '
 
 test_done

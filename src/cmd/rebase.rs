@@ -49,8 +49,7 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("committish")
                 .help("New base commit for the stack")
-                .value_parser(clap::value_parser!(SingleRevisionSpec))
-                .required_unless_present("interactive"),
+                .value_parser(clap::value_parser!(SingleRevisionSpec)),
         )
         .arg(
             Arg::new("interactive")
@@ -99,15 +98,36 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let branch_name = stack.get_branch_name().to_string();
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
+    let interactive = matches.get_flag("interactive");
 
-    let target_commit =
-        if let Some(target_rev_spec) = matches.get_one::<SingleRevisionSpec>("committish") {
-            target_rev_spec.resolve(&repo, Some(&stack))?.commit
-        } else {
-            stack.base().clone()
-        };
+    let target_commit = if let Some(target_rev_spec) =
+        matches.get_one::<SingleRevisionSpec>("committish")
+    {
+        target_rev_spec.resolve(&repo, Some(&stack))?.commit
+    } else if let Some(remote_ref) = repo
+        .branch_remote_tracking_ref_name(stack.get_branch_refname(), gix::remote::Direction::Fetch)
+        .transpose()?
+    {
+        let id = repo.rev_parse_single(remote_ref.as_bstr())?;
+        id.object()?.into_commit().into()
+    } else if interactive {
+        stack.base().clone()
+    } else {
+        print_info_message(
+            matches,
+            &format!(
+                "if you wish to set tracking information for this branch you can do so with:
 
-    if !matches.get_flag("interactive") && target_commit.id == stack.base().id {
+    git branch --set-upstream-to=<remote>/<branch> {branch_name}
+"
+            ),
+        );
+        return Err(anyhow!(
+            "there is no tracking information for the current branch"
+        ));
+    };
+
+    if !interactive && target_commit.id == stack.base().id {
         print_info_message(
             matches,
             &format!(
