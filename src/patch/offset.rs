@@ -38,7 +38,6 @@ impl FromStr for PatchOffsets {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use winnow::Parser;
         super::parse::patch_offsets
             .parse(s)
             .map_err(|_| Error::InvalidPatchOffsets(s.to_string()))
