@@ -181,6 +181,9 @@ fn list_commands(output: &mut Box<dyn std::io::Write>, style: OutputStyle) -> Re
                              ~~~~~~~~~~~~~~\n"
                         )?;
                     }
+                    CommandCategory::Alias | CommandCategory::Help => {
+                        unreachable!();
+                    }
                 }
                 last_category = Some(category);
             }

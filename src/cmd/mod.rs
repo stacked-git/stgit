@@ -59,6 +59,8 @@ pub(crate) enum CommandCategory {
     StackInspection,
     StackManipulation,
     Administration,
+    Alias,
+    Help,
 }
 
 /// Entry point for a StGit subcommand.
