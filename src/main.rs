@@ -21,7 +21,7 @@ mod stupid;
 mod templates;
 mod wrap;
 
-use std::{ffi::OsString, io::Write, path::PathBuf};
+use std::{ffi::OsString, fmt::Write as _, io::Write as _, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 use bstr::ByteSlice;
@@ -312,10 +312,70 @@ fn full_app_help(
         }
     };
 
+    // By default clap renders subcommands as a single list which is hard to read given the number
+    // of existing subcommands. We group the commands by their categories and create several
+    // shorter lists which are easier to read.
+    let command = {
+        let command = get_full_command(&aliases, color_choice);
+        let heading_style = command.get_styles().get_header().render();
+        let heading_style_reset = command.get_styles().get_header().render_reset();
+        let mut subcommands_by_category = String::new();
+
+        use cmd::CommandCategory::*;
+        const GROUPS: [(cmd::CommandCategory, &str); 7] = [
+            (PatchInspection, "Patch inspection commands:"),
+            (PatchManipulation, "Patch manipulation commands:"),
+            (StackInspection, "Stack inspection commands:"),
+            (StackManipulation, "Stack manipulation commands:"),
+            (Administration, "Administration commands:"),
+            (Alias, "Aliases:"),
+            (Help, "Help:"),
+        ];
+
+        // Render each subcommand list individually with a custom template and by hiding other
+        // subcommands.
+        for (group_category, group_heading) in GROUPS {
+            let mut command = command.clone().help_template(format!(
+                "{heading_style}{group_heading}{heading_style_reset}\n{{subcommands}}"
+            ));
+
+            for stgit_command in cmd::STGIT_COMMANDS {
+                command = command.mut_subcommand(stgit_command.name, |subcommand| {
+                    subcommand.hide(stgit_command.category != group_category)
+                });
+            }
+
+            for alias_name in aliases.keys() {
+                command = command.mut_subcommand(alias_name, |subcommand| {
+                    subcommand.hide(group_category != Alias)
+                });
+            }
+
+            command = command.disable_help_subcommand(group_category != Help);
+
+            write!(
+                subcommands_by_category,
+                "\n{}",
+                command.render_help().ansi()
+            )
+            .expect("failed to render help");
+        }
+
+        // Render the full help by injecting the subcommand groups into the template.
+        command.help_template(format!(
+            "\
+{{before-help}}{{about-with-newline}}
+{{usage-heading}} {{usage}}
+{subcommands_by_category}
+{heading_style}Options:{heading_style_reset}
+{{options}}{{after-help}}"
+        ))
+    };
+
     // full_app_help should only be called once it has been determined that the command
     // line does not have a viable subcommand or alias. Thus this get_matches_from()
     // call should print an appropriate help message and terminate the process.
-    let err = get_full_command(&aliases, color_choice)
+    let err = command
         .try_get_matches_from(argv)
         .expect_err("command line should not have viable matches");
     err.print().expect("failed to print clap error");
