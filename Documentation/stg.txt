@@ -265,8 +265,10 @@ stgit.autoimerge::
   is automatically run to attempt to resolve the conflicts.
 
 stgit.autosign::
-  Automatically add "Signed-off-by:" trailer to commit messages for new patches created
-  with linkstg:new[] or lingstg:import[].
+  Automatically add signoff trailer to commit messages for new patches created
+  with linkstg:new[] or lingstg:import[]. The value of this configuration
+  variable will be used as the key of the trailer and therefore should be set
+  to something like 'Signed-off-by'.
 
 stgit.autostash::
   When running linkstg:rebase[], if any modified files are found in the working tree, a

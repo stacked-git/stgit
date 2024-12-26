@@ -68,7 +68,9 @@ following guidelines:
   certifies that you wrote or otherwise have the right to contribute the
   patch as open-source, according to the [Developers Certificate of
   Origin](#developers-certificate-of-origin-11). A `Signed-off-by:` line
-  can be added to a patch by running `stg edit --sign`.
+  can be added to a patch by running `stg edit --sign`, and you can add one to
+  new patches by default with the setting by setting the config
+  `stgit.autosign` to `Signed-off-by`.
   
 - Lint. Run `make lint` to ensure that the code meets the project's
   syntactic standards and passes static checks.
