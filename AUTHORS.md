@@ -65,3 +65,4 @@ Thanks go out to StGit's many contributors:
 - Toke Høiland-Jørgensen ([@tohojo](https://github.com/tohojo))
 - Trond Myklebust
 - Topher Brown ([@topher200](https://github.com/topher200))
+- Frank Benkstein ([@fbenkstein](https://github.com/fbenkstein)) 
