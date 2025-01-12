@@ -55,7 +55,7 @@ test_expect_success 'Rebase without argument' '
     git checkout stack &&
     git branch --set-upstream-to=origin/master &&
     stg rebase 2>out &&
-    grep "info: Rebasing to .*(master origin/master)" out &&
+    grep -E "info: Rebasing to .*\(master( origin/HEAD)? origin/master\)" out &&
     test $(stg series --applied -c) = 1 &&
     grep bar file1 &&
     grep bar file2
