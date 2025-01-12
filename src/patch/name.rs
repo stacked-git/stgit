@@ -118,7 +118,7 @@ impl PatchName {
             candidate = default_name;
         }
 
-        if len_limit.map_or(false, |limit| limit > 0 && candidate.len() > limit) {
+        if len_limit.is_some_and(|limit| limit > 0 && candidate.len() > limit) {
             let len_limit = len_limit.unwrap();
             let mut word_iter = candidate.split('-').filter_map(|w| {
                 let w = w.trim_matches('.');

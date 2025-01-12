@@ -335,7 +335,7 @@ fn get_flags(command: &clap::Command) -> (ShStream, ShStream) {
             for name in longs {
                 if arg
                     .get_num_args()
-                    .map_or(false, |value_range| value_range.takes_values())
+                    .is_some_and(|value_range| value_range.takes_values())
                 {
                     long_flags.word(&f!("--{name}="));
                 } else {

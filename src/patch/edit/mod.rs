@@ -550,9 +550,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             default_committer.to_owned()
         };
 
-        let new_commit_id = if patch_commit.and_then(|commit| commit.decode().ok()).map_or(
-            false,
-            |patch_commit_ref| {
+        let new_commit_id = if patch_commit
+            .and_then(|commit| commit.decode().ok())
+            .is_some_and(|patch_commit_ref| {
                 patch_commit_ref.committer().name == committer.name
                 && patch_commit_ref.committer().email == committer.email
                 // N.B.: intentionally not comparing commiter.when()
@@ -562,8 +562,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 && patch_commit_ref.message == message.raw_bytes()
                 && patch_commit_ref.tree() == tree_id
                 && patch_commit_ref.parents().next() == Some(parent_id)
-            },
-        ) {
+            }) {
             None
         } else {
             Some(repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?)

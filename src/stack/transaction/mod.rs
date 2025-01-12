@@ -984,7 +984,7 @@ impl<'repo> StackTransaction<'repo> {
                 let is_last = i + 1 == patchnames.len();
                 let already_merged = merged
                     .as_ref()
-                    .map_or(false, |merged| merged.contains(&patchname));
+                    .is_some_and(|merged| merged.contains(&patchname));
                 self.push_patch(
                     patchname,
                     already_merged,

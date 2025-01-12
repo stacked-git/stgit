@@ -935,7 +935,7 @@ impl Headers {
 
             if line
                 .strip_prefix(b"commit ")
-                .map_or(false, |rest| rest.iter().all(u8::is_ascii_hexdigit))
+                .is_some_and(|rest| rest.iter().all(u8::is_ascii_hexdigit))
             {
                 // Looks like this patch came from `git show`. Remaining message lines
                 // need to be stripped of indentation.
