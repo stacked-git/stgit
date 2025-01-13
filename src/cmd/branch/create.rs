@@ -4,7 +4,7 @@
 
 use std::rc::Rc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use bstr::ByteSlice;
 
 use crate::{
@@ -222,20 +222,25 @@ fn set_upstream(
 
         Category::RemoteBranch => {
             let mut local_config_file = repo.local_config_file()?;
-            let (remote_name, remote_branch_name) = from_short_name
-                .split_once_str(b"/")
-                .expect("remote branch short name has form <remote>/<branch>");
+            let (upstream_branch, remote) = repo
+                .upstream_branch_and_remote_for_tracking_branch(from_branch.get_reference_name())?
+                .with_context(|| {
+                    format!(
+                        "No refspec of any remote matched '{}'",
+                        from_branch.get_reference_name().as_bstr()
+                    )
+                })?;
             local_config_file.set_raw_value_by(
                 "branch",
                 Some(to_short_name),
                 "remote",
-                remote_name,
+                remote.name().expect("only named remotes").as_bstr(),
             )?;
             local_config_file.set_raw_value_by(
                 "branch",
                 Some(to_short_name),
                 "merge",
-                remote_branch_name,
+                upstream_branch.as_bstr(),
             )?;
             repo.write_local_config(local_config_file)?;
             Ok(Some(from_short_name.to_string()))
