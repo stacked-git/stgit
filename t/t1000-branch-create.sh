@@ -24,7 +24,7 @@ test_expect_success 'Create branch based on remote ref' '
     stg branch --create foo origin/master &&
     test "$(stg branch)" = "foo" &&
     test "$(git config --get branch.foo.remote)" = "origin" &&
-    test "$(git config --get branch.foo.merge)" = "master" &&
+    test "$(git config --get branch.foo.merge)" = "refs/heads/master" &&
     test "$(git config --get branch.foo.stgit.parentbranch)" = "origin/master" &&
     stg branch master &&
     stg branch --delete foo
