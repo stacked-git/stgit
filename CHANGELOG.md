@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.5.1 2025-01-18
+
+### Fixed
+
+- fix: assure branch creation respects fetch-specs of remotes (#522)
+
+### Changed
+
+- ci: ubuntu-24.04 is now used to build release binaries
+- chore: gix is updated to 0.70
+
+
 ## 2.5.0 2025-01-01
 
 ### Added
