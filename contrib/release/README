@@ -23,35 +23,25 @@ StGit Release Checklist
 
    - `git tag --sign -m 'Release vX.Y.Z' vX.Y.Z`
 
-4. Make source archive
-
-   - `./contrib/releases/make-archive.sh`
-   - This archive will be uploaded in step 7.
-
-5. Update stacked-git.github.io
+4. Update stacked-git.github.io
 
    - In stacked-git.github.io repo, `make sync` to sync updated
      changelog and man pages into website.
    - Review home page for anything that should be updated in conjunction
      with the StGit release.
 
-6. Push changes upstream
+5. Push changes upstream
 
    - Push new tag and master branch upstream
    - Push stacked-git.github.io changes
 
-7. Create GitHub release
+6. Publish GitHub Release
 
-   - Use "Stacked Git X.Y.Z" for release title.
-   - Write a sentence or two description of release.
-   - Paste this version's changes from CHANGELOG.md.
-   - Upload source archive file (`stgit-X.Y.Z.tar.gz`) from step 4.
-   - Upload prebuilt packages from Actions build for this tag.
-     https://github.com/stacked-git/stgit/actions
+   - Draft release is created for new tags.
+   - Change release title to "Stacked Git X.Y.Z"
 
-8. Send notifications
+7. Publish to crates.io
 
-   - Post a new discussion on GitHub repo
-   - ...
+   - `cargo publish`
 
-9. Review and update these release instructions
+8. Review and update these release instructions
