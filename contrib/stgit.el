@@ -2606,8 +2606,14 @@ file ended up. You can then jump to the file with \
 
 (defun stgit-confirm-edit ()
   (interactive)
-  (let ((file (make-temp-file "stgit-edit-")))
-    (write-region (point-min) (point-max) file)
+  (let ((file (make-temp-file "stgit-edit-"))
+        (start (point-min))
+        (summary-string "Summary: "))
+    ;; log-edit puts this summary string here that we do not want
+    (if (string-equal (buffer-substring start (+ 1 (length summary-string)))
+                      summary-string)
+        (setq start (+ start (length summary-string))))
+    (write-region start (point-max) file)
     (stgit-capture-output nil
       (stgit-run "edit" "-f" file "--" stgit-edit-patchsym))
     (with-current-buffer log-edit-parent-buffer
