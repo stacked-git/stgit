@@ -236,65 +236,65 @@ format characters are recognized:
 
 (defface stgit-branch-name-face
   '((t :inherit bold))
-  "The face used for the StGit branch name"
+  "The face used for the StGit branch name."
   :group 'stgit-faces)
 
 (defface stgit-top-patch-face
   '((((background dark)) (:weight bold :foreground "yellow"))
     (((background light)) (:weight bold :foreground "purple"))
     (t (:weight bold)))
-  "The face used for the top patch names"
+  "The face used for the top patch names."
   :group 'stgit-faces)
 
 (defface stgit-applied-patch-face
   '((((background dark)) (:foreground "light yellow"))
     (((background light)) (:foreground "purple"))
     (t ()))
-  "The face used for applied patch names"
+  "The face used for applied patch names."
   :group 'stgit-faces)
 
 (defface stgit-unapplied-patch-face
   '((((background dark)) (:foreground "gray80"))
     (((background light)) (:foreground "orchid"))
     (t ()))
-  "The face used for unapplied patch names"
+  "The face used for unapplied patch names."
   :group 'stgit-faces)
 
 (defface stgit-committed-patch-face
   '((((background dark)) (:foreground "gray50"))
     (((background light)) (:foreground "gray50"))
     (t ()))
-  "The face used for already committed patch names"
+  "The face used for already committed patch names."
   :group 'stgit-faces)
 
 (defface stgit-description-face
   '((((background dark)) (:foreground "tan"))
     (((background light)) (:foreground "dark red")))
-  "The face used for StGit descriptions"
+  "The face used for StGit descriptions."
   :group 'stgit-faces)
 
 (defface stgit-index-work-tree-title-face
   '((((supports :slant italic)) :slant italic)
     (t :inherit bold))
-  "StGit mode face used for the \"Index\" and \"Work tree\" titles"
+  "StGit mode face used for the \"Index\" and \"Work tree\" titles."
   :group 'stgit-faces)
 
 (defface stgit-unmerged-file-face
   '((((class color) (background light)) (:foreground "red" :bold t))
     (((class color) (background dark)) (:foreground "red" :bold t)))
-  "StGit mode face used for unmerged file status"
+  "StGit mode face used for unmerged file status."
   :group 'stgit-faces)
 
 (defface stgit-unknown-file-face
   '((((class color) (background light)) (:foreground "goldenrod" :bold t))
     (((class color) (background dark)) (:foreground "goldenrod" :bold t)))
-  "StGit mode face used for unknown file status"
+  "StGit mode face used for unknown file status."
   :group 'stgit-faces)
 
 (defface stgit-ignored-file-face
   '((((class color) (background light)) (:foreground "grey60"))
     (((class color) (background dark)) (:foreground "grey40")))
-  "StGit mode face used for ignored files")
+  "StGit mode face used for ignored files.")
 
 (defface stgit-file-permission-face
   '((((class color) (background light)) (:foreground "green" :bold t))
@@ -305,7 +305,7 @@ format characters are recognized:
 (defface stgit-modified-file-face
   '((((class color) (background light)) (:foreground "purple"))
     (((class color) (background dark)) (:foreground "salmon")))
-  "StGit mode face used for modified file status"
+  "StGit mode face used for modified file status."
   :group 'stgit-faces)
 
 (defun stgit (dir)
@@ -484,7 +484,7 @@ necessary and no message will be shown if MESSAGE is nil.
 
 If `stgit-inhibit-messages' is non-nil, messages are
 suppressed. See also `stgit-message'. If MESSAGE is non-nil, BODY
-will be executed with `stgit-inhibit-messages' set to `t'.
+will be executed with `stgit-inhibit-messages' set to t.
 
 Returns the return value of BODY."
   (declare (indent 1) (debug (form body)))
@@ -586,8 +586,8 @@ default) that can be used to restore the point using
                         column)))))
 
 (defun stgit-get-window-state ()
-  "Return the state of the buffer and its windows. Use
-`stgit-restore-window-state' to restore the state."
+  "Return the state of the buffer and its windows.
+Use `stgit-restore-window-state' to restore the state."
   (list (current-buffer)
         (mapcar (lambda (window)
                   (cons window
@@ -800,7 +800,7 @@ during the operation."
             (unmerged    "Unmerged"    stgit-unmerged-file-face)
             (unknown     "Unknown"     stgit-unknown-file-face)
             (ignore      "Ignored"     stgit-ignored-file-face)))
-  "Alist of code symbols to description strings")
+  "Alist of code symbols to description strings.")
 
 (defconst stgit-patch-status-face-alist
   '((applied   . stgit-applied-patch-face)
@@ -809,10 +809,10 @@ during the operation."
     (committed . stgit-committed-patch-face)
     (index     . stgit-index-work-tree-title-face)
     (work      . stgit-index-work-tree-title-face))
-  "Alist of face to use for a given patch status")
+  "Alist of face to use for a given patch status.")
 
 (defun stgit-file-status-code-as-string (file)
-  "Return stgit status code for FILE as a string"
+  "Return stgit status code for FILE as a string."
   (let* ((code (assq (stgit-file->status file)
                      stgit-file-status-code-strings))
          (score (stgit-file->cr-score file)))
@@ -824,7 +824,7 @@ during the operation."
         (cdr code)))))
 
 (defun stgit-file-status-code (str &optional score)
-  "Return stgit status code from git status string"
+  "Return stgit status code from git status string."
   (let ((code (assoc str '(("A" . add)
                            ("C" . copy)
                            ("D" . delete)
@@ -845,7 +845,7 @@ during the operation."
   '((#o100 . "file")
     (#o120 . "symlink")
     (#o160 . "subproject"))
-  "Alist of names of file types")
+  "Alist of names of file types.")
 
 (defun stgit-file-type-string (type)
   "Return string describing file type TYPE (the high bits of file permission).
@@ -1104,7 +1104,7 @@ at point."
                                                          ""
                                                        (stgit-id patchsym))
                                                      ":" file)))
-          (error "git cat-file failed"))))
+          (error "Command 'git cat-file' failed"))))
     (funcall (if other-window
                  'switch-to-buffer-other-window
                'switch-to-buffer)
@@ -1210,7 +1210,7 @@ See also `stgit-expand'."
 (defun stgit-select ()
   "With point on a patch, toggle showing files in the patch.
 
-With point on a file, open the associated file. Opens the target
+With point on a file, open the associated file.  Opens the target
 file for (applied) copies and renames."
   (interactive)
   (stgit-assert-mode)
@@ -1257,21 +1257,21 @@ With prefix argument, open a buffer with that revision of the file."
       (git-status dir))))
 
 (defun stgit-goal-column ()
-  "Return goal column for the current line"
+  "Return goal column for the current line."
   (case (get-text-property (point) 'entry-type)
     ('patch 2)
     ('file 4)
     (t 0)))
 
 (defun stgit-next-line (&optional arg)
-  "Move cursor vertically down ARG lines"
+  "Move cursor vertically down ARG lines."
   (interactive "p")
   (stgit-assert-mode)
   (next-line arg)
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-previous-line (&optional arg)
-  "Move cursor vertically up ARG lines"
+  "Move cursor vertically up ARG lines."
   (interactive "p")
   (stgit-assert-mode)
   (previous-line arg)
@@ -1317,7 +1317,7 @@ With prefix argument, open a buffer with that revision of the file."
 (defun stgit-previous-patch-group (&optional arg)
   "Move to the previous group of patches.
 
-If ARG is non-nil, do this ARG times. If ARG is negative, move
+If ARG is non-nil, do this ARG times.  If ARG is negative, move
 -ARG groups forward instead; cf. `stgit-next-patch-group'."
   (interactive "p")
   (stgit-assert-mode)
@@ -1341,7 +1341,7 @@ If ARG is non-nil, do this ARG times. If ARG is negative, move
 (defun stgit-next-patch-group (&optional arg)
   "Move to the next group of patches.
 
-If ARG is non-nil, do this ARG times. If ARG is negative, move
+If ARG is non-nil, do this ARG times.  If ARG is negative, move
 -ARG groups backwards instead; cf. `stgit-previous-patch-group'."
   (interactive "p")
   (stgit-assert-mode)
@@ -1732,7 +1732,7 @@ refresh the stgit buffers as the git status of files change."
 
 (defvar stgit-pending-refresh-buffers nil
   "Alist of (`buffer' . `mode') of buffers that need to be
-refreshed. See `stgit-post-refresh' for the different values of
+refreshed.  See `stgit-post-refresh' for the different values of
 `mode'.")
 
 (defun stgit-run-pending-refreshs ()
@@ -1782,7 +1782,7 @@ MODE specifies what to do:
   "When Emacs becomes idle, update the status in any `stgit-mode'
 buffer that shows the status of the current buffer.
 
-MODE specifies how to update the buffer. See `stgit-post-refresh'
+MODE specifies how to update the buffer.  See `stgit-post-refresh'
 for the different values MODE can have."
   (let* ((dir (cond ((derived-mode-p 'stgit-mode 'stgit-status-mode 'dired-mode)
                      default-directory)
@@ -1887,7 +1887,7 @@ line of PATCHSYM and return :patch."
   (stgit-assert-mode)
   (unless (zerop (stgit-capture-output nil
 		   (stgit-run "init")))
-    (error "stg init failed"))
+    (error "Command 'stg init' failed"))
   (stgit-reload))
 
 (defun stgit-toggle-mark ()
@@ -2078,8 +2078,8 @@ git-config setting branch.<branch>.stgit.parentbranch."
 (defun stgit-rebase (new-base)
   "Rebase the current branch to NEW-BASE.
 
-Interactively, first ask which branch to rebase to. Defaults to
-what git-config branch.<branch>.stgit.parentbranch is set to."
+Interactively, first ask which branch to rebase to.  Defaults to what
+git-config branch.<branch>.stgit.parentbranch is set to."
   (interactive (list (completing-read "Rebase to: "
                                       (stgit-available-refs t)
                                       nil nil
@@ -2342,7 +2342,7 @@ or :bottom."
 (defun stgit-goto ()
   "Go to the patch on the current line.
 
-Push or pop patches to make this patch topmost. Push or pop all
+Push or pop patches to make this patch topmost.  Push or pop all
 patches if used on a line after or before all patches."
   (interactive)
   (stgit-assert-mode)
@@ -2463,9 +2463,9 @@ greater than four (e.g., \\[universal-argument] \
 (defun stgit-diff-range (&optional ignore-whitespace)
   "Show diff for the range of patches between point and the marked patch.
 
-With a prefix argument, ignore whitespace. With a prefix argument
-greater than four (e.g., \\[universal-argument] \
-\\[universal-argument] \\[stgit-diff-range]), ignore all whitespace."
+With a prefix argument, ignore whitespace.  With a prefix argument
+greater than four (e.g., \\[universal-argument] \ \\[universal-argument]
+\\[stgit-diff-range]), ignore all whitespace."
   (interactive "p")
   (stgit-assert-mode)
   (unless (= (length stgit-marked-patches) 1)
@@ -2503,7 +2503,7 @@ If FORCE is not nil, use --force."
                                     '("--") (list file))))))
 
 (defun stgit-remove-change-from-index (file)
-  "Unstages the change in FILE from the index"
+  "Unstages the change in FILE from the index."
   (stgit-capture-output "*git output*"
     (stgit-run-git "reset" "-q" "--" file)))
 
@@ -2525,7 +2525,7 @@ If FORCE is not nil, use --force."
   "Move modified file in or out of the index.
 
 Leaves the point where it is, but moves the mark to where the
-file ended up. You can then jump to the file with \
+file ended up.  You can then jump to the file with \
 \\[exchange-point-and-mark]."
   (interactive)
   (stgit-assert-mode)
@@ -2564,7 +2564,7 @@ file ended up. You can then jump to the file with \
 Works on index and work tree, as well as files in either.
 
 Leaves the point where it is, but moves the mark to where the
-file ended up. You can then jump to the file with \
+file ended up.  You can then jump to the file with \
 \\[exchange-point-and-mark]."
   (interactive)
   (stgit-assert-mode)
@@ -2620,8 +2620,7 @@ file ended up. You can then jump to the file with \
       (stgit-reload))))
 
 (defun stgit-new-here (add-sign)
-  "Create a new patch before the patch at point, asking for a
-commit message.
+  "Create a new patch before the patch at point, asking for a commit message.
 
 With a prefix argument, include a \"Signed-off-by:\" line at the
 end of the patch description.
@@ -2697,7 +2696,7 @@ This works just like running `stgit-new' followed by `stgit-refresh'."
   (stgit-new add-sign t))
 
 (defun stgit-create-patch-name (description)
-  "Create a patch name from a long description"
+  "Create a patch name from a long description."
   (let ((patch ""))
     (while (> (length description) 0)
       (cond ((string-match "\\`[a-zA-Z_-]+" description)
@@ -2846,7 +2845,7 @@ deepest patch had before the squash."
         (rename-buffer "*StGit error*")
         (resize-temp-buffer-window)
         (switch-to-buffer-other-window stgit-buffer)
-        (error "stg squash failed")))))
+        (error "Command 'stg squash' failed")))))
 
 (defun stgit-confirm-squash ()
   (interactive)
@@ -2955,7 +2954,7 @@ If HARD is non-nil, use the --hard flag."
       (if arg
           (when (or (and (stgit-index-empty-p)
                          (stgit-work-tree-empty-p))
-                    (y-or-n-p (format "Hard %s may overwrite index/work tree changes. Continue? "
+                    (y-or-n-p (format "Hard %s may overwrite index/work tree changes.  Continue? "
                                       cmd)))
             (stgit-run cmd "--hard"))
         (stgit-run cmd))))
