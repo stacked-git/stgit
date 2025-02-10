@@ -52,7 +52,7 @@
   (error "Emacs older than 22 is not supported by stgit.el"))
 
 (require 'git nil t)
-(require 'cl)
+(require 'cl-lib)
 (require 'comint)
 (require 'dired)
 (require 'ewoc)
@@ -318,7 +318,7 @@ See `stgit-mode' for commands available."
 
 (defun stgit-assert-mode ()
   "Signal an error if not in an StGit buffer."
-  (assert (derived-mode-p 'stgit-mode) nil "Not an StGit buffer"))
+  (cl-assert (derived-mode-p 'stgit-mode) nil "Not an StGit buffer"))
 
 (unless (fboundp 'git-get-top-dir)
   (defun git-get-top-dir (dir)
@@ -361,13 +361,13 @@ directory DIR or `default-directory'"
     (switch-to-buffer (or buffer
 			  (create-stgit-buffer dir)))))
 
-(defstruct (stgit-patch
+(cl-defstruct (stgit-patch
             (:conc-name stgit-patch->))
   status name desc empty files-ewoc)
 
 (defun stgit-patch-display-name (patch)
   (let ((name (stgit-patch->name patch)))
-    (case name
+    (cl-case name
       (:index "Index")
       (:work "Work Tree")
       (t (symbol-name name)))))
@@ -393,10 +393,10 @@ A newline is appended."
          (face (cdr (assq status stgit-patch-status-face-alist)))
          (fmt (stgit-line-format))
          (spec (format-spec-make
-                ?s (case status
-                     ('applied "+")
-                     ('top ">")
-                     ('unapplied "-")
+                ?s (cl-case status
+                     (applied "+")
+                     (top ">")
+                     (unapplied "-")
                      (t " "))
                 ?m (if (memq name stgit-marked-patches)
                        "*" " ")
@@ -575,8 +575,8 @@ default) that can be used to restore the point using
 (defun stgit-restore-position (state)
   "Move point to the position in STATE, as returned by
 `stgit-get-position'."
-  (destructuring-bind (patch file line column) state
-    (unless (and patch (case (stgit-goto-patch patch file)
+  (cl-destructuring-bind (patch file line column) state
+    (unless (and patch (cl-case (stgit-goto-patch patch file)
                          ((t) (move-to-column column) t)
                          ((:patch) t)))
       (goto-char (point-min))
@@ -605,7 +605,7 @@ Use `stgit-restore-window-state' to restore the state."
 (defun stgit-restore-window-state (state)
   "Restore the state of the stgit buffer and windows in STATE, as
 obtained from `stgit-get-window-state'."
-  (destructuring-bind
+  (cl-destructuring-bind
       (buffer window-states buffer-state mark-state
               old-mark-active old-transient-mark-mode)
       state
@@ -753,7 +753,7 @@ using (make-hash-table :test 'equal)."
         (stgit-run-series-insert-index ewoc))
       (setq stgit-index-node     index-node
             stgit-worktree-node  worktree-node
-            stgit-marked-patches (intersection stgit-marked-patches
+            stgit-marked-patches (cl-intersection stgit-marked-patches
                                                all-patchsyms)))))
 
 (defun stgit-current-branch ()
@@ -894,7 +894,7 @@ Cf. `stgit-file-type-change-string'."
                        (propertize (format "%o" new-perm)
                                    'face 'stgit-file-permission-face)))))))
 
-(defstruct (stgit-file
+(cl-defstruct (stgit-file
             (:conc-name stgit-file->))
   old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
@@ -909,7 +909,7 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
   (if (stgit-escape-file-name-p name)
     (concat (if no-quotes "" "\"")
 	    (mapconcat (lambda (c)
-			 (case c
+			 (cl-case c
 			   (?\t "\\t")
 			   (?\n "\\n")
 			   (?\" "\\\"")
@@ -1137,11 +1137,11 @@ Non-interactively, operate on PATCHES, and collapse instead of
 expand if COLLAPSE is not nil."
   (interactive (list (stgit-patches-marked-or-at-point t)))
   (stgit-assert-mode)
-  (let ((patches-diff (funcall (if collapse #'intersection #'set-difference)
+  (let ((patches-diff (funcall (if collapse #'cl-intersection #'cl-set-difference)
                                patches stgit-expanded-patches)))
     (setq stgit-expanded-patches
           (if collapse
-              (set-difference stgit-expanded-patches patches-diff)
+              (cl-set-difference stgit-expanded-patches patches-diff)
             (append stgit-expanded-patches patches-diff)))
     (stgit-show-task-message (concat (if collapse "Collapsing" "Expanding")
                                      " "
@@ -1180,7 +1180,7 @@ See also `stgit-expand'."
       (set-marker end (point))
       (set-marker-insertion-type end t))
 
-    (assert (string-match "/$" filename))
+    (cl-assert (string-match "/$" filename))
     ;; remove trailing "/"
     (setf (stgit-file->file file) (substring filename 0 -1))
     (ewoc-invalidate ewoc node)
@@ -1214,10 +1214,10 @@ With point on a file, open the associated file.  Opens the target
 file for (applied) copies and renames."
   (interactive)
   (stgit-assert-mode)
-  (case (get-text-property (point) 'entry-type)
-    ('patch
+  (cl-case (get-text-property (point) 'entry-type)
+    (patch
      (stgit-select-patch))
-    ('file
+    (file
      (stgit-select-file))
     (t
      (error "No patch or file on line"))))
@@ -1258,9 +1258,9 @@ With prefix argument, open a buffer with that revision of the file."
 
 (defun stgit-goal-column ()
   "Return goal column for the current line."
-  (case (get-text-property (point) 'entry-type)
-    ('patch 2)
-    ('file 4)
+  (cl-case (get-text-property (point) 'entry-type)
+    (patch 2)
+    (file 4)
     (t 0)))
 
 (defun stgit-next-line (&optional arg)
@@ -1769,7 +1769,7 @@ MODE specifies what to do:
     (if elem
         ;; if buffer is already present, update its mode if necessary
         (let ((omode (cdr elem)))
-          (when (case mode
+          (when (cl-case mode
                   (:index (eq mode :work))
                   (:reload t))
             (setcdr elem mode)))
@@ -1820,7 +1820,7 @@ allow historical commits; if nil, also allow work tree and index."
   (let ((patch (stgit-patch-at-point)))
     (and patch
          (memq (stgit-patch->status patch)
-               (case types
+               (cl-case types
                  ((nil) nil)
                  ((allow-committed) '(work index))
                  ((t) '(work index committed))
@@ -1904,7 +1904,7 @@ line of PATCHSYM and return :patch."
   (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node)))
-    (case (stgit-patch->status patch)
+    (cl-case (stgit-patch->status patch)
       (work      (error "Cannot mark the work tree"))
       (index     (error "Cannot mark the index"))
       (committed (error "Cannot mark a committed patch")))
@@ -2042,7 +2042,7 @@ If SKIP-CURRENT is not nil, do not include the current branch."
 
       ;; Do not expand any (normal) patches in the new branch
       (setq stgit-expanded-patches
-	    (remove-if-not (lambda (p) (memq p '(:work :index)))
+	    (cl-remove-if-not (lambda (p) (memq p '(:work :index)))
 			   stgit-expanded-patches))
 
       (stgit-reload))))
@@ -2060,7 +2060,7 @@ If OMIT-STGIT is not nil, filter out \"resf/heads/*.stgit\"."
                   (substring s (match-end 0))
                 s))
             (if omit-stgit
-                (delete-if (lambda (s)
+                (cl-delete-if (lambda (s)
                              (string-match "^refs/heads/.*\\.stgit$" s))
                            result)
               result))))
@@ -2212,7 +2212,7 @@ tree, or a single change in either."
         (stgit-revert-file)
       (let* ((patch-name (or (stgit-patch-name-at-point)
                              (error "No patch or file at point")))
-             (patch-desc (case patch-name
+             (patch-desc (cl-case patch-name
                            (:index "index")
                            (:work  "work tree")
                            (t (error (substitute-command-keys
@@ -2309,7 +2309,7 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
   (stgit-assert-mode)
   (let* ((patchsyms (stgit-patches-marked-or-at-point t t))
          (applied-syms (stgit-applied-patchsyms t))
-         (unapplied (set-difference patchsyms applied-syms)))
+         (unapplied (cl-set-difference patchsyms applied-syms)))
     (stgit-capture-output nil
       (apply 'stgit-run
              (if unapplied "push" "pop")
@@ -2330,7 +2330,7 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
 or :bottom."
   (let ((patch (stgit-patch-at-point)))
     (cond (patch
-           (case (stgit-patch->status patch)
+           (cl-case (stgit-patch->status patch)
              ((work index) nil)
              ((committed) :bottom)
              (t (stgit-patch->name patch))))
@@ -2349,7 +2349,7 @@ patches if used on a line after or before all patches."
   (let ((patchsym (stgit-goto-target)))
     (unless patchsym
       (error "No patch to go to on this line"))
-    (case patchsym
+    (cl-case patchsym
       (:top    (stgit-push-or-pop-patches t t))
       (:bottom (stgit-push-or-pop-patches nil t))
       (t (stgit-capture-output nil
@@ -2380,14 +2380,14 @@ which stage to diff against in the case of unmerged files."
   (let* ((space-arg (stgit-whitespace-diff-arg ignore-whitespace))
          (patch-name (stgit-patch-name-at-point t))
          (entry-type (get-text-property (point) 'entry-type))
-         (diff-desc (case entry-type
-                      ('file "diff")
-                      ('patch "patch")
+         (diff-desc (cl-case entry-type
+                      (file "diff")
+                      (patch "patch")
                       (t (error "No patch or file at point")))))
     (stgit-show-task-message (concat "Showing " diff-desc)
       (stgit-capture-output (concat "*StGit " diff-desc "*")
-        (case entry-type
-          ('file
+        (cl-case entry-type
+          (file
            (let* ((patched-file (stgit-patched-file-at-point))
                   (patch-id (let ((id (stgit-id patch-name)))
                               (if (and (eq id :index)
@@ -2412,7 +2412,7 @@ which stage to diff against in the case of unmerged files."
                                           (stgit-file->cr-to patched-file))
                                   (list (stgit-file->file patched-file))))))
              (apply 'stgit-run-git "diff" args)))
-          ('patch
+          (patch
            (let* ((patch-id (stgit-id patch-name)))
              (if (or (eq patch-id :index) (eq patch-id :work))
                  (apply 'stgit-run-git "diff"
@@ -2629,7 +2629,7 @@ This works like `stgit-new' followed by `stgit-move'."
   (interactive "P")
   (stgit-assert-mode)
   (let ((patch (stgit-patch-at-point t)))
-    (case (stgit-patch->status patch)
+    (cl-case (stgit-patch->status patch)
       ((index work) (stgit-new add-sign))
       ((applied top)
        (unless (and (stgit-index-empty-p)
@@ -2909,7 +2909,7 @@ When the command has finished, reload the stgit buffer."
   (let* ((patches (stgit-sort-patches
                    (stgit-patches-marked-or-at-point nil 'allow-committed)))
          (patch-names (mapcar 'symbol-name patches))
-         (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
+         (hyphens (cl-find-if (lambda (s) (string-match "^-" s)) patch-names))
          (program (if git-mode stgit-git-program stgit-stg-program))
          (defaultcmd (concat program
                              " "
