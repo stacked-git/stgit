@@ -159,8 +159,8 @@ flag, which reduces performance."
   "This variable controls where the \"Index\" and \"Work tree\"
 will be shown on in the buffer.
 
-It can be set to 'top (above all patches), 'center (show between
-applied and unapplied patches), and 'bottom (below all patches)."
+It can be set to \='top (above all patches), \='center (show between
+applied and unapplied patches), and \='bottom (below all patches)."
   :type '(radio (const :tag "above all patches (top)" top)
                 (const :tag "between applied and unapplied patches (center)"
                        center)
@@ -375,9 +375,7 @@ directory DIR or `default-directory'"
 (defun stgit-insert-without-trailing-whitespace (text)
   "Insert TEXT in buffer using `insert', without trailing whitespace.
 A newline is appended."
-  (unless (string-match "\\(.*?\\) *$" text)
-    (error))
-  (insert (match-string 1 text) ?\n))
+  (insert (string-trim-right text " ") ?\n))
 
 (defun stgit-line-format ()
   "Return the current line format; one of
@@ -545,6 +543,8 @@ been advised to update the stgit status when necessary.")
     (ewoc-invalidate (car stgit-worktree-node) (cdr stgit-worktree-node))))
 
 (defun stgit-run-series-insert-index (ewoc)
+  ;; TODO: non-lexical stuff happening here (`index-node' and `worktree-node').
+  ;; Fix this before enabling lexical binding.
   (setq index-node    (cons ewoc (ewoc-enter-last ewoc
                                                   (make-stgit-patch
                                                    :status 'index
@@ -562,7 +562,7 @@ been advised to update the stgit status when necessary.")
   "Return `stgit-mode' position information at POSITION (point by
 default) that can be used to restore the point using
 `stgit-restore-position'."
-  (let ((opoint (point)))
+  (let ((point (point)))
     (and position (goto-char position))
     (prog1
         (list (stgit-patch-name-at-point)
@@ -570,7 +570,7 @@ default) that can be used to restore the point using
                 (and f (stgit-file->file f)))
               (line-number-at-pos)
               (current-column))
-      (goto-char opoint))))
+      (goto-char point))))
 
 (defun stgit-restore-position (state)
   "Move point to the position in STATE, as returned by
@@ -643,7 +643,7 @@ where they were."
 reported by git svn.
 
 Cached data is stored in HASH, which must have been created
-using (make-hash-table :test 'equal)."
+using (make-hash-table :test \='equal)."
   (let ((result (gethash sha1 hash t)))
     (when (eq result t)
       (let ((svn-rev (with-output-to-string
@@ -772,7 +772,7 @@ during the operation."
   (stgit-show-task-message description
     (let ((inhibit-read-only t))
       (stgit-save-excursion
-        (ewoc-filter stgit-ewoc #'(lambda (x) nil))
+        (ewoc-filter stgit-ewoc #'(lambda (_) nil))
         (ewoc-set-hf stgit-ewoc
                      (concat "Branch: "
                              (propertize (stgit-current-branch)
@@ -1018,6 +1018,7 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
       (let ((file
              (cond ((looking-at
                      "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
+                    ;; TODO: Where does `patch' come from?
                     (let* ((patch-status (stgit-patch->status patch))
                            (file-subexp  (if (eq patch-status 'unapplied)
                                              3
@@ -1267,14 +1268,14 @@ With prefix argument, open a buffer with that revision of the file."
   "Move cursor vertically down ARG lines."
   (interactive "p")
   (stgit-assert-mode)
-  (next-line arg)
+  (forward-line arg)
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-previous-line (&optional arg)
   "Move cursor vertically up ARG lines."
   (interactive "p")
   (stgit-assert-mode)
-  (previous-line arg)
+  (forward-line (- arg))
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-next-patch (&optional arg)
@@ -1305,12 +1306,12 @@ With prefix argument, open a buffer with that revision of the file."
         ((stgit-at-header-p)
          (goto-char (point-min)))
         (t
-         (let ((opatch (stgit-patch-at-point)))
+         (let ((patch (stgit-patch-at-point)))
 	   (when (stgit-patched-file-at-point)
 	     (setq arg (1- arg)))
            (ewoc-goto-prev stgit-ewoc arg)
            (unless (zerop arg)
-             (when (eq opatch (stgit-patch-at-point))
+             (when (eq patch (stgit-patch-at-point))
                (goto-char (point-min)))))
          (move-to-column (stgit-goal-column)))))
 
@@ -1326,16 +1327,16 @@ If ARG is non-nil, do this ARG times.  If ARG is negative, move
     (while (and (not (bobp))
                 (> arg 0))
       (stgit-previous-patch 1)
-      (let* ((opoint (point))
+      (let* ((point (point))
              (patch  (stgit-patch-at-point))
              (status (and patch (stgit-patch->status patch))))
         (while (and (not (bobp))
                     (let* ((npatch (stgit-patch-at-point))
                            (nstatus (and npatch (stgit-patch->status npatch))))
                       (eq status nstatus)))
-          (setq opoint (point))
+          (setq point (point))
           (stgit-previous-patch 1))
-        (goto-char opoint))
+        (goto-char point))
       (setq arg (1- arg)))))
 
 (defun stgit-next-patch-group (&optional arg)
@@ -1768,7 +1769,7 @@ MODE specifies what to do:
   (let ((elem (assq buffer stgit-pending-refresh-buffers)))
     (if elem
         ;; if buffer is already present, update its mode if necessary
-        (let ((omode (cdr elem)))
+        (let ((mode (cdr elem)))
           (when (cl-case mode
                   (:index (eq mode :work))
                   (:reload t))
@@ -1808,14 +1809,19 @@ for the different values MODE can have."
   (setq stgit-marked-patches '()))
 
 (defun stgit-patch-at-point (&optional cause-error)
-  (get-text-property (point) 'patch-data))
+  "Return patch at point.
+If CAUSE-ERROR then throw an error when there is no patch."
+  (let ((return (get-text-property (point) 'patch-data)))
+    (when (and cause-error (not return))
+      (error "No patch at point"))
+    return))
 
 (defun stgit-patch-name-at-point (&optional cause-error types)
   "Return the patch name on the current line as a symbol.
 If CAUSE-ERROR is not nil, signal an error if none found.
 
 TYPES controls which types of commits and patches can be returned.
-If it is t, only allow stgit patches; if 'allow-committed, also
+If it is t, only allow stgit patches; if \='allow-committed, also
 allow historical commits; if nil, also allow work tree and index."
   (let ((patch (stgit-patch-at-point)))
     (and patch
@@ -1839,7 +1845,7 @@ allow historical commits; if nil, also allow work tree and index."
 If CAUSE-ERRROR is not nil, signal an error if none found.
 
 TYPES controls which types of commits and patches can be returned.
-If it is t, only allow stgit patches; if 'allow-committed, also
+If it is t, only allow stgit patches; if \='allow-committed, also
 allow historical commits; if nil, also allow work tree and index."
   (if stgit-marked-patches
       stgit-marked-patches
@@ -2131,9 +2137,9 @@ previous file if point is at the last file within a patch."
   "Returns list of the merge stages that contain FILE, which
 must be an unmerged file.
 
-Stage 1, the common ancestor, is 'ancestor.
-Stage 2, HEAD, is 'head.
-Stage 3, MERGE_HEAD, is 'merge-head."
+Stage 1, the common ancestor, is \='ancestor.
+Stage 2, HEAD, is \='head.
+Stage 3, MERGE_HEAD, is \='merge-head."
   (let ((output (with-output-to-string
 		  (stgit-run-git-silent "ls-files" "-u" "-z" "--"
 					(stgit-file->file file))))
@@ -2951,7 +2957,7 @@ If HARD is non-nil, use the --hard flag."
   (stgit-assert-mode)
   (let ((cmd (if redo "redo" "undo")))
     (stgit-capture-output nil
-      (if arg
+      (if hard
           (when (or (and (stgit-index-empty-p)
                          (stgit-work-tree-empty-p))
                     (y-or-n-p (format "Hard %s may overwrite index/work tree changes.  Continue? "
