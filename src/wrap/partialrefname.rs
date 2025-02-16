@@ -101,7 +101,9 @@ pub(crate) fn partial_ref_name(input: &mut &str) -> ModalResult<PartialRefName> 
 
     let name = input.next_slice(split_offset);
 
-    if name.is_empty() || name == "-" || name.ends_with(".lock") {
+    if name.is_empty() || name == "-" {
+        Err(ErrMode::Backtrack(ContextError::from_input(input)))
+    } else if name.ends_with(".lock") {
         // Names ending with ".lock" are invalid and there is no recovery.
         Err(ErrMode::Cut(ContextError::from_input(input)))
     } else {
