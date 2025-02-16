@@ -479,7 +479,7 @@ checksum = "c57c477b645ee248b173bb1176b52dd528872f12c50375801a58aaf5ae91113f"
 dependencies = [
  "bstr",
  "itoa",
- "jiff",
+ "jiff 0.1.29",
  "thiserror",
 ]
 
@@ -1124,6 +1124,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "jiff"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba926fdd8e5b5e7f9700355b0831d8c416afe94b014b1023424037a187c9c582"
+dependencies = [
+ "jiff-tzdb-platform",
+ "log",
+ "portable-atomic",
+ "portable-atomic-util",
+ "serde",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "jiff-tzdb"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1490,7 +1504,7 @@ dependencies = [
  "gix",
  "indexmap",
  "is-terminal",
- "jiff",
+ "jiff 0.2.0",
  "serde",
  "serde_json",
  "strsim",
