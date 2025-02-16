@@ -9,7 +9,7 @@ use winnow::{
     combinator::{alt, delimited, opt, preceded, repeat, terminated},
     stream::Stream,
     token::{none_of, one_of},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 use super::{
@@ -20,7 +20,7 @@ use super::{
 };
 use crate::{branchloc::BranchLocator, wrap::partial_ref_name};
 
-pub(in super::super) fn range_revision_spec(input: &mut &str) -> PResult<RangeRevisionSpec> {
+pub(in super::super) fn range_revision_spec(input: &mut &str) -> ModalResult<RangeRevisionSpec> {
     alt((
         (branch_prefix, patch_range_bounds)
             .map(|(branch_loc, bounds)| RangeRevisionSpec::BranchRange { branch_loc, bounds }),
@@ -30,7 +30,7 @@ pub(in super::super) fn range_revision_spec(input: &mut &str) -> PResult<RangeRe
     .parse_next(input)
 }
 
-pub(in super::super) fn single_revision_spec(input: &mut &str) -> PResult<SingleRevisionSpec> {
+pub(in super::super) fn single_revision_spec(input: &mut &str) -> ModalResult<SingleRevisionSpec> {
     alt((
         (branch_prefix, patch_like_spec).map(|(branch_loc, patch_like)| {
             SingleRevisionSpec::Branch {
@@ -43,7 +43,7 @@ pub(in super::super) fn single_revision_spec(input: &mut &str) -> PResult<Single
     .parse_next(input)
 }
 
-fn branch_prefix(input: &mut &str) -> PResult<BranchLocator> {
+fn branch_prefix(input: &mut &str) -> ModalResult<BranchLocator> {
     terminated(branch_locator, ':').parse_next(input)
 }
 
@@ -58,7 +58,7 @@ impl std::fmt::Display for PrevCheckoutError {
 
 impl std::error::Error for PrevCheckoutError {}
 
-pub(crate) fn branch_locator(input: &mut &str) -> PResult<BranchLocator> {
+pub(crate) fn branch_locator(input: &mut &str) -> ModalResult<BranchLocator> {
     alt((
         delimited("@{-", digit1, "}")
             .try_map(|s: &str| s.parse::<usize>())
@@ -77,7 +77,7 @@ pub(crate) fn branch_locator(input: &mut &str) -> PResult<BranchLocator> {
     .parse_next(input)
 }
 
-fn patch_and_or_git_like_spec(input: &mut &str) -> PResult<SingleRevisionSpec> {
+fn patch_and_or_git_like_spec(input: &mut &str) -> ModalResult<SingleRevisionSpec> {
     use std::cmp::Ordering;
 
     let start_checkpoint = input.checkpoint();
@@ -111,20 +111,20 @@ fn patch_and_or_git_like_spec(input: &mut &str) -> PResult<SingleRevisionSpec> {
     }
 }
 
-pub(in super::super) fn patch_like_spec(input: &mut &str) -> PResult<PatchLikeSpec> {
+pub(in super::super) fn patch_like_spec(input: &mut &str) -> ModalResult<PatchLikeSpec> {
     (patch_locator, git_revision_suffix)
         .map(|(patch_loc, suffix)| PatchLikeSpec { patch_loc, suffix })
         .parse_next(input)
 }
 
-fn git_like_spec(input: &mut &str) -> PResult<String> {
+fn git_like_spec(input: &mut &str) -> ModalResult<String> {
     (partial_ref_name, git_revision_suffix)
         .take()
         .map(|s| s.to_string())
         .parse_next(input)
 }
 
-fn git_revision_suffix(input: &mut &str) -> PResult<GitRevisionSuffix> {
+fn git_revision_suffix(input: &mut &str) -> ModalResult<GitRevisionSuffix> {
     repeat::<_, _, Vec<&str>, _, _>(
         0..,
         alt((
@@ -139,23 +139,23 @@ fn git_revision_suffix(input: &mut &str) -> PResult<GitRevisionSuffix> {
     .map(|suffix: &str| GitRevisionSuffix(suffix.to_string()))
 }
 
-fn at_braced<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn at_braced<'s>(input: &mut &'s str) -> ModalResult<&'s str> {
     preceded('@', braced).parse_next(input)
 }
 
-fn caret_braced<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn caret_braced<'s>(input: &mut &'s str) -> ModalResult<&'s str> {
     preceded('^', braced).parse_next(input)
 }
 
-fn caret_number(input: &mut &str) -> PResult<Option<usize>> {
+fn caret_number(input: &mut &str) -> ModalResult<Option<usize>> {
     preceded('^', opt(unsigned_int)).parse_next(input)
 }
 
-pub(crate) fn tilde_number(input: &mut &str) -> PResult<Option<usize>> {
+pub(crate) fn tilde_number(input: &mut &str) -> ModalResult<Option<usize>> {
     preceded('~', opt(unsigned_int)).parse_next(input)
 }
 
-fn braced<'s>(input: &mut &'s str) -> PResult<&'s str> {
+fn braced<'s>(input: &mut &'s str) -> ModalResult<&'s str> {
     delimited(
         '{',
         take_escaped(none_of(['\\', '{', '}']), '\\', one_of(['\\', '{', '}'])),

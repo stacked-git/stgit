@@ -3,9 +3,9 @@
 use std::str::FromStr;
 
 use winnow::{
-    error::{ContextError, ErrMode, ErrorKind, ParserError},
+    error::{ContextError, ErrMode, ParserError},
     stream::Stream,
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 /// A partial git reference name.
@@ -53,7 +53,7 @@ impl FromStr for PartialRefName {
     }
 }
 
-pub(crate) fn partial_ref_name(input: &mut &str) -> PResult<PartialRefName> {
+pub(crate) fn partial_ref_name(input: &mut &str) -> ModalResult<PartialRefName> {
     let mut iter = input.iter_offsets().peekable();
     let mut start_index = 0;
     let mut prev = None;
@@ -101,22 +101,9 @@ pub(crate) fn partial_ref_name(input: &mut &str) -> PResult<PartialRefName> {
 
     let name = input.next_slice(split_offset);
 
-    if name.is_empty() {
-        Err(ErrMode::Backtrack(ContextError::from_error_kind(
-            input,
-            ErrorKind::Eof,
-        )))
-    } else if name == "-" {
-        Err(ErrMode::Backtrack(ContextError::from_error_kind(
-            input,
-            ErrorKind::Verify,
-        )))
-    } else if name.ends_with(".lock") {
+    if name.is_empty() || name == "-" || name.ends_with(".lock") {
         // Names ending with ".lock" are invalid and there is no recovery.
-        Err(ErrMode::Cut(ContextError::from_error_kind(
-            input,
-            ErrorKind::Verify,
-        )))
+        Err(ErrMode::Cut(ContextError::from_input(input)))
     } else {
         gix::refs::PartialName::try_from(name).expect("parser only allows valid names");
         Ok(PartialRefName(name.to_string()))

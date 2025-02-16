@@ -5,13 +5,13 @@
 use winnow::{
     ascii::digit1,
     combinator::{alt, opt},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 use super::Sign;
 
 /// Parse a sign character, i.e. `-` or `+`.
-pub(super) fn sign(input: &mut &str) -> PResult<Sign> {
+pub(super) fn sign(input: &mut &str) -> ModalResult<Sign> {
     alt(('-'.map(|_| Sign::Minus), '+'.map(|_| Sign::Plus))).parse_next(input)
 }
 
@@ -19,14 +19,14 @@ pub(super) fn sign(input: &mut &str) -> PResult<Sign> {
 ///
 /// Although the returned value is a [`usize`], it is validated as an [`isize`]. This
 /// ensures that potential sign conversions are more likely to succeed.
-pub(super) fn unsigned_int(input: &mut &str) -> PResult<usize> {
+pub(super) fn unsigned_int(input: &mut &str) -> ModalResult<usize> {
     digit1
         .try_map(|s: &str| s.parse::<isize>().map(|n| n as usize))
         .parse_next(input)
 }
 
 /// Parse a negative int. I.e. an int with a leading `-` sign.
-pub(super) fn negative_int(input: &mut &str) -> PResult<isize> {
+pub(super) fn negative_int(input: &mut &str) -> ModalResult<isize> {
     ('-', digit1)
         .take()
         .try_map(|s: &str| s.parse::<isize>())
@@ -34,7 +34,7 @@ pub(super) fn negative_int(input: &mut &str) -> PResult<isize> {
 }
 
 /// Parse a positive int with a leading `+` sign.
-pub(super) fn plusative_int(input: &mut &str) -> PResult<isize> {
+pub(super) fn plusative_int(input: &mut &str) -> ModalResult<isize> {
     ('+', digit1)
         .take()
         .try_map(|s: &str| s.parse::<isize>())
@@ -42,7 +42,7 @@ pub(super) fn plusative_int(input: &mut &str) -> PResult<isize> {
 }
 
 /// Parse a signed int, but disallow an explicit `+` sign.
-pub(super) fn nonplussed_int(input: &mut &str) -> PResult<isize> {
+pub(super) fn nonplussed_int(input: &mut &str) -> ModalResult<isize> {
     (opt('-'), digit1)
         .take()
         .try_map(|s: &str| s.parse::<isize>())

@@ -5,7 +5,7 @@
 use winnow::{
     ascii::hex_digit1,
     combinator::{alt, opt, repeat},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 use super::{
@@ -15,7 +15,7 @@ use super::{
 };
 use crate::patch::{PatchId, PatchLocator, PatchOffsetAtom, PatchOffsets};
 
-pub(in super::super) fn patch_locator(input: &mut &str) -> PResult<PatchLocator> {
+pub(in super::super) fn patch_locator(input: &mut &str) -> ModalResult<PatchLocator> {
     alt((
         patch_locator_name,
         patch_locator_from_last,
@@ -25,7 +25,7 @@ pub(in super::super) fn patch_locator(input: &mut &str) -> PResult<PatchLocator>
     .parse_next(input)
 }
 
-fn patch_locator_name(input: &mut &str) -> PResult<PatchLocator> {
+fn patch_locator_name(input: &mut &str) -> ModalResult<PatchLocator> {
     (patch_name, patch_offsets)
         .map(|(patchname, offsets)| PatchLocator {
             id: PatchId::Name(patchname),
@@ -34,7 +34,7 @@ fn patch_locator_name(input: &mut &str) -> PResult<PatchLocator> {
         .parse_next(input)
 }
 
-fn patch_locator_from_last(input: &mut &str) -> PResult<PatchLocator> {
+fn patch_locator_from_last(input: &mut &str) -> ModalResult<PatchLocator> {
     ('^', opt(nonplussed_int), patch_offsets)
         .map(|(_, below_last, offsets)| PatchLocator {
             id: PatchId::BelowLast(below_last),
@@ -43,7 +43,7 @@ fn patch_locator_from_last(input: &mut &str) -> PResult<PatchLocator> {
         .parse_next(input)
 }
 
-pub(in super::super) fn patch_locator_top(input: &mut &str) -> PResult<PatchLocator> {
+pub(in super::super) fn patch_locator_top(input: &mut &str) -> ModalResult<PatchLocator> {
     alt((
         ('@', patch_offsets).map(|(_, offsets)| PatchLocator {
             id: PatchId::Top,
@@ -57,7 +57,7 @@ pub(in super::super) fn patch_locator_top(input: &mut &str) -> PResult<PatchLoca
     .parse_next(input)
 }
 
-pub(in super::super) fn patch_locator_base(input: &mut &str) -> PResult<PatchLocator> {
+pub(in super::super) fn patch_locator_base(input: &mut &str) -> ModalResult<PatchLocator> {
     ("{base}", patch_offsets)
         .map(|(_, offsets)| PatchLocator {
             id: PatchId::Base,
@@ -66,28 +66,28 @@ pub(in super::super) fn patch_locator_base(input: &mut &str) -> PResult<PatchLoc
         .parse_next(input)
 }
 
-pub(in super::super) fn patch_offsets(input: &mut &str) -> PResult<PatchOffsets> {
+pub(in super::super) fn patch_offsets(input: &mut &str) -> ModalResult<PatchOffsets> {
     repeat::<_, _, Vec<PatchOffsetAtom>, _, _>(0.., patch_offset_atom)
         .take()
         .map(|s: &str| PatchOffsets(s.to_string()))
         .parse_next(input)
 }
 
-pub(in super::super) fn patch_offset_atoms(input: &mut &str) -> PResult<Vec<PatchOffsetAtom>> {
+pub(in super::super) fn patch_offset_atoms(input: &mut &str) -> ModalResult<Vec<PatchOffsetAtom>> {
     repeat(0.., patch_offset_atom).parse_next(input)
 }
 
-pub(in super::super) fn patch_offset_atom(input: &mut &str) -> PResult<PatchOffsetAtom> {
+pub(in super::super) fn patch_offset_atom(input: &mut &str) -> ModalResult<PatchOffsetAtom> {
     alt((patch_offset_atom_plus, patch_offset_atom_tilde)).parse_next(input)
 }
 
-fn patch_offset_atom_plus(input: &mut &str) -> PResult<PatchOffsetAtom> {
+fn patch_offset_atom_plus(input: &mut &str) -> ModalResult<PatchOffsetAtom> {
     ('+', opt(unsigned_int))
         .map(|(_, n)| PatchOffsetAtom::Plus(n))
         .parse_next(input)
 }
 
-fn patch_offset_atom_tilde(input: &mut &str) -> PResult<PatchOffsetAtom> {
+fn patch_offset_atom_tilde(input: &mut &str) -> ModalResult<PatchOffsetAtom> {
     ('~', opt(unsigned_int))
         .map(|(_, n)| PatchOffsetAtom::Tilde(n))
         .parse_next(input)
@@ -95,11 +95,11 @@ fn patch_offset_atom_tilde(input: &mut &str) -> PResult<PatchOffsetAtom> {
 
 pub(in super::super) fn oid_prefix_offsets(
     input: &mut &str,
-) -> PResult<(gix::hash::Prefix, PatchOffsets)> {
+) -> ModalResult<(gix::hash::Prefix, PatchOffsets)> {
     (oid_prefix, patch_offsets).parse_next(input)
 }
 
-fn oid_prefix(input: &mut &str) -> PResult<gix::hash::Prefix> {
+fn oid_prefix(input: &mut &str) -> ModalResult<gix::hash::Prefix> {
     hex_digit1
         .try_map(gix::hash::Prefix::from_hex)
         .parse_next(input)
@@ -107,7 +107,7 @@ fn oid_prefix(input: &mut &str) -> PResult<gix::hash::Prefix> {
 
 pub(in super::super) fn sign_number_offsets(
     input: &mut &str,
-) -> PResult<(Option<Sign>, Option<usize>, PatchOffsets)> {
+) -> ModalResult<(Option<Sign>, Option<usize>, PatchOffsets)> {
     alt((
         (negative_int, patch_offsets)
             .map(|(n, offsets)| (Some(Sign::Minus), Some(n.unsigned_abs()), offsets)),

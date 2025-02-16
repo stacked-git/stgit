@@ -3,14 +3,14 @@
 //! Parsing support for [`PatchName`].
 
 use winnow::{
-    error::{ContextError, ErrMode, ErrorKind, ParserError},
+    error::{ContextError, ErrMode, ParserError},
     stream::Stream,
-    PResult,
+    ModalResult,
 };
 
 use crate::patch::PatchName;
 
-pub(super) fn patch_name(input: &mut &str) -> PResult<PatchName> {
+pub(super) fn patch_name(input: &mut &str) -> ModalResult<PatchName> {
     let mut iter = input.char_indices().peekable();
     let mut start_index = 0;
 
@@ -50,21 +50,12 @@ pub(super) fn patch_name(input: &mut &str) -> PResult<PatchName> {
     let name = input.next_slice(split_offset);
 
     if name.is_empty() {
-        Err(ErrMode::Backtrack(ContextError::from_error_kind(
-            input,
-            ErrorKind::Eof,
-        )))
+        Err(ErrMode::Backtrack(ContextError::from_input(input)))
     } else if name.ends_with(".lock") {
         // Names ending with ".lock" are invalid and there is no recovery.
-        Err(ErrMode::Cut(ContextError::from_error_kind(
-            input,
-            ErrorKind::Verify,
-        )))
+        Err(ErrMode::Cut(ContextError::from_input(input)))
     } else if name == "@" || name == "{base}" {
-        Err(ErrMode::Backtrack(ContextError::from_error_kind(
-            input,
-            ErrorKind::Verify,
-        )))
+        Err(ErrMode::Backtrack(ContextError::from_input(input)))
     } else {
         // This should be detected above.
         debug_assert!(!name.ends_with('.'));
