@@ -1125,9 +1125,9 @@ dependencies = [
 
 [[package]]
 name = "jiff"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba926fdd8e5b5e7f9700355b0831d8c416afe94b014b1023424037a187c9c582"
+checksum = "3590fea8e9e22d449600c9bbd481a8163bef223e4ff938e5f55899f8cf1adb93"
 dependencies = [
  "jiff-tzdb-platform",
  "log",
@@ -1504,7 +1504,7 @@ dependencies = [
  "gix",
  "indexmap",
  "is-terminal",
- "jiff 0.2.0",
+ "jiff 0.2.1",
  "serde",
  "serde_json",
  "strsim",
