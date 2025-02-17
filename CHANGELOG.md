@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.5.2 2025-02-16
+
+### Fixed
+
+- fix(stgit.el): various compile warnings
+- fix(stgit.el): Replace depercated cl function calls with new style
+- fix(stgit.el): checkdoc warnings
+- fix(stgit.el): emacs pre-pending "Summary: " to log-edit buffers
+
+### Changed
+
+- chore: update jiff to 0.2.0
+- chore: update winnow to 0.7.2
+- chore: resolve winnow deprecations
+- chore: update dependencies
+
+
 ## 2.5.1 2025-01-18
 
 ### Fixed
