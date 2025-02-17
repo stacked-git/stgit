@@ -94,9 +94,11 @@ The following Makefile targets are available to build packages:
 - `deb-i686`: build `stgit_x.y.z_i386.deb`
 - `deb-x86_64`: build `stgit_x.y.z_amd64.deb`
 - `deb-aarch64`: build `stgit_x.y.z_arm64.deb`
+- `deb-riscv64`: build `stgit_x.y.z_riscv64.deb`
 - `rpm-i686`: build `stgit-x.y.z-w.i686.rpm`
 - `rpm-x86_64`: build `stgit-x.y.z-w.x86_64.rpm`
 - `rpm-aarch64`: build `stgit-x.y.z-w.aarch64.rpm`
+- `rpm-riscv64`: build `stgit-x.y.z-w.riscv64.rpm`
 
 The generated package files are output to `target/pkg/`.
 
@@ -106,6 +108,7 @@ Rust Dependencies
 To build these packages, rust needs to be setup for some additional targets:
 
 - aarch64-unknown-linux-musl
+- riscv64gc-unknown-linux-musl
 - i686-unknown-linux-musl
 - x86_64-unknown-linux-musl
 
@@ -121,19 +124,22 @@ install`.
 Linker Setup
 ============
 
-When cross-compiling, e.g. when building aarch64 targets from an x86_64
-host, the cross compiler linker needs to be installed and configured.
+When cross-compiling, e.g. when building aarch64 or riscv64 targets from
+an x86_64 host, the cross compiler linker needs to be installed and configured.
 
-On Arch Linux, install `aarch64-linux-gnu-gcc`.
+On Arch Linux, install `aarch64-linux-gnu-gcc` and `riscv64-linux-gnu-gcc`.
 
 In Debian/Ubuntu environments, install the `gcc-aarch64-linux-gnu`
-package.
+and `gcc-riscv64-linux-gnu` packages.
 
 To configure, add the following to your `~/.cargo/config.toml` file:
 
 ```toml
 [target.aarch64-unknown-linux-musl]
 linker = "aarch64-linux-gnu-gcc"
+
+[target.riscv64gc-unknown-linux-musl]
+linker = "riscv64-linux-gnu-gcc"
 ```
 
 [musl]: https://musl.libc.org/

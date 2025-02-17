@@ -20,7 +20,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          targets: i686-unknown-linux-musl,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+          targets: i686-unknown-linux-musl,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl,riscv64gc-unknown-linux-musl
           components: clippy, rustfmt
       - name: Build
         run: |
@@ -70,9 +70,9 @@ jobs:
         with:
           crate: cargo-generate-rpm
           version: "^0.15.0"
-      - name: Install aarch64 Dependencies
+      - name: Install aarch64 and riscv64 Dependencies
         run: |
-          sudo apt-get install gcc-aarch64-linux-gnu
+          sudo apt-get install gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu
       - name: Static Build x86_64
         run: |
           make build-static-x86_64
@@ -85,11 +85,19 @@ jobs:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
         run: |
           make build-static-aarch64
+      - name: Static Build riscv64
+        env:
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: "riscv64-linux-gnu-gcc"
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_STRIP: "riscv64-linux-gnu-strip"
+        run: |
+          make build-static-riscv64
       - name: Build Packages
         env:
           USE_ASCIIDOCTOR: "1"
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: "riscv64-linux-gnu-gcc"
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_STRIP: "riscv64-linux-gnu-strip"
         run: |
           make packages
       - name: Upload Packages

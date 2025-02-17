@@ -66,6 +66,9 @@ build-static-x86_64:
 build-static-aarch64:
 	$(CARGO) build --profile=for-pkg --target aarch64-unknown-linux-musl --no-default-features
 
+build-static-riscv64:
+	$(CARGO) build --profile=for-pkg --target riscv64gc-unknown-linux-musl --no-default-features
+
 target/pkg:
 	mkdir -p $@
 
@@ -78,7 +81,10 @@ deb-x86_64: completion doc target/pkg build-static-x86_64
 deb-aarch64: completion doc target/pkg build-static-aarch64
 	$(CARGO_OFFLINE) deb --no-build --no-strip --output target/pkg/ --profile=for-pkg --target=aarch64-unknown-linux-musl
 
-debs: deb-i686 deb-x86_64 deb-aarch64
+deb-riscv64: completion doc target/pkg build-static-riscv64
+	$(CARGO_OFFLINE) deb --no-build --no-strip --output target/pkg/ --profile=for-pkg --target=riscv64gc-unknown-linux-musl
+
+debs: deb-i686 deb-x86_64 deb-aarch64 deb-riscv64
 
 rpm-i686: completion doc target/pkg build-static-i686
 	$(CARGO_OFFLINE) generate-rpm --output target/pkg/ --profile=for-pkg --target=i686-unknown-linux-musl
@@ -89,14 +95,17 @@ rpm-x86_64: completion doc target/pkg build-static-x86_64
 rpm-aarch64: completion doc target/pkg build-static-aarch64
 	$(CARGO_OFFLINE) generate-rpm --output target/pkg/ --profile=for-pkg --target=aarch64-unknown-linux-musl
 
-rpms: rpm-i686 rpm-x86_64 rpm-aarch64
+rpm-riscv64: completion doc target/pkg build-static-riscv64
+	$(CARGO_OFFLINE) generate-rpm --output target/pkg/ --profile=for-pkg --target=riscv64gc-unknown-linux-musl
+
+rpms: rpm-i686 rpm-x86_64 rpm-aarch64 rpm-riscv64
 
 packages: debs rpms
 
 .PHONY: packages
-.PHONY: debs deb-i686 deb-x86_64 deb-aarch64
-.PHONY: rpms rpm-i686 rpm-x86_64 rpm-aarch64
-.PHONY: build-static-i686 build-static-x86_64 build-static-aarch64
+.PHONY: debs deb-i686 deb-x86_64 deb-aarch64 deb-riscv64
+.PHONY: rpms rpm-i686 rpm-x86_64 rpm-aarch64 rpm-riscv64
+.PHONY: build-static-i686 build-static-x86_64 build-static-aarch64 build-static-riscv64
 
 
 lint: lint-format lint-clippy lint-api-doc lint-t unit-test
