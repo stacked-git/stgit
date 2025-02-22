@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.5.3 2025-02-22
+
+### Added
+
+- build: statically linked packages for riscv64
+
+### Changed
+
+- chore: update dependencies
+- refactor(stgit.el): use space-based indentation consistently
+
+
 ## 2.5.2 2025-02-16
 
 ### Fixed
