@@ -359,7 +359,7 @@ directory DIR or `default-directory'"
   (setq dir (file-name-as-directory dir))
   (let ((buffer (stgit-find-buffer dir)))
     (switch-to-buffer (or buffer
-			  (create-stgit-buffer dir)))))
+                          (create-stgit-buffer dir)))))
 
 (cl-defstruct (stgit-patch
             (:conc-name stgit-patch->))
@@ -448,13 +448,13 @@ Returns the result of the last form in BODY."
        (setq default-directory stgit-dir)
        (setq buffer-read-only t))
      (prog1
-	 (let ((standard-output output-buf))
-	   ,@body)
+         (let ((standard-output output-buf))
+           ,@body)
        (with-current-buffer output-buf
-	 (set-buffer-modified-p nil)
-	 (setq buffer-read-only t)
-	 (if (< (point-min) (point-max))
-	     (display-buffer output-buf t))))))
+         (set-buffer-modified-p nil)
+         (setq buffer-read-only t)
+         (if (< (point-min) (point-max))
+             (display-buffer output-buf t))))))
 
 (defun stgit-make-run-args (args)
   "Return a copy of ARGS with its elements converted to strings."
@@ -659,13 +659,13 @@ using (make-hash-table :test \='equal)."
         stgit-worktree-node nil)
   (let (all-patchsyms base)
     (when (and stgit-show-committed
-	       (> stgit-committed-count 0)
-	       (setq base (condition-case nil
-			      (stgit-id "{base}")
-			    (error nil))))
+               (> stgit-committed-count 0)
+               (setq base (condition-case nil
+                              (stgit-id "{base}")
+                            (error nil))))
       (let* ((show-svn stgit-show-svn)
              (svn-hash stgit-svn-find-rev-hash)
-	     (nentries (format "-%s" stgit-committed-count)))
+             (nentries (format "-%s" stgit-committed-count)))
         (with-temp-buffer
           (let* ((standard-output (current-buffer))
                  (fmt (stgit-line-format))
@@ -852,7 +852,7 @@ during the operation."
 Cf. `stgit-file-type-strings' and `stgit-file-type-change-string'."
   (let ((type-str (assoc type stgit-file-type-strings)))
     (or (and type-str (cdr type-str))
-	(format "unknown type %o" type))))
+        (format "unknown type %o" type))))
 
 (defun stgit-file-type-change-string (old-perm new-perm)
   "Return string describing file type change from OLD-PERM to NEW-PERM.
@@ -879,7 +879,7 @@ Cf. `stgit-file-type-change-string'."
           (zerop new-perm))
       ""
     (let* ((modified       (logxor old-perm new-perm))
-	   (not-x-modified (logand (logxor old-perm new-perm) #o666)))
+           (not-x-modified (logand (logxor old-perm new-perm) #o666)))
       (cond ((zerop modified) "")
             ((and (zerop not-x-modified)
                   (or (and (eq #o111 (logand old-perm #o111))
@@ -908,31 +908,31 @@ Cf. `stgit-file-type-change-string'."
 If NO-QUOTES is non-nil, do not enclose the result in double quotes."
   (if (stgit-escape-file-name-p name)
     (concat (if no-quotes "" "\"")
-	    (mapconcat (lambda (c)
-			 (cl-case c
-			   (?\t "\\t")
-			   (?\n "\\n")
-			   (?\" "\\\"")
-			   (?\\ "\\\\")
-			   (t (char-to-string c))))
-		       name "")
-	    (if no-quotes "" "\""))
+            (mapconcat (lambda (c)
+                         (cl-case c
+                           (?\t "\\t")
+                           (?\n "\\n")
+                           (?\" "\\\"")
+                           (?\\ "\\\\")
+                           (t (char-to-string c))))
+                       name "")
+            (if no-quotes "" "\""))
     name))
 
 (defun stgit-describe-copy-or-rename (file)
   (let* ((arrow    (concat " "
-			   (propertize "->" 'face 'stgit-description-face)
-			   " "))
-	 (esc-from (stgit-file->cr-from file))
-	 (esc-to   (stgit-file->cr-to   file))
-	 (quote    "")
-	 from to common-head common-tail)
+                           (propertize "->" 'face 'stgit-description-face)
+                           " "))
+         (esc-from (stgit-file->cr-from file))
+         (esc-to   (stgit-file->cr-to   file))
+         (quote    "")
+         from to common-head common-tail)
 
     (when (or (stgit-escape-file-name-p esc-from)
-	      (stgit-escape-file-name-p esc-to))
+              (stgit-escape-file-name-p esc-to))
       (setq esc-from (stgit-escape-file-name esc-from t)
-	    esc-to   (stgit-escape-file-name esc-to t)
-	    quote    "\""))
+            esc-to   (stgit-escape-file-name esc-to t)
+            quote    "\""))
 
     (when stgit-abbreviate-copies-and-renames
       (setq from (split-string esc-from "/")
@@ -956,7 +956,7 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
 
     (if (or common-head common-tail)
         (concat quote
-		(if common-head
+                (if common-head
                     (mapconcat #'identity common-head "/")
                   "")
                 (if common-head "/" "")
@@ -969,7 +969,7 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
                 (if common-tail
                     (mapconcat #'identity common-tail "/")
                   "")
-		quote)
+                quote)
       (concat quote esc-from arrow esc-to quote))))
 
 (defun stgit-file-pp (file)
@@ -1238,7 +1238,7 @@ With prefix argument, open a buffer with that revision of the file."
   (stgit-find-file t)
   (let ((filename (file-name-nondirectory buffer-file-name)))
     (smerge-ediff (concat "*" filename " GIT*")
-		  (concat "*" filename " PATCH*"))))
+                  (concat "*" filename " PATCH*"))))
 
 (defun stgit-quit ()
   "Hide the stgit buffer."
@@ -1307,8 +1307,8 @@ With prefix argument, open a buffer with that revision of the file."
          (goto-char (point-min)))
         (t
          (let ((patch (stgit-patch-at-point)))
-	   (when (stgit-patched-file-at-point)
-	     (setq arg (1- arg)))
+           (when (stgit-patched-file-at-point)
+             (setq arg (1- arg)))
            (ewoc-goto-prev stgit-ewoc arg)
            (unless (zerop arg)
              (when (eq patch (stgit-patch-at-point))
@@ -1792,7 +1792,7 @@ for the different values MODE can have."
                       (expand-file-name buffer-file-name)))))
          (gitdir (and dir (condition-case nil (git-get-top-dir dir)
                             (error nil))))
-	 (buffer (and gitdir (stgit-find-buffer gitdir))))
+         (buffer (and gitdir (stgit-find-buffer gitdir))))
     (when buffer
       (stgit-post-refresh buffer (or mode :work)))))
 
@@ -1892,7 +1892,7 @@ line of PATCHSYM and return :patch."
   (interactive)
   (stgit-assert-mode)
   (unless (zerop (stgit-capture-output nil
-		   (stgit-run "init")))
+                   (stgit-run "init")))
     (error "Command 'stg init' failed"))
   (stgit-reload))
 
@@ -1959,16 +1959,16 @@ line of PATCHSYM and return :patch."
   (let ((old-patchsym (stgit-patch-name-at-point t t)))
     (unless (string-equal (symbol-name old-patchsym) name)
       (stgit-capture-output nil
-	(stgit-run "rename" "--" old-patchsym name))
+        (stgit-run "rename" "--" old-patchsym name))
       (let ((name-sym (intern name)))
-	(when (memq old-patchsym stgit-expanded-patches)
-	  (setq stgit-expanded-patches
-		(cons name-sym (delq old-patchsym stgit-expanded-patches))))
-	(when (memq old-patchsym stgit-marked-patches)
-	  (setq stgit-marked-patches
-		(cons name-sym (delq old-patchsym stgit-marked-patches))))
-	(stgit-reload)
-	(stgit-goto-patch name-sym)))))
+        (when (memq old-patchsym stgit-expanded-patches)
+          (setq stgit-expanded-patches
+                (cons name-sym (delq old-patchsym stgit-expanded-patches))))
+        (when (memq old-patchsym stgit-marked-patches)
+          (setq stgit-marked-patches
+                (cons name-sym (delq old-patchsym stgit-marked-patches))))
+        (stgit-reload)
+        (stgit-goto-patch name-sym)))))
 
 (defun stgit-reload-or-repair (repair)
   "Update the contents of the StGit buffer (`stgit-reload').
@@ -1997,7 +1997,7 @@ If SKIP-CURRENT is not nil, do not include the current branch."
   (let ((output (with-output-to-string
                   (stgit-run "branch" "--list")))
         (pattern (format "^%c\\s-+%c\\s-+\\(\\S-+\\)"
-			 (if skip-current ?\  ?.)
+                         (if skip-current ?\  ?.)
                          (if all ?. ?s)))
         (start 0)
         result)
@@ -2018,38 +2018,38 @@ If SKIP-CURRENT is not nil, do not include the current branch."
   (let ((merge (not (and (stgit-index-empty-p) (stgit-work-tree-empty-p)))))
 
     (when (cond ((and merge
-		      (not (yes-or-no-p
-			    "Attempt to merge uncommitted changes? ")))
-		 nil)
+                      (not (yes-or-no-p
+                            "Attempt to merge uncommitted changes? ")))
+                 nil)
 
-		((member branch (stgit-available-branches t))
-		 (stgit-capture-output nil
-		   (apply 'stgit-run
-			  (append '("branch")
-				  (and merge '("--merge"))
-				  '("--")
-				  (list branch))))
-		 t)
-		((not (string-match stgit-allowed-branch-name-re branch))
-		 (error "Invalid branch name"))
-		(merge
-		 (error "Cannot merge changes into a new branch"))
-		((yes-or-no-p (format "Create branch \"%s\"? " branch))
-		 (let ((branch-point (completing-read
-				      "Branch from (default current branch): "
-				      (stgit-available-branches))))
-		   (stgit-capture-output nil
-		     (apply 'stgit-run
-			    `("branch" "--create" "--"
-			      ,branch
-			      ,@(unless (zerop (length branch-point))
-				  (list branch-point)))))
-		   t)))
+                ((member branch (stgit-available-branches t))
+                 (stgit-capture-output nil
+                   (apply 'stgit-run
+                          (append '("branch")
+                                  (and merge '("--merge"))
+                                  '("--")
+                                  (list branch))))
+                 t)
+                ((not (string-match stgit-allowed-branch-name-re branch))
+                 (error "Invalid branch name"))
+                (merge
+                 (error "Cannot merge changes into a new branch"))
+                ((yes-or-no-p (format "Create branch \"%s\"? " branch))
+                 (let ((branch-point (completing-read
+                                      "Branch from (default current branch): "
+                                      (stgit-available-branches))))
+                   (stgit-capture-output nil
+                     (apply 'stgit-run
+                            `("branch" "--create" "--"
+                              ,branch
+                              ,@(unless (zerop (length branch-point))
+                                  (list branch-point)))))
+                   t)))
 
       ;; Do not expand any (normal) patches in the new branch
       (setq stgit-expanded-patches
-	    (cl-remove-if-not (lambda (p) (memq p '(:work :index)))
-			   stgit-expanded-patches))
+            (cl-remove-if-not (lambda (p) (memq p '(:work :index)))
+                              stgit-expanded-patches))
 
       (stgit-reload))))
 
@@ -2141,16 +2141,16 @@ Stage 1, the common ancestor, is \='ancestor.
 Stage 2, HEAD, is \='head.
 Stage 3, MERGE_HEAD, is \='merge-head."
   (let ((output (with-output-to-string
-		  (stgit-run-git-silent "ls-files" "-u" "-z" "--"
-					(stgit-file->file file))))
-	stages
-	start)
+                  (stgit-run-git-silent "ls-files" "-u" "-z" "--"
+                                        (stgit-file->file file))))
+        stages
+        start)
     (while (string-match "\\([0-7]*\\) \\([0-9A-Fa-f]\\{40\\}\\) \\([1-3]\\)\t\\([^\0]*\\)\0"
-			 output start)
+                         output start)
       (setq stages (cons (elt [ancestor head merge-head]
-			      (1- (string-to-number (match-string 3 output))))
-			 stages)
-	    start (match-end 0)))
+                              (1- (string-to-number (match-string 3 output))))
+                         stages)
+            start (match-end 0)))
     stages))
 
 (defun stgit-revert-file ()
@@ -2171,40 +2171,40 @@ working tree."
                              ((not (memq file-status '(copy add unknown)))
                               (stgit-file->file patched-file))))
          (next-file    (stgit-neighbour-file))
-	 (rm-disk-file (when (memq file-status '(ignore unknown))
-			 (stgit-file->file patched-file)))
-	 add-file)
+         (rm-disk-file (when (memq file-status '(ignore unknown))
+                         (stgit-file->file patched-file)))
+         add-file)
     (unless (memq patch-name '(:work :index))
       (error "No index or working tree file on this line"))
 
     (when (eq file-status 'unmerged)
       (let ((stages (stgit-unmerged-file-stages patched-file)))
-	(if (memq 'head stages)
-	    (setq add-file (stgit-file->file patched-file))
-	  (setq rm-file (stgit-file->file patched-file)
-		co-file nil))))
+        (if (memq 'head stages)
+            (setq add-file (stgit-file->file patched-file))
+          (setq rm-file (stgit-file->file patched-file)
+                co-file nil))))
 
     (when (yes-or-no-p (cond (rm-disk-file
-			      (format "Delete %s? " rm-disk-file))
-			     ((and rm-file co-file)
-			      "Revert 2 files? ")
-			     (t
-			      (format "Revert %s? " (or rm-file co-file)))))
+                              (format "Delete %s? " rm-disk-file))
+                             ((and rm-file co-file)
+                              "Revert 2 files? ")
+                             (t
+                              (format "Revert %s? " (or rm-file co-file)))))
       (when rm-disk-file
-	(dired-delete-file rm-disk-file dired-recursive-deletes))
+        (dired-delete-file rm-disk-file dired-recursive-deletes))
 
       (stgit-capture-output nil
-	(when rm-file
-	  (stgit-run-git "rm" "-f" "-q" "--" rm-file))
-	(when add-file
-	  (stgit-run-git "add" "--" add-file))
-	(when co-file
-	  (let ((rev (when (or (eq file-status 'unmerged)
-			       (eq patch-name :index))
-		       '("HEAD"))))
-	    (apply #'stgit-run-git
-		   "checkout"
-		   `(,@rev "--" ,co-file)))))
+        (when rm-file
+          (stgit-run-git "rm" "-f" "-q" "--" rm-file))
+        (when add-file
+          (stgit-run-git "add" "--" add-file))
+        (when co-file
+          (let ((rev (when (or (eq file-status 'unmerged)
+                               (eq patch-name :index))
+                       '("HEAD"))))
+            (apply #'stgit-run-git
+                   "checkout"
+                   `(,@rev "--" ,co-file)))))
       (stgit-reload)
       (stgit-goto-patch patch-name next-file))))
 
@@ -2368,9 +2368,9 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
   (if (keywordp patchsym)
       patchsym
     (let ((result (with-output-to-string
-		    (stgit-run-silent "id" "--" patchsym))))
+                    (stgit-run-silent "id" "--" patchsym))))
       (unless (string-match "^\\([0-9A-Fa-f]\\{40\\}\\)$" result)
-	(error "Cannot find commit id for %s" patchsym))
+        (error "Cannot find commit id for %s" patchsym))
       (match-string 1 result))))
 
 (defun stgit-whitespace-diff-arg (arg)
@@ -2536,15 +2536,15 @@ file ended up.  You can then jump to the file with \
   (interactive)
   (stgit-assert-mode)
   (let* ((patched-file   (or (stgit-patched-file-at-point)
-			     (error "No file on the current line")))
-	 (patched-status (stgit-file->status patched-file)))
+                             (error "No file on the current line")))
+         (patched-status (stgit-file->status patched-file)))
     (when (eq patched-status 'unmerged)
       (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
     (let* ((patch      (stgit-patch-at-point))
            (patch-name (stgit-patch->name patch))
            (mark-file  (if (eq patched-status 'rename)
-			   (stgit-file->cr-to patched-file)
-			 (stgit-file->file patched-file)))
+                           (stgit-file->cr-to patched-file)
+                         (stgit-file->file patched-file)))
            (point-file  (if (eq patched-status 'rename)
                             (stgit-file->cr-from patched-file)
                           (stgit-neighbour-file))))
@@ -2738,8 +2738,8 @@ the work tree and index."
 
   (let ((npatches (length patchsyms)))
     (when (yes-or-no-p (format "Really delete %d patch%s%s? "
-			       npatches
-			       (if (= 1 npatches) "" "es")
+                               npatches
+                               (if (= 1 npatches) "" "es")
                                (if spill-p
                                    " (spilling contents to index)"
                                  "")))
