@@ -332,7 +332,6 @@ impl SingleRevisionSpec {
             SingleRevisionSpec::PatchAndGitLike(patch_like, git_like) => {
                 patch_like.resolve_object(repo, stack).or_else(|e| {
                     repo.rev_parse_single_ex(git_like)
-                        .map_err(anyhow::Error::from)
                         .and_then(|id| id.object().map_err(anyhow::Error::from))
                         .map_err(|_| e)
                 })?
