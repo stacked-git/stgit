@@ -1,4 +1,4 @@
-;;; stgit.el --- major mode for StGit interaction
+;;; stgit.el --- major mode for StGit interaction  -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2007-2013 David Kågedal
 ;;
@@ -543,20 +543,18 @@ been advised to update the stgit status when necessary.")
     (ewoc-invalidate (car stgit-worktree-node) (cdr stgit-worktree-node))))
 
 (defun stgit-run-series-insert-index (ewoc)
-  ;; TODO: non-lexical stuff happening here (`index-node' and `worktree-node').
-  ;; Fix this before enabling lexical binding.
-  (setq index-node    (cons ewoc (ewoc-enter-last ewoc
-                                                  (make-stgit-patch
-                                                   :status 'index
-                                                   :name :index
-                                                   :desc nil
-                                                   :empty nil)))
-        worktree-node (cons ewoc (ewoc-enter-last ewoc
-                                                  (make-stgit-patch
-                                                   :status 'work
-                                                   :name :work
-                                                   :desc nil
-                                                   :empty nil)))))
+  (setq stgit-index-node    (cons ewoc (ewoc-enter-last ewoc
+                                                        (make-stgit-patch
+                                                         :status 'index
+                                                         :name :index
+                                                         :desc nil
+                                                         :empty nil)))
+        stgit-worktree-node (cons ewoc (ewoc-enter-last ewoc
+                                                        (make-stgit-patch
+                                                         :status 'work
+                                                         :name :work
+                                                         :desc nil
+                                                         :empty nil)))))
 
 (defun stgit-get-position (&optional position)
   "Return `stgit-mode' position information at POSITION (point by
@@ -708,9 +706,7 @@ using (make-hash-table :test \='equal)."
                                     :desc   desc
                                     :empty  empty)))
                 (forward-line 1)))))))
-    (let ((inserted-index (not stgit-show-worktree))
-          index-node
-          worktree-node)
+    (let ((inserted-index (not stgit-show-worktree)))
       (with-temp-buffer
         (let* ((standard-output (current-buffer))
                (exit-status (stgit-run-silent "series"
@@ -752,9 +748,7 @@ using (make-hash-table :test \='equal)."
               (forward-line 1)))))
       (unless inserted-index
         (stgit-run-series-insert-index ewoc))
-      (setq stgit-index-node     index-node
-            stgit-worktree-node  worktree-node
-            stgit-marked-patches (cl-intersection stgit-marked-patches
+      (setq stgit-marked-patches (cl-intersection stgit-marked-patches
                                                all-patchsyms)))))
 
 (defun stgit-current-branch ()
