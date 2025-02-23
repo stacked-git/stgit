@@ -672,6 +672,7 @@ using (make-hash-table :test \='equal)."
                  (commit-abbrev (when (string-match "%-\\([0-9]+\\)n" fmt)
                                   (string-to-number (match-string 1 fmt))))
                  (exit-status (stgit-run-git-silent "--no-pager" "log"
+                                                    "--no-color"
                                                     "--reverse"
                                                     "--pretty=oneline"
                                                     nentries
@@ -2427,7 +2428,7 @@ which stage to diff against in the case of unmerged files."
                                 (if (eq patch-id :index)
                                     '("--cached")
                                   (list unmerged-stage))))
-               (let ((args (append '("show" "-O" "--patch-with-stat")
+               (let ((args (append '("show" "--color=never" "-O" "--patch-with-stat")
                                    `("-O" ,(stgit-find-copies-harder-diff-arg))
                                    (and space-arg (list "-O" space-arg))
                                    (list (stgit-patch-name-at-point)))))
