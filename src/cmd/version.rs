@@ -38,7 +38,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let license_id = env!("CARGO_PKG_LICENSE");
         println!(
             "Stacked Git {pkg_version}{hash_suffix}\n\
-             Copyright (C) 2005-2024 StGit authors\n\
+             Copyright (C) 2005-2025 StGit authors\n\
              This is free software: you are free to change and redistribute it.\n\
              There is NO WARRANTY, to the extent permitted by law.\n\
              SPDX-License-Identifier: {license_id}",
