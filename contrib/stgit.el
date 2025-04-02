@@ -334,6 +334,15 @@ format characters are recognized:
   "StGit mode face used for modified file status."
   :group 'stgit-faces)
 
+(defconst stgit-patch-status-face-alist
+  '((applied   . stgit-applied-patch-face)
+    (top       . stgit-top-patch-face)
+    (unapplied . stgit-unapplied-patch-face)
+    (committed . stgit-committed-patch-face)
+    (index     . stgit-index-work-tree-title-face)
+    (work      . stgit-index-work-tree-title-face))
+  "Alist of face to use for a given patch status.")
+
 (defun stgit (dir)
   "Manage StGit patches for the tree in DIR.
 
@@ -822,15 +831,6 @@ during the operation."
             (unknown     "Unknown"     stgit-unknown-file-face)
             (ignore      "Ignored"     stgit-ignored-file-face)))
   "Alist of code symbols to description strings.")
-
-(defconst stgit-patch-status-face-alist
-  '((applied   . stgit-applied-patch-face)
-    (top       . stgit-top-patch-face)
-    (unapplied . stgit-unapplied-patch-face)
-    (committed . stgit-committed-patch-face)
-    (index     . stgit-index-work-tree-title-face)
-    (work      . stgit-index-work-tree-title-face))
-  "Alist of face to use for a given patch status.")
 
 (defun stgit-file-status-code-as-string (file)
   "Return stgit status code for FILE as a string."
