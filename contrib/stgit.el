@@ -73,6 +73,14 @@
 (defvar-local stgit-show-svn)
 (defvar-local stgit-show-unknown)
 (defvar-local stgit-show-worktree)
+(defvar-local stgit-ewoc)
+(defvar-local stgit-edit-patchsym)
+(defvar-local stgit-refresh-after-new)
+(defvar-local stgit-refresh-after-new)
+(defvar-local stgit-sink-to)
+(defvar-local stgit-patchsyms)
+(defvar-local old-process-sentinel)
+(defvar-local stgit-buffer)
 
 (defun stgit-set-default (symbol value)
   "Set default value of SYMBOL to VALUE using `set-default' and
@@ -440,8 +448,8 @@ Argument DIR is the repository path."
     (with-current-buffer buf
       (setq default-directory dir)
       (stgit-mode)
-      (set (make-local-variable 'stgit-ewoc)
-           (ewoc-create #'stgit-patch-pp "Branch:\n\n" "--\n" t))
+      (setq stgit-ewoc
+            (ewoc-create #'stgit-patch-pp "Branch:\n\n" "--\n" t))
       (setq buffer-read-only t))
     buf))
 
@@ -1119,7 +1127,7 @@ at point."
                  'switch-to-buffer-other-window
                'switch-to-buffer)
              (find-file-noselect filename))
-    (set (make-local-variable 'vc-parent-buffer) filename)))
+    (setq vc-parent-buffer filename)))
 
 (defun stgit-find-file (&optional other-window this-rev)
   (let* ((file (or (stgit-patched-file-at-point)
@@ -2609,7 +2617,7 @@ file ended up.  You can then jump to the file with \
         (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-edit t nil edit-buf)
-    (set (make-local-variable 'stgit-edit-patchsym) patchsym)
+    (setq stgit-edit-patchsym patchsym)
     (setq default-directory dir)
     (let ((standard-output edit-buf))
       (save-excursion
@@ -2665,8 +2673,8 @@ that name (a symbol)."
         (dir default-directory))
     (log-edit 'stgit-confirm-new t nil edit-buf)
     (setq default-directory dir)
-    (set (make-local-variable 'stgit-refresh-after-new) refresh)
-    (set (make-local-variable 'stgit-sink-to) sink-to)
+    (setq stgit-refresh-after-new refresh)
+    (setq stgit-sink-to sink-to)
     (when add-sign
       (save-excursion
         (let ((standard-output (current-buffer)))
@@ -2840,7 +2848,7 @@ deepest patch had before the squash."
         (dir default-directory)
         (sorted-patchsyms (stgit-sort-patches patchsyms)))
     (log-edit 'stgit-confirm-squash t nil edit-buf)
-    (set (make-local-variable 'stgit-patchsyms) sorted-patchsyms)
+    (setq stgit-patchsyms sorted-patchsyms)
     (setq default-directory dir)
     (let ((result (let ((standard-output edit-buf))
                     (save-excursion
@@ -2944,10 +2952,8 @@ When the command has finished, reload the stgit buffer."
         (let ((old-buffer (current-buffer)))
           (with-current-buffer buffer
             (let ((process (get-buffer-process buffer)))
-              (set (make-local-variable 'old-process-sentinel)
-                   (process-sentinel process))
-              (set (make-local-variable 'stgit-buffer)
-                   old-buffer)
+              (setq old-process-sentinel (process-sentinel process))
+              (setq stgit-buffer old-buffer)
               (set-process-filter process 'stgit-execute-process-filter)
               (set-process-sentinel process 'stgit-execute-process-sentinel))))
       (with-current-buffer buffer
