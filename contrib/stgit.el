@@ -58,6 +58,9 @@
 (require 'ewoc)
 (require 'easymenu)
 (require 'format-spec)
+(require 'vc)
+
+(defvar log-edit-parent-buffer)
 
 (defvar-local stgit-marked-patches nil
   "List of marked patches.")
