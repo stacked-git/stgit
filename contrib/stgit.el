@@ -59,6 +59,21 @@
 (require 'easymenu)
 (require 'format-spec)
 
+(defvar-local stgit-marked-patches nil
+  "List of marked patches.")
+
+(defvar-local stgit-index-node nil)
+(defvar-local stgit-worktree-node nil)
+(defvar-local stgit-expanded-patches '(:work :index))
+(defvar-local stgit-svn-find-rev-hash nil)
+(defvar-local stgit-committed-count)
+(defvar-local stgit-show-committed)
+(defvar-local stgit-show-ignored)
+(defvar-local stgit-show-patch-names)
+(defvar-local stgit-show-svn)
+(defvar-local stgit-show-unknown)
+(defvar-local stgit-show-worktree)
+
 (defun stgit-set-default (symbol value)
   "Set default value of SYMBOL to VALUE using `set-default' and
 reload all StGit buffers."
@@ -1678,21 +1693,16 @@ See also \\[customize-group] for the \"stgit\" group."
         major-mode 'stgit-mode
         goal-column 2)
   (use-local-map stgit-mode-map)
-  (mapc (lambda (x) (set (make-local-variable (car x)) (cdr x)))
-        `((list-buffers-directory       . ,default-directory)
-          (parse-sexp-lookup-properties . t)
-          (stgit-expanded-patches       . (:work :index))
-          (stgit-index-node             . nil)
-          (stgit-worktree-node          . nil)
-          (stgit-marked-patches         . nil)
-          (stgit-svn-find-rev-hash      . ,(make-hash-table :test 'equal))
-          (stgit-committed-count        . ,stgit-default-committed-count)
-          (stgit-show-committed         . ,stgit-default-show-committed)
-          (stgit-show-ignored           . ,stgit-default-show-ignored)
-          (stgit-show-patch-names       . ,stgit-default-show-patch-names)
-          (stgit-show-svn               . ,stgit-default-show-svn)
-          (stgit-show-unknown           . ,stgit-default-show-unknown)
-          (stgit-show-worktree          . ,stgit-default-show-worktree)))
+  (setq list-buffers-directory default-directory)
+  (setq-local parse-sexp-lookup-properties t)
+  (setq stgit-svn-find-rev-hash (make-hash-table :test 'equal))
+  (setq stgit-committed-count   stgit-default-committed-count)
+  (setq stgit-show-committed    stgit-default-show-committed)
+  (setq stgit-show-ignored      stgit-default-show-ignored)
+  (setq stgit-show-patch-names  stgit-default-show-patch-names)
+  (setq stgit-show-svn          stgit-default-show-svn)
+  (setq stgit-show-unknown      stgit-default-show-unknown)
+  (setq stgit-show-worktree     stgit-default-show-worktree)
   (set-variable 'truncate-lines 't)
   (add-hook 'after-save-hook 'stgit-update-stgit-for-buffer)
   (unless stgit-did-advise
