@@ -1007,7 +1007,7 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
         (insert ":0 0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000 " file-flag "\0")
         (forward-char name-len)))))
 
-(defun stgit-process-files (callback)
+(defun stgit-process-files (patch callback)
   (goto-char (point-min))
   (when (looking-at "[0-9A-Fa-f]\\{40\\}\0")
     (goto-char (match-end 0)))
@@ -1018,7 +1018,6 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
       (let ((file
              (cond ((looking-at
                      "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
-                    ;; TODO: Where does `patch' come from?
                     (let* ((patch-status (stgit-patch->status patch))
                            (file-subexp  (if (eq patch-status 'unapplied)
                                              3
@@ -1082,7 +1081,7 @@ at point."
           (sort-regexp-fields nil ":[^\0]*\0\\([^\0]*\\)\0" "\\1"
                               (point-min) (point-max)))
 
-        (stgit-process-files (lambda (file) (ewoc-enter-last ewoc file)))
+        (stgit-process-files patch (lambda (file) (ewoc-enter-last ewoc file)))
 
         (unless (ewoc-nth ewoc 0)
           (ewoc-set-hf ewoc ""
@@ -1192,7 +1191,8 @@ See also `stgit-expand'."
                                      "--no-empty-directory" "--"
                                      filename)
                                "X")
-        (stgit-process-files (lambda (f)
+        (stgit-process-files patch
+                             (lambda (f)
                                (setq node (ewoc-enter-after ewoc node f))))))
 
     (move-to-column (stgit-goal-column))
