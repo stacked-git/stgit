@@ -100,10 +100,8 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
             );
             None
         }
-    } else if let Ok(current_branch) = repo.get_current_branch() {
-        Some(current_branch)
     } else {
-        None
+        repo.get_current_branch().ok()
     };
 
     let (target_commit, target_name) = if let Some(parent_branch) = parent_branch.as_ref() {
