@@ -449,7 +449,7 @@ fn execute_shell_alias(
     command.args(user_args);
 
     if let Some(repo) = repo {
-        if let Some(work_dir) = repo.work_dir() {
+        if let Some(work_dir) = repo.workdir() {
             command.current_dir(work_dir);
             if let Ok(Some(prefix)) = repo.prefix() {
                 let mut prefix = prefix.as_os_str().to_owned();

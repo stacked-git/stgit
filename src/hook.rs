@@ -27,7 +27,7 @@ fn get_hook_path(repo: &gix::Repository, hook_name: &str) -> Result<Option<PathB
                 Cow::Owned(repo.common_dir().join(core_hooks_path))
             } else {
                 // The hooks path is relative to the root of the working tree otherwise
-                let work_dir = repo.work_dir().expect("non-bare repo must have work dir");
+                let work_dir = repo.workdir().expect("non-bare repo must have work dir");
                 Cow::Owned(work_dir.join(core_hooks_path))
             }
         } else {
@@ -66,7 +66,7 @@ pub(crate) fn run_pre_commit_hook(repo: &gix::Repository, use_editor: bool) -> R
         return Ok(false);
     };
 
-    let work_dir = repo.work_dir().expect("not a bare repo");
+    let work_dir = repo.workdir().expect("not a bare repo");
 
     let mut hook_command = std::process::Command::from(
         gix::command::prepare(hook_path).stdout(std::process::Stdio::inherit()),
@@ -112,7 +112,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
         return Ok(message);
     };
 
-    let work_dir = repo.work_dir().expect("not a bare repo");
+    let work_dir = repo.workdir().expect("not a bare repo");
     let temp_msg = TemporaryMessage::new(work_dir, &message)?;
 
     let index_path = repo.index_path();

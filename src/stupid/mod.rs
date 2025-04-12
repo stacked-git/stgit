@@ -30,7 +30,7 @@ impl<'repo, 'index> Stupid<'repo, 'index> for gix::Repository {
     fn stupid(&'repo self) -> StupidContext<'repo, 'index> {
         StupidContext {
             git_dir: Some(self.git_dir()),
-            work_dir: self.work_dir(),
+            work_dir: self.workdir(),
             index_filename: None,
             git_version: RefCell::new(None::<self::version::StupidVersion>),
         }

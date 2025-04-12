@@ -91,7 +91,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
 
         let status_result = gix::command::prepare(&editor)
             .arg(path.as_ref())
-            .with_shell_allow_manual_argument_splitting()
+            .command_may_be_shell_script_allow_manual_argument_splitting()
             .stdin(std::process::Stdio::inherit())
             .stdout(std::process::Stdio::inherit())
             .spawn()
