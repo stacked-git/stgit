@@ -57,7 +57,7 @@ tar = "0.4"
 tempfile = "3"
 termcolor = "1.4"
 thiserror = "~2.0"
-winnow = "0.7.2"
+winnow = "0.7.10"
 
 curl = { version = "0.4", optional = true }
 
