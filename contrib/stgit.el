@@ -1710,13 +1710,16 @@ See also \\[customize-group] for the \"stgit\" group."
     (setq stgit-did-advise t))
   (run-hooks 'stgit-mode-hook))
 
+(defun stgit-update-stgit-advice (&rest _ignore)
+  "Update work tree and index of stgit buffers.
+Intended to be used to advise other functions."
+  (stgit-update-stgit-for-buffer :index))
+
 (defun stgit-advise-funlist (funlist)
   "Advise functions in FUNLIST to refresh stgit buffers."
   (mapc (lambda (sym)
           (when (fboundp sym)
-            (eval `(defadvice ,sym (after stgit-update-stgit-for-buffer)
-                     (stgit-update-stgit-for-buffer :index)))
-            (ad-activate sym)))
+            (advice-add sym :after #'stgit-update-stgit-advice)))
         funlist))
 
 (defun stgit-advise ()
