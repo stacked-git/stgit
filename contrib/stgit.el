@@ -79,8 +79,7 @@
 (defvar-local stgit-buffer nil)
 
 (defun stgit-set-default (symbol value)
-  "Set default value of SYMBOL to VALUE using `set-default' and
-reload all StGit buffers."
+  "Set default value of SYMBOL to VALUE and reload StGit buffers."
   (set-default symbol value)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
@@ -146,8 +145,7 @@ shown."
 (defvar-local stgit-show-committed stgit-default-show-committed)
 
 (defcustom stgit-default-committed-count 5
-  "The number of historical commits to show when `stgit-show-committed'
-is enabled."
+  "The number of historical commits to show when `stgit-show-committed' is enabled."
   :type 'number
   :group 'stgit
   :link '(variable-link stgit-default-show-committed)
@@ -155,8 +153,7 @@ is enabled."
 (defvar-local stgit-committed-count stgit-default-committed-count)
 
 (defcustom stgit-default-show-svn t
-  "Set to non-nil to by default show subversion information in a
-new stgit buffer.
+  "Set to non-nil to by default show subversion information in a new stgit buffer.
 
 Use \\<stgit-mode-map>\\[stgit-toggle-svn] to toggle this \
 setting in an already-started StGit buffer."
@@ -166,8 +163,8 @@ setting in an already-started StGit buffer."
 (defvar-local stgit-show-svn stgit-default-show-svn)
 
 (defcustom stgit-abbreviate-copies-and-renames t
-  "If non-nil, abbreviate copies and renames as \"dir/{old -> new}/file\"
-instead of \"dir/old/file -> dir/new/file\"."
+  "If non-nil, abbreviate copies and renames.
+For example: \"dir/{old -> new}/file\" instead of \"dir/old/file -> dir/new/file\"."
   :type 'boolean
   :group 'stgit
   :set 'stgit-set-default)
@@ -182,8 +179,7 @@ flag, which reduces performance."
   :set 'stgit-set-default)
 
 (defcustom stgit-show-worktree-mode 'center
-  "This variable controls where the \"Index\" and \"Work tree\"
-will be shown on in the buffer.
+  "Where the \"Index\" and \"Work tree\" will be shown in the buffer.
 
 It can be set to \='top (above all patches), \='center (show between
 applied and unapplied patches), and \='bottom (below all patches)."
@@ -368,8 +364,7 @@ See `stgit-mode' for commands available."
                                 (car (split-string cdup "\n")))))))
 
 (defun stgit-refresh-git-status (&optional dir)
-  "If it exists, refresh the `git-status' buffer belonging to
-directory DIR or `default-directory'"
+  "If it exists, refresh the `git-status' buffer for DIR or `default-directory'."
   (when (and (fboundp 'git-find-status-buffer)
              (fboundp 'git-refresh-status))
     (let* ((top-dir (git-get-top-dir (or dir default-directory)))
@@ -413,8 +408,8 @@ A newline is appended."
   (insert (string-trim-right text " ") ?\n))
 
 (defun stgit-line-format ()
-  "Return the current line format; one of
-`stgit-patch-line-format' and `stgit-noname-patch-line-format'"
+  "Return the current line format.
+Will be either `stgit-patch-line-format' or `stgit-noname-patch-line-format'."
   (if stgit-show-patch-names
       stgit-patch-line-format
     stgit-noname-patch-line-format))
@@ -468,8 +463,7 @@ Argument DIR is the repository path."
 (def-edebug-spec stgit-capture-output
   (form body))
 (defmacro stgit-capture-output (name &rest body)
-  "Capture StGit output and, if there was any output, show it in a window
-at the end.
+  "Capture StGit output from BODY in buffer NAME and display it.
 Returns the result of the last form in BODY."
   (declare (debug ([&or stringp null] body))
            (indent 1))
@@ -506,7 +500,8 @@ Returns the result of the last form in BODY."
   "Set to non-nil to inhibit messages when running `stg' commands.
 See also `stgit-message'.")
 (defun stgit-message (format-spec &rest args)
-  "Call `message' on the arguments unless `stgit-inhibit-messages' is non-nil."
+  "Call `message' on the arguments unless `stgit-inhibit-messages' is non-nil.
+See `message` for a description of FORMAT-SPEC and ARGS."
   (unless stgit-inhibit-messages
     (apply 'message format-spec args)))
 
@@ -592,9 +587,8 @@ been advised to update the stgit status when necessary.")
                                                          :empty nil)))))
 
 (defun stgit-get-position (&optional position)
-  "Return `stgit-mode' position information at POSITION (point by
-default) that can be used to restore the point using
-`stgit-restore-position'."
+  "Return position information at POSITION or point that can be restored later.
+Point restoration is done by `stgit-restore-position'."
   (let ((point (point)))
     (and position (goto-char position))
     (prog1
@@ -606,8 +600,7 @@ default) that can be used to restore the point using
       (goto-char point))))
 
 (defun stgit-restore-position (state)
-  "Move point to the position in STATE, as returned by
-`stgit-get-position'."
+  "Move point to the position in STATE, as returned by `stgit-get-position'."
   (cl-destructuring-bind (patch file line column) state
     (unless (and patch (cl-case (stgit-goto-patch patch file)
                          ((t) (move-to-column column) t)
@@ -636,8 +629,8 @@ Use `stgit-restore-window-state' to restore the state."
         transient-mark-mode))
 
 (defun stgit-restore-window-state (state)
-  "Restore the state of the stgit buffer and windows in STATE, as
-obtained from `stgit-get-window-state'."
+  "Restore the state of the stgit buffer and windows in STATE.
+State information is obtained from `stgit-get-window-state'."
   (cl-destructuring-bind
       (buffer window-states buffer-state mark-state
               old-mark-active old-transient-mark-mode)
@@ -661,9 +654,7 @@ obtained from `stgit-get-window-state'."
               transient-mark-mode old-transient-mark-mode)))))
 
 (defmacro stgit-save-excursion (&rest body)
-  "Execute BODY and, for each window displaying the current
-buffer, move point and mark back to the file, patch, or line
-where they were."
+  "Save point relative position; execute BODY; restore point."
   (declare (indent 0) (debug (body)))
   (let ((state (make-symbol "state")))
     `(let ((,state (stgit-get-window-state))
@@ -672,8 +663,7 @@ where they were."
        (stgit-restore-window-state ,state))))
 
 (defun stgit-svn-find-rev (sha1 hash)
-  "Return the subversion revision corresponding to SHA1 as
-reported by git svn.
+  "Return the subversion revision corresponding to SHA1 as reported by git svn.
 
 Cached data is stored in HASH, which must have been created
 using (make-hash-table :test \='equal)."
@@ -845,7 +835,7 @@ during the operation."
         (cdr code)))))
 
 (defun stgit-file-status-code (str &optional score)
-  "Return stgit status code from git status string."
+  "Return stgit status code from git status string STR."
   (let ((code (assoc str '(("A" . add)
                            ("C" . copy)
                            ("D" . delete)
@@ -1014,8 +1004,8 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
                                'file-data file))))
 
 (defun stgit-find-copies-harder-diff-arg ()
-  "Return the flag to use with `git-diff' depending on the
-`stgit-find-copies-harder' flag."
+  "Return the flag to use with `git-diff'.
+Depends on the value of `stgit-find-copies-harder'."
   (if stgit-find-copies-harder "--find-copies-harder" "-C"))
 
 (defun stgit-insert-ls-files (args file-flag)
@@ -1070,8 +1060,7 @@ If NO-QUOTES is non-nil, do not enclose the result in double quotes."
 
 
 (defun stgit-insert-patch-files (patch)
-  "Expand (show modification of) the patch PATCH after the line
-at point."
+  "Expand (show modification of) the patch PATCH after the line at point."
   (let* ((patchsym     (stgit-patch->name patch))
          (end          (point-marker))
          (args         (list "-z" (stgit-find-copies-harder-diff-arg)))
@@ -1175,7 +1164,7 @@ expand if COLLAPSE is not nil."
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-collapse (&optional patches)
-  "Hide the contents of marked patches, or the patch at point.
+  "Hide the contents of marked PATCHES, or the patch at point.
 
 See also `stgit-expand'."
   (interactive (list (stgit-patches-marked-or-at-point t)))
@@ -1244,13 +1233,13 @@ file for (applied) copies and renames."
     (t
      (error "No patch or file on line"))))
 
-(defun stgit-find-file-other-window (&optional this-rev)
+(defun stgit-find-file-other-window (&optional revision)
   "Open file at point in other window.
 
-With prefix argument, open a buffer with that revision of the file."
+With prefix argument, open a buffer with that REVISION of the file."
   (interactive "p")
   (stgit-assert-mode)
-  (stgit-find-file t (> this-rev 1)))
+  (stgit-find-file t (> revision 1)))
 
 (defun stgit-find-file-merge ()
   "Open file at point and merge it using `smerge-ediff'."
@@ -1722,8 +1711,7 @@ See also \\[customize-group] for the \"stgit\" group."
   (run-hooks 'stgit-mode-hook))
 
 (defun stgit-advise-funlist (funlist)
-  "Add advice to the functions in FUNLIST so we can refresh the
-stgit buffers as the git status of files change."
+  "Advise functions in FUNLIST to refresh stgit buffers."
   (mapc (lambda (sym)
           (when (fboundp sym)
             (eval `(defadvice ,sym (after stgit-update-stgit-for-buffer)
@@ -1732,8 +1720,7 @@ stgit buffers as the git status of files change."
         funlist))
 
 (defun stgit-advise ()
-  "Add advice to appropriate (non-stgit) git functions so we can
-refresh the stgit buffers as the git status of files change."
+  "Advise appropriate (non-stgit) git functions to refresh stgit buffers."
   (mapc (lambda (arg)
           (let ((feature (car arg))
                 (funlist (cdr arg)))
@@ -1748,9 +1735,8 @@ refresh the stgit buffers as the git status of files change."
           (dired  dired-delete-file))))
 
 (defvar stgit-pending-refresh-buffers nil
-  "Alist of (`buffer' . `mode') of buffers that need to be
-refreshed.  See `stgit-post-refresh' for the different values of
-`mode'.")
+  "Alist of (`buffer' . `mode') of buffers that need to be refreshed.
+See `stgit-post-refresh' for the different values of `mode'.")
 
 (defun stgit-run-pending-refreshs ()
   "Run all pending stgit buffer updates as posted by `stgit-post-refresh'."
@@ -1796,8 +1782,7 @@ MODE specifies what to do:
                   stgit-pending-refresh-buffers)))))
 
 (defun stgit-update-stgit-for-buffer (&optional mode)
-  "When Emacs becomes idle, update the status in any `stgit-mode'
-buffer that shows the status of the current buffer.
+  "When Emacs becomes idle, update the status in any `stgit-mode' buffers.
 
 MODE specifies how to update the buffer.  See `stgit-post-refresh'
 for the different values MODE can have."
@@ -1858,7 +1843,7 @@ allow historical commits; if nil, also allow work tree and index."
 
 (defun stgit-patches-marked-or-at-point (&optional cause-error types)
   "Return the symbols of the marked patches, or the patch on the current line.
-If CAUSE-ERRROR is not nil, signal an error if none found.
+If CAUSE-ERROR is not nil, signal an error if none found.
 
 TYPES controls which types of commits and patches can be returned.
 If it is t, only allow stgit patches; if \='allow-committed, also
@@ -1989,7 +1974,7 @@ line of PATCHSYM and return :patch."
 (defun stgit-reload-or-repair (repair)
   "Update the contents of the StGit buffer (`stgit-reload').
 
-With a prefix argument, repair the StGit metadata if the branch
+With a prefix argument, REPAIR the StGit metadata if the branch
 was modified with git commands (`stgit-repair')."
   (interactive "P")
   (stgit-assert-mode)
@@ -2088,8 +2073,8 @@ If OMIT-STGIT is not nil, filter out \"resf/heads/*.stgit\"."
               result))))
 
 (defun stgit-parent-branch ()
-  "Return the parent branch of the current stg branch as per
-git-config setting branch.<branch>.stgit.parentbranch."
+  "Return the parent branch of the current stg branch.
+It is determed as per git-config setting branch.<branch>.stgit.parentbranch."
   (let ((output (with-output-to-string
                   (stgit-run-git-silent "config"
                                         (format "branch.%s.stgit.parentbranch"
@@ -2134,8 +2119,9 @@ A negative COUNT will commit using `stgit-commit' instead."
     (stgit-reload)))
 
 (defun stgit-neighbour-file ()
-  "Return the file name of the next file after point, or the
-previous file if point is at the last file within a patch."
+  "Return the file name of the file at point.
+It will be the file after point, or the previous file if point is at the
+last file within a patch."
   (let ((old-point (point))
         neighbour-file)
     (and (zerop (forward-line 1))
@@ -2150,8 +2136,7 @@ previous file if point is at the last file within a patch."
     neighbour-file))
 
 (defun stgit-unmerged-file-stages (file)
-  "Returns list of the merge stages that contain FILE, which
-must be an unmerged file.
+  "Returns list of merge stages that contain FILE, which must be an unmerged file.
 
 Stage 1, the common ancestor, is \='ancestor.
 Stage 2, HEAD, is \='head.
@@ -2170,8 +2155,7 @@ Stage 3, MERGE_HEAD, is \='merge-head."
     stages))
 
 (defun stgit-revert-file ()
-  "Revert the file at point, which must be in the index or the
-working tree."
+  "Revert the file at point, which must be in the index or the working tree."
   (interactive)
   (stgit-assert-mode)
   (let* ((patched-file (or (stgit-patched-file-at-point)
@@ -2225,8 +2209,9 @@ working tree."
       (stgit-goto-patch patch-name next-file))))
 
 (defun stgit-revert ()
-  "Revert the change at point, which must be the index, the work
-tree, or a single change in either."
+  "Revert the change at point.
+The change must be in the index, the work tree, or a single change in
+either."
   (interactive)
   (stgit-assert-mode)
   (let ((patched-file (stgit-patched-file-at-point)))
@@ -2348,8 +2333,7 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
   (not (next-single-property-change (point) 'patch-data)))
 
 (defun stgit-goto-target ()
-  "Return the goto target at point: a patchsym, :top,
-or :bottom."
+  "Return the goto target at point: a patchsym, :top, or :bottom."
   (let ((patch (stgit-patch-at-point)))
     (cond (patch
            (cl-case (stgit-patch->status patch)
@@ -2705,8 +2689,7 @@ that name (a symbol)."
       (stgit-goto-patch new-patch))))
 
 (defun stgit-new-and-refresh (add-sign)
-  "Create a new patch based on the current changes, asking for a
-commit message.
+  "Create a new patch based on the current changes, asking for a commit message.
 
 With a prefix argument, include a \"Signed-off-by:\" line at the
 end of the patch.
@@ -2718,7 +2701,7 @@ This works just like running `stgit-new' followed by `stgit-refresh'."
   (stgit-new add-sign t))
 
 (defun stgit-create-patch-name (description)
-  "Create a patch name from a long description."
+  "Create a patch name from a long DESCRIPTION."
   (let ((patch ""))
     (while (> (length description) 0)
       (cond ((string-match "\\`[a-zA-Z_-]+" description)
@@ -2767,8 +2750,7 @@ the work tree and index."
         (stgit-reload)))))
 
 (defun stgit-move-patches-target ()
-  "Return the patchsym indicating a target patch for
-`stgit-move-patches'.
+  "Return the patchsym indicating a target patch for `stgit-move-patches'.
 
 This is either the first unmarked patch at or after point, or one
 of :top and :bottom if the point is after or before the applied
@@ -2787,8 +2769,8 @@ patches."
       result)))
 
 (defun stgit-sort-patches (patchsyms &optional allow-duplicates)
-  "Returns the list of patches in PATCHSYMS sorted according to
-their position in the patch series, bottommost first.
+  "Returns a list of patches in PATCHSYMS sorted by patch series position.
+The bottommost position is first.
 
 PATCHSYMS must not contain duplicate entries, unless
 ALLOW-DUPLICATES is not nil."
