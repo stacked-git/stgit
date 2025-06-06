@@ -69,21 +69,14 @@
 (defvar-local stgit-worktree-node nil)
 (defvar-local stgit-expanded-patches '(:work :index))
 (defvar-local stgit-svn-find-rev-hash nil)
-(defvar-local stgit-committed-count)
-(defvar-local stgit-show-committed)
-(defvar-local stgit-show-ignored)
-(defvar-local stgit-show-patch-names)
-(defvar-local stgit-show-svn)
-(defvar-local stgit-show-unknown)
-(defvar-local stgit-show-worktree)
-(defvar-local stgit-ewoc)
-(defvar-local stgit-edit-patchsym)
-(defvar-local stgit-refresh-after-new)
-(defvar-local stgit-refresh-after-new)
-(defvar-local stgit-sink-to)
-(defvar-local stgit-patchsyms)
-(defvar-local old-process-sentinel)
-(defvar-local stgit-buffer)
+(defvar-local stgit-ewoc nil)
+(defvar-local stgit-edit-patchsym nil)
+(defvar-local stgit-refresh-after-new nil)
+(defvar-local stgit-refresh-after-new nil)
+(defvar-local stgit-sink-to nil)
+(defvar-local stgit-patchsyms nil)
+(defvar-local old-process-sentinel nil)
+(defvar-local stgit-buffer nil)
 
 (defun stgit-set-default (symbol value)
   "Set default value of SYMBOL to VALUE using `set-default' and
@@ -108,6 +101,7 @@ setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-worktree))
+(defvar-local stgit-show-worktree stgit-default-show-worktree)
 
 (defcustom stgit-default-show-unknown nil
   "Set to non-nil to by default show unknown files a new stgit buffer.
@@ -117,6 +111,7 @@ setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-unknown))
+(defvar-local stgit-show-unknown stgit-default-show-unknown)
 
 (defcustom stgit-default-show-ignored nil
   "Set to non-nil to by default show ignored files a new stgit buffer.
@@ -126,6 +121,7 @@ setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-ignored))
+(defvar-local stgit-show-ignored stgit-default-show-ignored)
 
 (defcustom stgit-default-show-patch-names t
   "If non-nil, default to showing patch names in a new stgit buffer.
@@ -135,6 +131,7 @@ to toggle the this setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-patch-names))
+(defvar-local stgit-show-patch-names stgit-default-show-patch-names)
 
 (defcustom stgit-default-show-committed nil
   "Set to nil to inhibit showing of historical git commits by default.
@@ -146,6 +143,7 @@ shown."
   :group 'stgit
   :link '(variable-link stgit-default-committed-count)
   :link '(variable-link stgit-show-committed))
+(defvar-local stgit-show-committed stgit-default-show-committed)
 
 (defcustom stgit-default-committed-count 5
   "The number of historical commits to show when `stgit-show-committed'
@@ -154,6 +152,7 @@ is enabled."
   :group 'stgit
   :link '(variable-link stgit-default-show-committed)
   :link '(variable-link stgit-committed-count))
+(defvar-local stgit-committed-count stgit-default-committed-count)
 
 (defcustom stgit-default-show-svn t
   "Set to non-nil to by default show subversion information in a
@@ -164,6 +163,7 @@ setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-worktree))
+(defvar-local stgit-show-svn stgit-default-show-svn)
 
 (defcustom stgit-abbreviate-copies-and-renames t
   "If non-nil, abbreviate copies and renames as \"dir/{old -> new}/file\"
