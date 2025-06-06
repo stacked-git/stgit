@@ -1724,18 +1724,15 @@ Intended to be used to advise other functions."
 
 (defun stgit-advise ()
   "Advise appropriate (non-stgit) git functions to refresh stgit buffers."
-  (mapc (lambda (arg)
-          (let ((feature (car arg))
-                (funlist (cdr arg)))
-            (if (featurep feature)
-                (stgit-advise-funlist funlist)
-              (add-to-list 'after-load-alist
-                           `(,feature (stgit-advise-funlist
-                                       (quote ,funlist)))))))
-        ;; lists of (<feature> <function> <function> ...) to be advised
-        '((vc-git vc-git-rename-file vc-git-revert vc-git-register)
-          (git    git-add-file git-checkout git-revert-file git-remove-file)
-          (dired  dired-delete-file))))
+  (with-eval-after-load "vc-git"
+    (stgit-advise-funlist
+     '(vc-git-rename-file vc-git-revert vc-git-register)))
+  (with-eval-after-load "git"
+    (stgit-advise-funlist
+     '(git-add-file git-checkout git-revert-file git-remove-file)))
+  (with-eval-after-load "dired"
+    (stgit-advise-funlist
+     '(dired-delete-file))))
 
 (defvar stgit-pending-refresh-buffers nil
   "Alist of (`buffer' . `mode') of buffers that need to be refreshed.
