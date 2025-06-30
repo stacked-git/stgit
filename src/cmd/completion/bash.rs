@@ -60,6 +60,7 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
         &f!("local long_flags=\"{long_flags}\""),
         &f!("local options=\"{options_pattern}\""),
         "local pos_index=0",
+        "local __branch",
     ]);
 
     if !subcommand_names.as_ref().is_empty() {
@@ -83,6 +84,17 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
         script.lines(&["cmd_index=$i", &f!("{fname}-{subcommand_name}; return;;")]);
         script.dedent();
     }
+    script.lines(&[
+        "-b|--branch|-B|--ref-branch)",
+        "    if (( i < cword )); then",
+        "      __branch=\"${words[i+1]}\"",
+        "    fi",
+        "    ;;",
+        "--branch=*|--ref-branch=*)",
+        "    __branch=\"${words[i]}\"",
+        "    __branch=\"${__branch#*=}\"",
+        "    ;;",
+    ]);
     if !flags_pattern.as_ref().is_empty() {
         script.lines(&[&f!("{flags_pattern})"), "    ;;"]);
     }
@@ -549,29 +561,34 @@ _remotes ()
     test "$g" && __git show-ref  | grep ' refs/remotes/' | sed 's,.* refs/remotes/,,'
 }
 
+_stg_series ()
+{
+    __stg series ${__branch:+"--branch=${__branch}"} "$@"
+}
+
 _all_patches ()
 {
-    __stg series --no-description --noprefix --all
+    _stg_series --no-description --noprefix --all
 }
 
 _applied_patches ()
 {
-    __stg series --no-description --noprefix --applied
+    _stg_series --no-description --noprefix --applied
 }
 
 _unapplied_patches ()
 {
-    __stg series --no-description --noprefix --unapplied
+    _stg_series --no-description --noprefix --unapplied
 }
 
 _visible_patches ()
 {
-    __stg series --no-description --noprefix --applied --unapplied
+    _stg_series --no-description --noprefix --applied --unapplied
 }
 
 _hidden_patches ()
 {
-    __stg series --no-description --noprefix --hidden
+    _stg_series --no-description --noprefix --hidden
 }
 
 _conflicting_files ()
