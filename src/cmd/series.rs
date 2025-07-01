@@ -525,19 +525,20 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let indices_flag = matches.get_flag("indices");
     let offsets_flag = matches.get_flag("offsets");
 
-    let index_width = (indices_flag && !patches.is_empty())
-        .then(|| patches.last().unwrap().index.to_string().len())
-        .unwrap_or_default();
-
-    let offset_width = (offsets_flag && !patches.is_empty())
-        .then(|| {
-            [patches.first().unwrap(), patches.last().unwrap()]
-                .iter()
-                .map(|entry| format!("{:+}", entry.offset_from_top).len())
-                .max()
-                .unwrap()
-        })
-        .unwrap_or_default();
+    let index_width = if indices_flag && !patches.is_empty() {
+        patches.last().unwrap().index.to_string().len()
+    } else {
+        Default::default()
+    };
+    let offset_width = if offsets_flag && !patches.is_empty() {
+        [patches.first().unwrap(), patches.last().unwrap()]
+            .iter()
+            .map(|entry| format!("{:+}", entry.offset_from_top).len())
+            .max()
+            .unwrap()
+    } else {
+        Default::default()
+    };
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();

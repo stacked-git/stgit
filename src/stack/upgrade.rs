@@ -312,7 +312,7 @@ fn stack_upgrade_from_2(repo: &gix::Repository, branch_name: &str) -> Result<()>
 /// Remove the stack's format version from the config.
 fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()> {
     let section = "branch";
-    let subsection = format!("{}.stgit", branch_name);
+    let subsection = format!("{branch_name}.stgit");
     let subsection = subsection.as_str();
 
     let mut local_config_file = repo.local_config_file()?;
@@ -337,7 +337,7 @@ fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()
 /// Set the stack's protected state in the config.
 fn set_protected(repo: &gix::Repository, branch_name: &str) -> Result<()> {
     let section = "branch";
-    let subsection = format!("{}.stgit", branch_name);
+    let subsection = format!("{branch_name}.stgit");
     let subsection = subsection.as_str();
 
     let mut local_config_file = repo.local_config_file()?;
