@@ -181,7 +181,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // Make temp patch
     let temp_commit_id = stack.repo.commit_ex(
-        &repo.get_author()?.override_author(matches),
+        repo.get_author()?
+            .override_author(matches)
+            .to_ref(&mut gix::date::parse::TimeBuf::default()),
         repo.get_committer()?,
         &Message::from(format!("Refresh of {patchname}")),
         tree_id,

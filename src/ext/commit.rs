@@ -53,7 +53,7 @@ impl<'a> CommitExtended<'a> for gix::Commit<'a> {
                 Ok(gix::actor::Signature {
                     name: BString::from(name.as_ref()),
                     email: BString::from(email.as_ref()),
-                    time: sig.time,
+                    time: sig.time()?,
                 })
             } else {
                 Err(anyhow!(

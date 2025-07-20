@@ -233,7 +233,12 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         replacements.insert("authemail", Cow::Borrowed(author.email));
         replacements.insert(
             "authdate",
-            Cow::Owned(author.time.format(gix::date::time::format::ISO8601).into()),
+            Cow::Owned(
+                author
+                    .time()?
+                    .format(gix::date::time::format::ISO8601)
+                    .into(),
+            ),
         );
         let committer = patch_commit.committer()?;
         replacements.insert("commname", Cow::Borrowed(committer.name));
@@ -242,7 +247,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             "commdate",
             Cow::Owned(
                 committer
-                    .time
+                    .time()?
                     .format(gix::date::time::format::ISO8601)
                     .into(),
             ),

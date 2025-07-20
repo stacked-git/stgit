@@ -256,8 +256,8 @@ impl RepositoryExtended for gix::Repository {
             let commit_id = self.write_object(&gix::objs::Commit {
                 tree: tree_id,
                 parents: parent_ids.into_iter().collect(),
-                author: author.to_owned(),
-                committer: committer.to_owned(),
+                author: author.to_owned()?,
+                committer: committer.to_owned()?,
                 encoding: commit_encoding.map(|enc| enc.name().into()),
                 message: message.raw_bytes().into(),
                 extra_headers: vec![],

@@ -599,10 +599,10 @@ fn create_patch<'repo>(
             gix::actor::Signature {
                 name: BString::from(name),
                 email: BString::from(email),
-                time: default_author.time,
+                time: default_author.time()?,
             }
         } else {
-            default_author.to_owned()
+            default_author.to_owned()?
         }
     };
 
