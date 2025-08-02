@@ -530,6 +530,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else {
         Default::default()
     };
+
     let offset_width = if offsets_flag && !patches.is_empty() {
         [patches.first().unwrap(), patches.last().unwrap()]
             .iter()

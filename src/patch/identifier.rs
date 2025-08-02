@@ -27,7 +27,7 @@ mod test {
     #[test]
     fn format_patch_ids() {
         let pn = PatchId::Name(crate::patch::PatchName::from_str("p1").unwrap());
-        assert_eq!("p1  ", format!("{:4}", pn));
+        assert_eq!("p1  ", format!("{pn:4}"));
         assert_eq!("@   ", format!("{:4}", PatchId::Top));
         assert_eq!("~   ", format!("{:4}", PatchId::BelowTop(None)));
         assert_eq!("~1  ", format!("{:4}", PatchId::BelowTop(Some(1))));
