@@ -180,9 +180,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_annotate = matches.get_one::<String>("annotate");
 
     // Make temp patch
+    let overridden_author = repo.get_author()?.override_author(matches)?;
+    let committer = repo.get_committer()?.to_owned()?;
     let temp_commit_id = stack.repo.commit_ex(
-        &repo.get_author()?.override_author(matches),
-        repo.get_committer()?,
+        &overridden_author,
+        &committer,
         &Message::from(format!("Refresh of {patchname}")),
         tree_id,
         [stack.get_branch_head().id],

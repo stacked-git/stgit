@@ -375,17 +375,15 @@ impl StupidContext<'_, '_> {
     /// Create a commit for the specified tree id using `git commit-tree`.
     ///
     /// The newly created commit id is returned.
-    pub(crate) fn commit_tree<'a>(
+    pub(crate) fn commit_tree(
         &self,
-        author: impl Into<gix::actor::SignatureRef<'a>>,
-        committer: impl Into<gix::actor::SignatureRef<'a>>,
+        author: &gix::actor::Signature,
+        committer: &gix::actor::Signature,
         message: &[u8],
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
         gpgsign: bool,
     ) -> Result<gix::ObjectId> {
-        let author = author.into();
-        let committer = committer.into();
         let mut command = self.git();
         command.arg("commit-tree").arg(tree_id.to_string());
         for parent_id in parent_ids {

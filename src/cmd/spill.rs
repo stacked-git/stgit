@@ -101,11 +101,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let author = patch_commit.author_strict()?;
     let default_committer = repo.get_committer()?;
     let committer = if matches.get_flag("committer-date-is-author-date") {
-        let mut committer = default_committer.to_owned();
+        let mut committer = default_committer.to_owned()?;
         committer.time = author.time;
         committer
     } else {
-        default_committer.to_owned()
+        default_committer.to_owned()?
     };
 
     let commit_id = repo.commit_ex(

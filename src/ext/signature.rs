@@ -2,6 +2,7 @@
 
 //! Extension trait for [`gix::actor::Signature`].
 
+use anyhow::Result;
 use bstr::BString;
 
 /// Extend [`gix::actor::Signature`] with additional methods.
@@ -13,11 +14,11 @@ pub(crate) trait SignatureExtended {
     ///
     /// The provided `matches` must come from a [`clap::Command`] setup with
     /// [`crate::patch::edit::add_args()`].
-    fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature;
+    fn override_author(self, matches: &clap::ArgMatches) -> Result<gix::actor::Signature>;
 }
 
 impl SignatureExtended for gix::actor::Signature {
-    fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature {
+    fn override_author(self, matches: &clap::ArgMatches) -> Result<gix::actor::Signature> {
         let time = matches
             .get_one::<gix::date::Time>("authdate")
             .copied()
@@ -37,16 +38,16 @@ impl SignatureExtended for gix::actor::Signature {
                     .unwrap_or(self.email);
                 (name, email)
             };
-        gix::actor::Signature { name, email, time }
+        Ok(gix::actor::Signature { name, email, time })
     }
 }
 
 impl SignatureExtended for gix::actor::SignatureRef<'_> {
-    fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature {
+    fn override_author(self, matches: &clap::ArgMatches) -> Result<gix::actor::Signature> {
         let time = matches
             .get_one::<gix::date::Time>("authdate")
             .copied()
-            .unwrap_or(self.time);
+            .map_or_else(|| self.time(), Ok)?;
 
         let (name, email) =
             if let Some((name, email)) = matches.get_one::<(String, String)>("author") {
@@ -62,6 +63,6 @@ impl SignatureExtended for gix::actor::SignatureRef<'_> {
                     .unwrap_or_else(|| self.email.to_owned());
                 (name, email)
             };
-        gix::actor::Signature { name, email, time }
+        Ok(gix::actor::Signature { name, email, time })
     }
 }

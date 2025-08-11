@@ -110,7 +110,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .allow_diff_edit(false)
                 .allow_template_save(true)
                 .template_patchname(patchname.as_ref())
-                .default_author(repo.get_author()?.override_author(matches))
+                .default_author(repo.get_author()?.override_author(matches)?)
                 .default_message(prepare_message(&stack, &squash_patchnames)?)
                 .edit(&stack, &repo, matches)?
         {
@@ -271,7 +271,7 @@ fn try_squash(
                 } else {
                     repo.get_author()?
                 }
-                .override_author(matches),
+                .override_author(matches)?,
             )
             .default_message(prepare_message(trans, patchnames)?)
             .edit(trans, repo, matches)?

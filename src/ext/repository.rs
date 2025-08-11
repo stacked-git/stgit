@@ -53,10 +53,10 @@ pub(crate) trait RepositoryExtended {
     ///
     /// - Respecting `i18n.commitEncoding` for commit messages.
     /// - Respecting `commit.gpgSign` and creating signed commits when enabled.
-    fn commit_ex<'a>(
+    fn commit_ex(
         &self,
-        author: impl Into<gix::actor::SignatureRef<'a>>,
-        committer: impl Into<gix::actor::SignatureRef<'a>>,
+        author: &gix::actor::Signature,
+        committer: &gix::actor::Signature,
         message: &Message,
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
@@ -66,10 +66,10 @@ pub(crate) trait RepositoryExtended {
     ///
     /// The provided [`CommitOptions`] gives finer-grained control versus
     /// [`RepositoryExtended::commit_ex()`].
-    fn commit_with_options<'a>(
+    fn commit_with_options(
         &self,
-        author: impl Into<gix::actor::SignatureRef<'a>>,
-        committer: impl Into<gix::actor::SignatureRef<'a>>,
+        author: &gix::actor::Signature,
+        committer: &gix::actor::Signature,
         message: &Message,
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
@@ -195,10 +195,10 @@ impl RepositoryExtended for gix::Repository {
         Ok(())
     }
 
-    fn commit_ex<'a>(
+    fn commit_ex(
         &self,
-        author: impl Into<gix::actor::SignatureRef<'a>>,
-        committer: impl Into<gix::actor::SignatureRef<'a>>,
+        author: &gix::actor::Signature,
+        committer: &gix::actor::Signature,
         message: &Message,
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
@@ -219,17 +219,15 @@ impl RepositoryExtended for gix::Repository {
         )
     }
 
-    fn commit_with_options<'a>(
+    fn commit_with_options(
         &self,
-        author: impl Into<gix::actor::SignatureRef<'a>>,
-        committer: impl Into<gix::actor::SignatureRef<'a>>,
+        author: &gix::actor::Signature,
+        committer: &gix::actor::Signature,
         message: &Message,
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
         options: &CommitOptions<'_>,
     ) -> Result<gix::ObjectId> {
-        let author = author.into();
-        let committer = committer.into();
         let commit_encoding = match &options.commit_encoding {
             Some(s) => {
                 let encoding = encoding_rs::Encoding::for_label(s)
@@ -256,7 +254,7 @@ impl RepositoryExtended for gix::Repository {
             let commit_id = self.write_object(&gix::objs::Commit {
                 tree: tree_id,
                 parents: parent_ids.into_iter().collect(),
-                author: author.to_owned(),
+                author: author.clone(),
                 committer: committer.to_owned(),
                 encoding: commit_encoding.map(|enc| enc.name().into()),
                 message: message.raw_bytes().into(),

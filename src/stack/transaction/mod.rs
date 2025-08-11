@@ -558,11 +558,11 @@ impl<'repo> StackTransaction<'repo> {
             let author = patch_commit.author_strict()?;
             let default_committer = repo.get_committer()?;
             let committer = if self.options.committer_date_is_author_date {
-                let mut committer = default_committer.to_owned();
+                let mut committer = default_committer.to_owned()?;
                 committer.time = author.time;
                 committer
             } else {
-                default_committer.to_owned()
+                default_committer.to_owned()?
             };
             let message = patch_commit.message_ex();
             let parent_ids = [self.top().id];
@@ -1111,11 +1111,11 @@ impl<'repo> StackTransaction<'repo> {
         if new_tree_id != patch_commit_ref.tree() || new_parent.id != old_parent.id {
             let author = patch_commit.author_strict()?;
             let committer = if self.options.committer_date_is_author_date {
-                let mut committer = default_committer.to_owned();
+                let mut committer = default_committer.to_owned()?;
                 committer.time = author.time;
                 committer
             } else {
-                default_committer.to_owned()
+                default_committer.to_owned()?
             };
             let commit_id = repo.commit_ex(
                 &author,

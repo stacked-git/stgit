@@ -195,7 +195,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .allow_implicit_edit(true)
         .allow_template_save(!is_refreshing)
         .original_patchname(patchname.as_ref())
-        .default_author(repo.get_author()?.override_author(matches))
+        .default_author(repo.get_author()?.override_author(matches)?)
         .override_tree_id(tree_id)
         .override_parent_id(parent_id)
         .edit(&stack, &repo, matches)?

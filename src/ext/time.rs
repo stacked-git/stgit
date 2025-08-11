@@ -58,7 +58,6 @@ mod tests {
         let time = Time::parse_time("123456 +0600").unwrap();
         assert_eq!(time.seconds, 123456);
         assert_eq!(time.offset, 6 * 60 * 60);
-        assert!(matches!(time.sign, gix::date::time::Sign::Plus));
     }
 
     #[test]
@@ -66,7 +65,6 @@ mod tests {
         let time = Time::parse_time("123456").unwrap();
         assert_eq!(time.seconds, 123456);
         assert_eq!(time.offset, 0);
-        assert!(matches!(time.sign, gix::date::time::Sign::Plus));
     }
 
     #[test]
@@ -101,7 +99,6 @@ mod tests {
         let time = Time::parse_time("123456 -0230").unwrap();
         assert_eq!(time.seconds, 123456);
         assert_eq!(time.offset, -150 * 60);
-        assert!(matches!(time.sign, gix::date::time::Sign::Minus));
     }
 
     #[test]

@@ -261,7 +261,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let author = if let Some(Some(author)) = file_author {
             Some(author)
         } else if let Some(overlay_author) = overlay_author {
-            Some(overlay_author.override_author(matches))
+            Some(overlay_author.override_author(matches)?)
         } else {
             // Problem: the patch commit, which may not have been created by StGit,
             // may have mal-encoded author. I.e. the author is not encoded with the
@@ -273,11 +273,12 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             // existing patch commit's author is broken, but only if the author
             // signature has to be derived from that commit.
             let patch_commit = patch_commit.expect("existing patch or author overlay is required");
-            if let Some(args_author) = author_from_args(matches, Some(patch_commit.author()?.time))?
+            if let Some(args_author) =
+                author_from_args(matches, Some(patch_commit.author()?.time()?))?
             {
                 Some(args_author)
             } else {
-                Some(patch_commit.author_strict()?.override_author(matches))
+                Some(patch_commit.author_strict()?.override_author(matches)?)
             }
         };
 
@@ -473,7 +474,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 Some(None) => Some(if let Some(commit) = patch_commit {
                     commit.author_strict()?
                 } else {
-                    repo.get_author()?.to_owned()
+                    repo.get_author()?.to_owned()?
                 }),
                 None => patch_description.author.take(),
             };
@@ -543,11 +544,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let committer = if matches.get_flag("committer-date-is-author-date") {
-            let mut committer = default_committer.to_owned();
+            let mut committer = default_committer.to_owned()?;
             committer.time = author.time;
             committer
         } else {
-            default_committer.to_owned()
+            default_committer.to_owned()?
         };
 
         let new_commit_id = if patch_commit
@@ -558,7 +559,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 // N.B.: intentionally not comparing commiter.when()
                 && patch_commit_ref.author().name == author.name
                 && patch_commit_ref.author().email == author.email
-                && patch_commit_ref.author().time == author.time
+                && patch_commit_ref.author().time == author.time.to_string()
                 && patch_commit_ref.message == message.raw_bytes()
                 && patch_commit_ref.tree() == tree_id
                 && patch_commit_ref.parents().next() == Some(parent_id)

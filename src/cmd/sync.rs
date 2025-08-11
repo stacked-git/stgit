@@ -225,11 +225,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                     let author = commit.author_strict()?;
                     let default_committer = trans.repo().get_committer()?;
                     let committer = if matches.get_flag("committer-date-is-author-date") {
-                        let mut committer = default_committer.to_owned();
+                        let mut committer = default_committer.to_owned()?;
                         committer.time = author.time;
                         committer
                     } else {
-                        default_committer.to_owned()
+                        default_committer.to_owned()?
                     };
                     let commit_id = trans.repo().commit_ex(
                         &author,

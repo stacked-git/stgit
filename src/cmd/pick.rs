@@ -314,11 +314,11 @@ fn pick_picks(
         let author = commit.author_strict()?;
         let default_committer = stack.repo.get_committer()?;
         let committer = if matches.get_flag("committer-date-is-author-date") {
-            let mut committer = default_committer.to_owned();
+            let mut committer = default_committer.to_owned()?;
             committer.time = author.time;
             committer
         } else {
-            default_committer.to_owned()
+            default_committer.to_owned()?
         };
         let parent = if let Some(parent) = opt_parent.as_ref() {
             parent.clone()
