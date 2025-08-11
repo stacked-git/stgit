@@ -22,7 +22,7 @@ pub(crate) trait CommitExtended<'a> {
     fn author_strict(&self) -> Result<gix::actor::Signature>;
 
     /// Get commit message with extended capabilities.
-    fn message_ex(&self) -> Message;
+    fn message_ex(&self) -> Message<'_>;
 
     /// Determine whether the commit has the same tree as its parent.
     fn is_no_change(&self) -> Result<bool>;
@@ -71,7 +71,7 @@ impl<'a> CommitExtended<'a> for gix::Commit<'a> {
         }
     }
 
-    fn message_ex(&self) -> Message {
+    fn message_ex(&self) -> Message<'_> {
         let commit_ref = self.decode().expect("commit can be decoded");
         if let Ok(message) = commit_ref.message.to_str() {
             Message::Str(message)

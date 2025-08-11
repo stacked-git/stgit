@@ -465,7 +465,7 @@ impl<'a> Iterator for Paragraphs<'a> {
     }
 }
 
-fn paragraphs(text: &str) -> Paragraphs {
+fn paragraphs(text: &str) -> Paragraphs<'_> {
     Paragraphs { text }
 }
 
@@ -507,6 +507,6 @@ impl<'a> Iterator for WrappedLines<'a> {
     }
 }
 
-fn wrap(text: &str, width: usize) -> WrappedLines {
+fn wrap(text: &str, width: usize) -> WrappedLines<'_> {
     WrappedLines { text, width }
 }

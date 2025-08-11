@@ -524,7 +524,7 @@ impl<'repo> StackTransaction<'repo> {
                 commit: Rc::new(commit),
             }),
         );
-        self.ui.print_popped(&[patchname.clone()])?;
+        self.ui.print_popped(std::slice::from_ref(patchname))?;
         Ok(())
     }
 
