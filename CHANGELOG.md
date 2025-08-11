@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.5.4 2025-08-10
+
+### Fixed
+
+- stgit.el: Use `with-eval-after-load` instead of a homemade version
+- stgit.el: Use `advice-add` instead of `defadvice`
+- stgit.el: Fix various checkdoc warnings
+- stgit.el: Support Emacs versions < 31
+- stgit.el: Move 'stgit-patch-status-face-alist' before first use
+- stgit.el: Silence warnings of missing vc variables
+- stgit.el: Replace ad-hoc `make-local-variable` with `defvar-local`
+- stgit.el: Use defvar-local instead of make-local-variable
+- stgit.el: Enable lexical-binding
+- stgit.el: Allow empty descriptions
+- stgit.el: Add "--no-color" flag to 'git log' and 'git show'
+- stgit.el: Pass patch into `stgit-process-files`
+
+### Changed
+
+- chore: update gix to 0.73
+- docs: Update copyright year
+- feat(bash): complete patches from chosen branch
+
+
 ## 2.5.3 2025-02-22
 
 ### Added
