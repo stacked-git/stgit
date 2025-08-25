@@ -47,7 +47,7 @@ gix = { version = "0.73", default-features = false, features = [
   "command",
   "revision",
 ] }
-indexmap = "2.7"
+indexmap = "2.11"
 is-terminal = "0.4"
 jiff = "0.2.1"
 serde = { version = "1.0", features = ["derive"] }
