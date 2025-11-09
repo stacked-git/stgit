@@ -22,15 +22,15 @@ check_test () {
 }
 
 test_import_quilt_series_should_fail_p_something_ok () {
-    quilt new -p $1 patch-p$1.diff
+    quilt new "patch-p$1.diff"
     quilt add t
     echo 4 >t
-    quilt refresh
+    quilt refresh -p "$1"
 
-    quilt new -p $1 patch-p$1-s.diff
+    quilt new "patch-p$1-s.diff"
     quilt add s/u
     echo 4 >s/u
-    quilt refresh
+    quilt refresh -p "$1"
 }
 
 test_import_quilt_series_should_fail_p_something_unexpected () {
@@ -96,7 +96,7 @@ test_expect_success QUILT 'Import a quilt series with patches for toplevel files
     quilt add t &&
     echo 3 >t &&
     quilt refresh &&
-    quilt new -p ab patch-pab.diff &&
+    quilt new patch-pab.diff &&
     quilt add t &&
     echo 4 >t &&
     quilt refresh &&
@@ -118,7 +118,7 @@ test_expect_success QUILT 'Import a quilt series with patches for subdirectories
     quilt add s/u &&
     echo 3 >s/u &&
     quilt refresh &&
-    quilt new -p ab patch-pab-s.diff &&
+    quilt new patch-pab-s.diff &&
     quilt add s/u &&
     echo 4 >s/u &&
     quilt refresh &&
