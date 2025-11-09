@@ -49,7 +49,7 @@ fn get_format_version(repo: &gix::Repository, branch_name: &str) -> Result<i64> 
 
     if let Ok(mut stack_ref_v4) = repo.find_reference(refname_v4.as_str()) {
         let state_commit = stack_ref_v4
-            .peel_to_id_in_place()
+            .peel_to_id()
             .context("finding version 4 state commit")?
             .object()?
             .try_into_commit()?;
@@ -89,7 +89,7 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
 
     if let Ok(mut stack_ref_v4) = repo.find_reference(refname_v4.as_str()) {
         let state_commit = stack_ref_v4
-            .peel_to_id_in_place()
+            .peel_to_id()
             .context("finding version 4 state commit")?
             .object()?
             .try_into_commit()?;
@@ -226,7 +226,7 @@ fn stack_upgrade_from_3(repo: &gix::Repository, branch_name: &str) -> Result<()>
     let mut patches: BTreeMap<PatchName, RawPatchState> = BTreeMap::new();
 
     if let Ok(mut head_ref) = repo.find_reference(format!("refs/heads/{branch_name}").as_str()) {
-        let commit_id: gix::ObjectId = head_ref.peel_to_id_in_place()?.into();
+        let commit_id: gix::ObjectId = head_ref.peel_to_id()?.into();
         head = Some(commit_id);
     }
 
@@ -248,7 +248,7 @@ fn stack_upgrade_from_3(repo: &gix::Repository, branch_name: &str) -> Result<()>
             if let Ok(mut reference) =
                 repo.find_reference(format!("refs/patches/{branch_name}/{pn}").as_str())
             {
-                let commit_id: gix::ObjectId = reference.peel_to_id_in_place()?.into();
+                let commit_id: gix::ObjectId = reference.peel_to_id()?.into();
                 let patchname = PatchName::from_str(&pn)
                     .with_context(|| format!("converting `{}` to patchname", &pn))?;
                 patch_list.push(patchname.clone());
