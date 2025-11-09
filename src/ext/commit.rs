@@ -13,7 +13,7 @@ pub(crate) trait CommitExtended<'a> {
     /// encoded with the commit encoding. However, `gitoxide` does not perform any
     /// decoding when it parses commit objects, thus a [`gix::actor::Signature`] from a
     /// [`gix::Commit`] is not decoded in the general case, and thus
-    /// [`gix::actor::Signature.name`] and [`gix::actor::Signature.email` ] may only be
+    /// [`gix::actor::Signature::name`] and [`gix::actor::Signature::email` ] may only be
     /// decoded UTF-8 strings iff the commit happens to be using the UTF-8 encoding.
     ///
     /// This method takes into account the commit's encoding and attempts to decode the
