@@ -27,10 +27,12 @@ impl Default for TransactionOptions {
 
 /// Policies for whether a transaction may execute when conflicts emerge from the
 /// transactions operations.
+#[derive(Default)]
 pub(crate) enum ConflictMode {
     /// Transaction execution will fail if there are conflicts recorded in the index.
     ///
     /// This is the default.
+    #[default]
     Disallow,
 
     /// Transaction execution will succeed even if there are outstanding conflicts.
@@ -39,10 +41,4 @@ pub(crate) enum ConflictMode {
     /// Transaction execution will succeed with conflicts, but only if the topmost patch
     /// is unchanged by the transaction.
     AllowIfSameTop,
-}
-
-impl Default for ConflictMode {
-    fn default() -> Self {
-        Self::Disallow
-    }
 }
