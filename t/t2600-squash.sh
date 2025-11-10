@@ -73,11 +73,11 @@ test_expect_success 'Squash at stack top' '
 
 test_expect_success 'Squash patches with all non-default author' '
     echo "a" >>baz.txt &&
-    stg new -rm "a-patch" --author "Other Contributor <another@example.com>" &&
+    stg new -rm "a-patch" --author "Other Contributor <another@example.com>" --authdate 1762750000 &&
     echo "b" >>baz.txt &&
-    stg new -rm "b-patch" --author "Other Contributor <another@example.com>" &&
+    stg new -rm "b-patch" --author "Other Contributor <another@example.com>" --authdate 1762760000 &&
     echo "c" >>baz.txt &&
-    stg new -rm "c-patch" --author "Other Contributor <another@example.com>" &&
+    stg new -rm "c-patch" --author "Other Contributor <another@example.com>" --authdate 1762770000 &&
     stg squash -m "abc-patch" a-patch b-patch c-patch &&
     test_when_finished "stg delete abc-patch" &&
     stg show abc-patch | grep "Author:" >out &&
