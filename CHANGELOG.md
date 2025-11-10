@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.5.5 2025-11-10
+
+### Fixed
+
+- fix(squash): keep author when squashed commits have same author
+
+### Changed
+
+- chore: update gix to 0.74
+
+
 ## 2.5.4 2025-08-10
 
 ### Fixed
