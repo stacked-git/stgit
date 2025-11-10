@@ -230,7 +230,7 @@ fn try_squash(
         for commit in patchnames[1..].iter().map(|pn| trans.get_patch_commit(pn)) {
             let commit_ref = commit.decode()?;
             let author = commit.author()?;
-            if author != base_author {
+            if author.name != base_author.name || author.email != base_author.email {
                 use_base_author = false;
             }
             let parent = commit.get_parent_commit()?;
