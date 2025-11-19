@@ -10,6 +10,7 @@ mod describe;
 mod list;
 mod protect;
 mod rename;
+mod reset;
 mod unprotect;
 
 use anyhow::Result;
@@ -59,6 +60,7 @@ fn make() -> clap::Command {
                 "{--delete,-D} [--force] [branch]",
                 "--cleanup [--force] [branch]",
                 "{--describe,-d} <description> [branch]",
+                "--reset [branch]",
             ],
         ))
         .subcommand(self::list::command())
@@ -70,6 +72,7 @@ fn make() -> clap::Command {
         .subcommand(self::delete::command())
         .subcommand(self::cleanup::command())
         .subcommand(self::describe::command())
+        .subcommand(self::reset::command())
         .arg(
             clap::Arg::new("merge")
                 .long("merge")
@@ -98,6 +101,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             "--delete" => self::delete::dispatch(&repo, submatches),
             "--cleanup" => self::cleanup::dispatch(&repo, submatches),
             "--describe" => self::describe::dispatch(&repo, submatches),
+            "--reset" => self::reset::dispatch(&repo, submatches),
             s => panic!("unhandled branch subcommand {s}"),
         }
     } else if let Some(target_branch_loc) = matches.get_one::<BranchLocator>("branch-any") {
