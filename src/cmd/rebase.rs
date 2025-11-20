@@ -367,16 +367,16 @@ fn interactive_pushback(
         return Ok(());
     }
 
-    let filename = ".stgit-rebase-interactive.txt";
+    let filename = stack.repo.git_data_file(".stgit-rebase-interactive.txt");
     std::fs::write(
-        filename,
+        &filename,
         make_instructions_template(&stack, previously_applied),
     )?;
 
-    let buf = patchedit::call_editor(filename, config)?;
+    let buf = patchedit::call_editor(&filename, config)?;
     let buf = buf
         .to_str()
-        .map_err(|_| anyhow!("`{filename}` is not valid UTF-8"))?;
+        .map_err(|_| anyhow!("`{}` is not valid UTF-8", filename.display()))?;
     let mut instructions = parse_instructions(buf)?;
 
     validate_instructions(&stack, &instructions)?;

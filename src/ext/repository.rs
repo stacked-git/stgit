@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use std::borrow::Cow;
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use bstr::BStr;
@@ -78,6 +79,13 @@ pub(crate) trait RepositoryExtended {
 
     /// [`gix::Repository::rev_parse_single()`] with StGit-specific error mapping.
     fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>>;
+
+    /// Get path to a file in the git directory.
+    ///
+    /// By default, this returns a path within the `.git` directory to avoid cluttering
+    /// the working directory. If the `STG_EDIT_IN_CWD` environment variable is set,
+    /// returns the path relative to the current working directory instead.
+    fn git_data_file(&self, path: &str) -> PathBuf;
 }
 
 /// Options for creating a git commit object.
@@ -327,5 +335,13 @@ impl RepositoryExtended for gix::Repository {
                     }
                 }
             })
+    }
+
+    fn git_data_file(&self, path: &str) -> PathBuf {
+        // If STG_EDIT_IN_CWD is set, return path as is.
+        match std::env::var("STG_EDIT_IN_CWD") {
+            Ok(_) => PathBuf::from(path),
+            Err(_) => self.path().join(path),
+        }
     }
 }
