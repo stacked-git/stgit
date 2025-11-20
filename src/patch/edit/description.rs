@@ -9,6 +9,8 @@ use bstr::{BStr, BString, ByteSlice};
 
 use crate::{ext::TimeExtended, patch::PatchName};
 
+const CUT_LINE: &str = "------------------------ >8 ------------------------";
+
 #[derive(Clone, PartialEq, Eq)]
 pub(super) struct DiffBuffer(pub(super) BString);
 
@@ -45,30 +47,38 @@ pub(super) struct EditablePatchDescription {
     /// Instruction string presented to the user in the editable patch description file.
     ///
     /// Will be `None` when the description is read-back after user edits.
-    pub instruction: Option<&'static str>,
+    pub instruction: Option<String>,
 
     /// Instructions for user regarding what can/cannot be done with the diff.
     ///
     /// This instruction is only needed/presented when the optional diff is provided.
     /// This field will be `None` when the description is read-back after user edits.
-    pub diff_instruction: Option<&'static str>,
+    pub diff_instruction: Option<String>,
 
     /// Optional diff to present to the user in the editable patch description.
     ///
     /// Unlike all the other fields, the diff *does not* have to be valid UTF-8.
     pub diff: Option<DiffBuffer>,
+
+    /// Comment symbol to use for comment lines in the patch description.
+    ///
+    /// This is typically read from git's `core.commentChar` config.
+    pub comment_symbol: String,
 }
 
-const CUT_LINE: &str = "# ------------------------ >8 ------------------------\n";
-
 impl EditablePatchDescription {
-    /// Write user-editable patch description to the provided stream.
-    pub(super) fn write<S: Write>(&self, stream: &mut S) -> Result<()> {
+    /// Write user-editable patch description to the provided stream with custom comment string.
+    pub(super) fn write_with_comment_symbol<S: Write>(
+        &self,
+        stream: &mut S,
+        comment_symbol: &str,
+    ) -> Result<()> {
         let patchname = if let Some(patchname) = &self.patchname {
             patchname.as_ref()
         } else {
             ""
         };
+
         writeln!(stream, "Patch:  {patchname}")?;
         if let Some(author) = self.author.as_ref() {
             let authdate = author.time.format(gix::date::time::format::ISO8601)?;
@@ -83,20 +93,36 @@ impl EditablePatchDescription {
         }
         let message = self.message.trim_end_matches('\n');
         write!(stream, "\n{message}\n")?;
-        if let Some(instruction) = self.instruction {
-            write!(stream, "\n{instruction}")?;
+        if let Some(instruction) = &self.instruction {
+            writeln!(stream)?;
+            for line in instruction.lines() {
+                writeln!(stream, "{} {}", comment_symbol, line)?;
+            }
         } else {
             writeln!(stream)?;
         }
         if let Some(diff) = self.diff.as_ref() {
-            if let Some(diff_instruction) = self.diff_instruction {
-                write!(stream, "{diff_instruction}")?;
+            if let Some(diff_instruction) = &self.diff_instruction {
+                for line in diff_instruction.lines() {
+                    writeln!(stream, "{} {}", comment_symbol, line)?;
+                }
             }
-            stream.write_all(CUT_LINE.as_bytes())?;
-            writeln!(stream, "# Do not modify or remove the line above.")?;
+            writeln!(stream, "{} {}", comment_symbol, CUT_LINE)?;
+            writeln!(
+                stream,
+                "{} Do not modify or remove the line above.",
+                comment_symbol
+            )?;
             stream.write_all(diff.as_ref())?;
         }
         Ok(())
+    }
+
+    /// Write user-editable patch description to the provided stream.
+    ///
+    /// Uses the comment symbol stored in the struct.
+    pub(super) fn write<S: Write>(&self, stream: &mut S) -> Result<()> {
+        self.write_with_comment_symbol(stream, &self.comment_symbol)
     }
 }
 
@@ -141,22 +167,29 @@ pub(super) struct EditedPatchDescription {
     pub diff: Option<DiffBuffer>,
 }
 
-impl TryFrom<&[u8]> for EditedPatchDescription {
-    type Error = anyhow::Error;
-
+impl EditedPatchDescription {
     /// Attempt to parse user-edited patch description.
     ///
-    /// Any lines starting with '#' are treated as comments and discarded, except for
-    /// the cut line which separates the headers and message from the diff content.
+    /// Any lines starting with '#' (or the comment_symbol) are treated as comments
+    /// and discarded, except for the cut line which separates the headers and
+    /// message from the diff content.
     ///
-    /// The "Patch", "Author", and "Date" headers, if present, must be the first three
-    /// lines of the message. This rigidity is done to allow the message, which follows
-    /// these headers, to potentially contain strings such as "Patch:".
+    /// The "Patch", "Author", and "Date" headers, if present, must be the first
+    /// three lines of the message. This rigidity is done to allow the message,
+    /// which follows these headers, to potentially contain strings such as
+    /// "Patch:".
     ///
     /// If all headers are absent and the trimmed message is empty, an error is
-    /// returned. Blanking-out the headers and message is thus a mechanism for the user
-    /// to abort the interactive edit.
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+    /// returned. Blanking-out the headers and message is thus a mechanism for the
+    /// user to abort the interactive edit.
+    pub(super) fn parse_with_comment_symbol(buf: &[u8], comment_symbol: &str) -> Result<Self> {
+        Self::parse_internal(buf, comment_symbol)
+    }
+
+    fn parse_internal(buf: &[u8], comment_symbol: &str) -> Result<Self> {
+        let comment_bytes = comment_symbol.as_bytes();
+        let cut_line = format!("{} {}", comment_symbol, CUT_LINE);
+        let cut_line_bytes = cut_line.as_bytes();
         let mut raw_patchname: Option<Option<String>> = None;
         let mut raw_author: Option<Option<String>> = None;
         let mut raw_authdate: Option<Option<String>> = None;
@@ -172,10 +205,10 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             .enumerate()
         {
             pos += line.len();
-            if line.starts_with(CUT_LINE.as_bytes()) {
+            if line.starts_with(cut_line_bytes) {
                 consume_diff = true;
                 break;
-            } else if line.starts_with(b"#") {
+            } else if line.starts_with(comment_bytes) {
                 continue;
             }
 
@@ -256,7 +289,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             Some(if let Some(name_email) = maybe_author {
                 let (name, email) = super::parse::parse_name_email(&name_email)?;
                 let time = if let Some(Some(date_str)) = raw_authdate {
-                    gix::date::Time::parse_time(&date_str).context("patch description date")?
+                    gix::date::Time::parse_time(&date_str).context("parsing author date")?
                 } else {
                     gix::date::Time::now_local_or_utc()
                 };
@@ -283,7 +316,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
         let diff = if consume_diff {
             // Skip any comment lines after the cut line.
             for line in buf[pos..].split_inclusive(|&b| b == b'\n') {
-                if line.starts_with(b"#") {
+                if line.starts_with(comment_bytes) {
                     pos += line.len();
                 } else {
                     break;
@@ -400,9 +433,10 @@ mod tests {
                 time: gix::date::Time::new(987654321, -3600),
             }),
             message: "".to_string(),
-            instruction: Some("# Instruction\n"),
+            instruction: Some("Instruction\n".to_string()),
             diff_instruction: None,
             diff: None,
+            comment_symbol: "#".to_string(),
         };
 
         let mut buf: Vec<u8> = vec![];
@@ -419,7 +453,8 @@ mod tests {
              # Instruction\n",
         );
 
-        let edited = EditedPatchDescription::try_from(buf.as_slice()).unwrap();
+        let edited =
+            EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), "#").unwrap();
 
         compare_patch_descs(&edited, &editable);
     }
@@ -434,9 +469,10 @@ mod tests {
                 time: gix::date::Time::new(987654321, 21600),
             }),
             message: "Subject\n".to_string(),
-            instruction: Some("# Instruction\n"),
+            instruction: Some("Instruction\n".to_string()),
             diff_instruction: None,
             diff: None,
+            comment_symbol: "#".to_string(),
         };
 
         let mut buf: Vec<u8> = vec![];
@@ -453,7 +489,8 @@ mod tests {
              # Instruction\n",
         );
 
-        let edited_desc = EditedPatchDescription::try_from(buf.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), "#").unwrap();
 
         compare_patch_descs(&edited_desc, &patch_desc);
     }
@@ -475,9 +512,10 @@ mod tests {
                       With-a-trailer: yes\n\
                       "
             .to_string(),
-            instruction: Some("# Instruction\n"),
+            instruction: Some("Instruction\n".to_string()),
             diff_instruction: None,
             diff: None,
+            comment_symbol: "#".to_string(),
         };
 
         let mut buf: Vec<u8> = vec![];
@@ -499,7 +537,8 @@ mod tests {
              # Instruction\n",
         );
 
-        let edited_desc = EditedPatchDescription::try_from(buf.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), "#").unwrap();
 
         compare_patch_descs(&edited_desc, &patch_desc);
     }
@@ -514,8 +553,8 @@ mod tests {
                 time: gix::date::Time::new(987654321, 21600),
             }),
             message: "Subject\n".to_string(),
-            instruction: Some("# Instruction\n"),
-            diff_instruction: Some("# Diff instruction\n"),
+            instruction: Some("Instruction\n".to_string()),
+            diff_instruction: Some("Diff instruction\n".to_string()),
             diff: Some(DiffBuffer(BString::from(
                 "\n\
                  Some stuff before first diff --git\n\
@@ -529,6 +568,7 @@ mod tests {
                  +goodbye\n\
                  \\ No newline at end of file\n",
             ))),
+            comment_symbol: "#".to_string(),
         };
 
         let mut buf: Vec<u8> = vec![];
@@ -559,7 +599,8 @@ mod tests {
              \\ No newline at end of file\n",
         );
 
-        let edited_desc = EditedPatchDescription::try_from(buf.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), "#").unwrap();
 
         compare_patch_descs(&edited_desc, &pd);
     }
@@ -580,9 +621,10 @@ mod tests {
                       With-a-trailer: yes\n\
                       "
             .to_string(),
-            instruction: Some("# Instruction\n"),
+            instruction: Some("Instruction\n".to_string()),
             diff_instruction: None,
             diff: None,
+            comment_symbol: "#".to_string(),
         };
 
         let mut buf: Vec<u8> = vec![];
@@ -619,7 +661,8 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(edited.as_slice(), "#").unwrap();
 
         compare_patch_descs(&edited_desc, &patch_desc);
     }
@@ -635,7 +678,8 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         let expected = EditedPatchDescription {
             patchname: None,
@@ -662,7 +706,8 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         let commented_time = gix::date::Time::new(987654321, 21600);
         assert!(edited_desc.author.is_some());
@@ -700,7 +745,8 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         let expected = EditedPatchDescription {
             patchname: Some(Some("patch".parse::<PatchName>().unwrap())),
@@ -728,7 +774,9 @@ mod tests {
         \n\
         # Instruction\n";
 
-        assert!(EditedPatchDescription::try_from(description.as_slice()).is_err());
+        assert!(
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").is_err()
+        );
     }
 
     #[test]
@@ -741,7 +789,8 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
         assert_eq!(edited_desc.message, "Subject\n");
     }
 
@@ -758,7 +807,8 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         assert_eq!(edited_desc.message, "Subject\n");
     }
@@ -773,7 +823,8 @@ mod tests {
         Subject\n\
         # Instruction\n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         assert_eq!(edited_desc.message, "Subject\n");
     }
@@ -787,7 +838,8 @@ mod tests {
         \n\
         Subject";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         assert_eq!(edited_desc.message, "Subject\n");
     }
@@ -812,7 +864,8 @@ mod tests {
         # Instruction\n\
         \n";
 
-        let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(description.as_slice(), "#").unwrap();
 
         assert_eq!(
             edited_desc.message,
@@ -836,7 +889,7 @@ mod tests {
             b"# ------------------------ >8 ------------------------  \n",
             b"# ------------------------ >8 ------------------------\n  \n",
         ] {
-            let result = EditedPatchDescription::try_from(description);
+            let result = EditedPatchDescription::parse_with_comment_symbol(description, "#");
             assert!(result.is_err());
         }
     }
@@ -849,7 +902,8 @@ mod tests {
         Body1.\n\
         Body2.\n";
 
-        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(edited.as_slice(), "#").unwrap();
 
         assert!(edited_desc.patchname.is_none());
         assert!(edited_desc.author.is_none());
@@ -869,7 +923,8 @@ mod tests {
         Body1.\n\
         Body2.\n";
 
-        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(edited.as_slice(), "#").unwrap();
 
         assert!(edited_desc.patchname.unwrap().is_none());
         assert!(edited_desc.author.unwrap().is_none());
@@ -887,7 +942,8 @@ mod tests {
         ---\n\
         Extra.\n";
 
-        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(edited.as_slice(), "#").unwrap();
 
         assert!(edited_desc.patchname.is_none());
         assert!(edited_desc.author.is_none());
@@ -917,7 +973,8 @@ mod tests {
         ---\n\
         Extra.\n";
 
-        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(edited.as_slice(), "#").unwrap();
 
         assert!(edited_desc.patchname.unwrap().is_none());
         assert!(edited_desc.author.unwrap().is_none());
@@ -931,5 +988,86 @@ mod tests {
              Extra.\n"
         );
         assert!(edited_desc.diff.is_none());
+    }
+
+    #[test]
+    fn parse_with_custom_comment_symbol() {
+        let edited = b"\
+        Patch:  patch\n\
+        Author: The Author <author@example.com>\n\
+        Date:   2001-04-19 10:25:21 +0600\n\
+        \n\
+        Subject\n\
+        %% Comment\n\
+        Body 1.\n\
+        %% Instruction\n";
+
+        let comment_symbol = "%%";
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(edited.as_slice(), comment_symbol)
+                .unwrap();
+
+        assert_eq!(edited_desc.message, "Subject\nBody 1.\n");
+    }
+    #[test]
+    fn write_with_custom_comment_symbol() {
+        let pd = EditablePatchDescription {
+            patchname: Some("patch".parse::<PatchName>().unwrap()),
+            author: Some(gix::actor::Signature {
+                name: BString::from("The Author"),
+                email: BString::from("author@example.com"),
+                time: gix::date::Time::new(987654321, 21600),
+            }),
+            message: "Subject\n".to_string(),
+            instruction: Some("Instruction\n".to_string()),
+            diff_instruction: Some("Diff instruction\n".to_string()),
+            diff: Some(DiffBuffer(BString::from(
+                "\n\
+                 Some stuff before first diff --git\n\
+                 \n\
+                 diff --git a/foo.txt b/foo.txt\n\
+                 index ce01362..a21e91b 100644\n\
+                 --- a/foo.txt\n\
+                 +++ b/foo.txt\n\
+                 @@ -1 +1 @@\n\
+                 -hello\n\
+                 +goodbye\n\
+                 \\ No newline at end of file\n",
+            ))),
+            comment_symbol: "%%".to_string(),
+        };
+
+        let mut buf: Vec<u8> = vec![];
+        pd.write(&mut buf).unwrap();
+
+        assert_eq!(
+            buf.to_str().unwrap(),
+            "Patch:  patch\n\
+             Author: The Author <author@example.com>\n\
+             Date:   2001-04-19 10:25:21 +0600\n\
+             \n\
+             Subject\n\
+             \n\
+             %% Instruction\n\
+             %% Diff instruction\n\
+             %% ------------------------ >8 ------------------------\n\
+             %% Do not modify or remove the line above.\n\
+             \n\
+             Some stuff before first diff --git\n\
+             \n\
+             diff --git a/foo.txt b/foo.txt\n\
+             index ce01362..a21e91b 100644\n\
+             --- a/foo.txt\n\
+             +++ b/foo.txt\n\
+             @@ -1 +1 @@\n\
+             -hello\n\
+             +goodbye\n\
+             \\ No newline at end of file\n",
+        );
+
+        let edited_desc =
+            EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), "%%").unwrap();
+
+        compare_patch_descs(&edited_desc, &pd);
     }
 }
