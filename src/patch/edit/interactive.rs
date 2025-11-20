@@ -14,15 +14,18 @@ use bstr::BString;
 
 use super::description::{EditablePatchDescription, EditedPatchDescription};
 
-pub(crate) static EDIT_INSTRUCTION: &str = "\
-    # Please enter the message for your patch. Lines starting with\n\
-    # '#' will be ignored. An empty message aborts the new patch.\n\
-    # The patch name and author information may also be modified.\n";
+pub(super) fn edit_instruction(comment_symbol: &str) -> String {
+    format!(
+        "Please enter the message for your patch. Lines starting with\n\
+         '{}' will be ignored. An empty message aborts the new patch.\n\
+         The patch name and author information may also be modified.\n",
+        comment_symbol
+    )
+}
 
-pub(crate) static EDIT_INSTRUCTION_READ_ONLY_DIFF: &str =
-    "# The diff below is for reference. Any edits will be ignored.\n";
-
-pub(crate) static EDIT_INSTRUCTION_EDITABLE_DIFF: &str = "# The diff below may be edited.\n";
+pub(super) const EDIT_INSTRUCTION_READ_ONLY_DIFF: &str =
+    "The diff below is for reference. Any edits will be ignored.\n";
+pub(super) const EDIT_INSTRUCTION_EDITABLE_DIFF: &str = "The diff below may be edited.\n";
 
 /// Default file name for interactively editable patch description.
 static EDIT_FILE_NAME: &str = ".stgit-edit.txt";
@@ -38,6 +41,9 @@ pub(super) fn edit_interactive(
     patch_desc: &EditablePatchDescription,
     config: &gix::config::Snapshot,
 ) -> Result<EditedPatchDescription> {
+    use crate::ext::RepositoryExtended;
+
+    let comment_symbol = config.repo.get_comment_symbol();
     let filename = if patch_desc.diff.is_some() {
         EDIT_FILE_NAME_DIFF
     } else {
@@ -47,11 +53,12 @@ pub(super) fn edit_interactive(
     {
         let file = File::create(filename)?;
         let mut stream = BufWriter::new(file);
-        patch_desc.write(&mut stream)?;
+        patch_desc.write_with_comment_symbol(&mut stream, &comment_symbol)?;
     }
 
     let buf = call_editor(filename, config)?;
-    let edited_desc = EditedPatchDescription::try_from(buf.as_slice())?;
+    let edited_desc =
+        EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), &comment_symbol)?;
     Ok(edited_desc)
 }
 
