@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 
 use anyhow::{anyhow, Result};
-use bstr::BStr;
+use bstr::{BStr, ByteSlice};
 
 use crate::{
     stupid::Stupid,
@@ -78,6 +78,13 @@ pub(crate) trait RepositoryExtended {
 
     /// [`gix::Repository::rev_parse_single()`] with StGit-specific error mapping.
     fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>>;
+
+    /// Get the comment symbol from git config.
+    ///
+    /// Returns the configured `core.commentChar` value, defaulting to "#" if not set.
+    /// Git's default is '#' and it also supports 'auto' which we treat as '#'.
+    /// Note: git allows this to be a string, not just a single character.
+    fn get_comment_symbol(&self) -> String;
 }
 
 /// Options for creating a git commit object.
@@ -329,5 +336,18 @@ impl RepositoryExtended for gix::Repository {
                     }
                 }
             })
+    }
+
+    fn get_comment_symbol(&self) -> String {
+        let config = self.config_snapshot();
+        config
+            // fetch the comment symbol from the config
+            .string("core.commentChar")
+            // convert the value to a string and trim it
+            .and_then(|value| value.to_str().ok().map(|s| s.trim().to_string()))
+            // filter out empty values and "auto"
+            .filter(|value_str| !value_str.is_empty() && value_str != "auto")
+            // if no value is found, return "#"
+            .unwrap_or("#".to_string())
     }
 }

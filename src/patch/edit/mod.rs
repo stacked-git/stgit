@@ -241,6 +241,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let config = repo.config_snapshot();
         let default_committer = repo.get_committer()?;
 
+        let comment_symbol = repo.get_comment_symbol();
         let EditedPatchDescription {
             patchname: file_patchname,
             author: file_author,
@@ -250,9 +251,12 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             if file_os.to_str() == Some("-") {
                 let mut buf: Vec<u8> = Vec::with_capacity(8192);
                 std::io::stdin().read_to_end(&mut buf)?;
-                EditedPatchDescription::try_from(buf.as_slice())?
+                EditedPatchDescription::parse_with_comment_symbol(buf.as_slice(), &comment_symbol)?
             } else {
-                EditedPatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
+                EditedPatchDescription::parse_with_comment_symbol(
+                    std::fs::read(file_os)?.as_slice(),
+                    &comment_symbol,
+                )?
             }
         } else {
             EditedPatchDescription::default() // i.e. all Nones
@@ -412,12 +416,12 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let need_commit_msg_hook =
             !matches.get_flag("no-verify") && (need_interactive_edit || is_message_modified());
 
-        let instruction = Some(interactive::EDIT_INSTRUCTION);
-        let diff_instruction = Some(if allow_diff_edit {
-            interactive::EDIT_INSTRUCTION_EDITABLE_DIFF
+        let instruction = Some(interactive::edit_instruction(&comment_symbol));
+        let diff_instruction = if allow_diff_edit {
+            Some(interactive::EDIT_INSTRUCTION_EDITABLE_DIFF.to_string())
         } else {
-            interactive::EDIT_INSTRUCTION_READ_ONLY_DIFF
-        });
+            Some(interactive::EDIT_INSTRUCTION_READ_ONLY_DIFF.to_string())
+        };
 
         if allow_template_save && matches.contains_id("save-template") {
             let message = message.decode()?.to_string();
@@ -425,9 +429,10 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 patchname,
                 author,
                 message,
-                instruction,
-                diff_instruction,
+                instruction: instruction.clone(),
+                diff_instruction: diff_instruction.clone(),
                 diff,
+                comment_symbol: comment_symbol.clone(),
             };
             let path = matches.get_one::<PathBuf>("save-template").unwrap().clone();
             if path.to_str() == Some("-") {
@@ -445,9 +450,10 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 patchname,
                 author,
                 message: message.decode()?.to_string(),
-                instruction,
-                diff_instruction,
+                instruction: instruction.clone(),
+                diff_instruction: diff_instruction.clone(),
                 diff,
+                comment_symbol: comment_symbol.clone(),
             };
 
             let EditedPatchDescription {
@@ -509,8 +515,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                         author,
                         message: message.decode()?.to_string(),
                         instruction,
-                        diff_instruction,
+                        diff_instruction: diff_instruction.clone(),
                         diff,
+                        comment_symbol,
                     };
                     failed_patch_description.write(&mut stream)?;
                     return Err(anyhow!(
