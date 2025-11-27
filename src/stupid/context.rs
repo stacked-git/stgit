@@ -417,11 +417,11 @@ impl StupidContext<'_, '_> {
             // TODO: re-encode dates?
             .env(
                 "GIT_AUTHOR_DATE",
-                author.time.format(gix::date::time::format::RAW),
+                author.time.format(gix::date::time::format::RAW)?,
             )
             .env(
                 "GIT_COMMITTER_DATE",
-                committer.time.format(gix::date::time::format::RAW),
+                committer.time.format(gix::date::time::format::RAW)?,
             )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

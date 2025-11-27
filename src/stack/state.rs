@@ -412,7 +412,7 @@ impl<'repo> StackState<'repo> {
         let parent_tree_id = parent.tree_id()?;
         let commit_tree_id = commit_ref.tree();
         let author = commit_ref.author();
-        let date = commit_ref.time().format(gix::date::time::format::ISO8601);
+        let date = commit_ref.time().format(gix::date::time::format::ISO8601)?;
 
         let mut patch_meta: BString = Vec::with_capacity(1024).into();
         patch_meta.push_str(format!(

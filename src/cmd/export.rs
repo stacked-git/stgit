@@ -236,7 +236,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Cow::Owned(
                 author
                     .time()?
-                    .format(gix::date::time::format::ISO8601)
+                    .format(gix::date::time::format::ISO8601)?
                     .into(),
             ),
         );
@@ -248,7 +248,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Cow::Owned(
                 committer
                     .time()?
-                    .format(gix::date::time::format::ISO8601)
+                    .format(gix::date::time::format::ISO8601)?
                     .into(),
             ),
         );

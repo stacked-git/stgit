@@ -71,7 +71,7 @@ impl EditablePatchDescription {
         };
         writeln!(stream, "Patch:  {patchname}")?;
         if let Some(author) = self.author.as_ref() {
-            let authdate = author.time.format(gix::date::time::format::ISO8601);
+            let authdate = author.time.format(gix::date::time::format::ISO8601)?;
             write!(stream, "Author: ")?;
             stream.write_all(author.name.as_bstr())?;
             write!(stream, " <")?;

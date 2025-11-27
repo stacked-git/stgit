@@ -86,6 +86,7 @@ mod tests {
         let time = Time::parse_time(time_str).unwrap();
         assert!(time
             .format(gix::date::time::format::ISO8601_STRICT)
+            .unwrap()
             .starts_with(time_str));
     }
 
