@@ -88,6 +88,28 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::push_conflicts_arg())
+        .arg(
+            Arg::new("exec")
+                .long("exec")
+                .short('x')
+                .help("Execute command after each patch is applied")
+                .long_help(
+                    "Execute the given shell command after each patch is successfully \
+                     applied during the rebase operation. If the command fails (exits with \
+                     non-zero status), the entire transaction is rolled back and no patches \
+                     remain applied.\n\
+                     \n\
+                     This option may be specified multiple times to run multiple commands \
+                     in sequence after each patch.\n\
+                     \n\
+                     This is similar to `git rebase --exec`, but note that stgit rolls back \
+                     the entire operation on failure rather than leaving you at the failing \
+                     point.",
+                )
+                .action(clap::ArgAction::Append)
+                .value_name("cmd")
+                .conflicts_with_all(["nopush", "interactive"]),
+        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -237,13 +259,24 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else if !matches.get_flag("nopush") {
         stack.check_head_top_mismatch()?;
         let check_merged = matches.get_flag("merged");
+        let exec_cmds: Vec<&str> = matches
+            .get_many::<String>("exec")
+            .map(|vals| vals.map(String::as_str).collect())
+            .unwrap_or_default();
+
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
             .allow_push_conflicts(allow_push_conflicts)
             .committer_date_is_author_date(committer_date_is_author_date)
             .with_output_stream(get_color_stdout(matches))
-            .transact(|trans| trans.push_patches(&applied, check_merged))
+            .transact(|trans| {
+                if exec_cmds.is_empty() {
+                    trans.push_patches(&applied, check_merged)
+                } else {
+                    trans.push_patches_with_exec(&applied, check_merged, &exec_cmds)
+                }
+            })
             .execute("rebase (reapply)")?;
     }
 

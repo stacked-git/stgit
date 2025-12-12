@@ -243,6 +243,16 @@ impl TransactionUserInterface {
         Ok(())
     }
 
+    pub(super) fn print_exec(&self, cmd: &str) -> Result<()> {
+        let mut output = self.output.borrow_mut();
+        let mut color_spec = termcolor::ColorSpec::new();
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+        write!(output, "Executing: ")?;
+        output.reset()?;
+        writeln!(output, "{cmd}")?;
+        Ok(())
+    }
+
     pub(super) fn print_updated(&self, patchname: &PatchName, applied: &[PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let (is_applied, is_top) = if let Some(pos) = applied.iter().position(|pn| pn == patchname)

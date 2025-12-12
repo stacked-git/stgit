@@ -969,6 +969,40 @@ impl<'repo> StackTransaction<'repo> {
     where
         P: AsRef<PatchName>,
     {
+        self.push_patches_impl(patchnames, check_merged, &[])
+    }
+
+    /// Push unapplied patches, running exec commands after each successful push.
+    ///
+    /// After each patch is successfully pushed, all provided exec commands are run
+    /// in sequence. If any exec command fails, the entire transaction is rolled back
+    /// (no patches remain applied).
+    ///
+    /// This supports the `stg rebase --exec` functionality. Note that this differs from
+    /// `git rebase --exec` which leaves you at the failing point; stgit's rollback
+    /// behavior is safer and consistent with how stgit transactions work.
+    pub(crate) fn push_patches_with_exec<P>(
+        &mut self,
+        patchnames: &[P],
+        check_merged: bool,
+        exec_cmds: &[&str],
+    ) -> Result<()>
+    where
+        P: AsRef<PatchName>,
+    {
+        self.push_patches_impl(patchnames, check_merged, exec_cmds)
+    }
+
+    /// Core implementation for pushing patches with optional exec commands.
+    fn push_patches_impl<P>(
+        &mut self,
+        patchnames: &[P],
+        check_merged: bool,
+        exec_cmds: &[&str],
+    ) -> Result<()>
+    where
+        P: AsRef<PatchName>,
+    {
         let stupid = self.stack.repo.stupid();
         stupid.with_temp_index(|stupid_temp| {
             let mut temp_index_tree_id: Option<gix::ObjectId> = None;
@@ -981,17 +1015,27 @@ impl<'repo> StackTransaction<'repo> {
 
             for (i, patchname) in patchnames.iter().enumerate() {
                 let patchname = patchname.as_ref();
-                let is_last = i + 1 == patchnames.len();
+                // When exec commands are provided, we can't optimize the final checkout
+                // because the commands may modify the working tree. Only treat the last
+                // patch as "last" (enabling checkout optimization) when there are no
+                // exec commands.
+                let should_optimize_final_checkout =
+                    i + 1 == patchnames.len() && exec_cmds.is_empty();
                 let already_merged = merged
                     .as_ref()
                     .is_some_and(|merged| merged.contains(&patchname));
                 self.push_patch(
                     patchname,
                     already_merged,
-                    is_last,
+                    should_optimize_final_checkout,
                     stupid_temp,
                     &mut temp_index_tree_id,
                 )?;
+
+                for cmd in exec_cmds {
+                    self.ui.print_exec(cmd)?;
+                    stupid.exec_cmd(cmd)?;
+                }
             }
 
             Ok(())

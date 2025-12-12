@@ -1317,6 +1317,42 @@ impl StupidContext<'_, '_> {
         }
     }
 
+    /// Run user-provided exec command in a shell.
+    ///
+    /// This executes the command using the user's shell (from $SHELL env var, or
+    /// "sh" as fallback), similar to how `git rebase --exec` works.
+    pub(crate) fn exec_cmd(&self, cmd: &str) -> Result<()> {
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
+        let mut command = Command::new(&shell);
+        if let Some(work_dir) = self.work_dir {
+            command.current_dir(work_dir);
+        }
+        self.setup_git_env(&mut command);
+        let status = command
+            .arg("-c")
+            .arg(cmd)
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .with_context(|| format!("could not execute command: {cmd}"))?;
+
+        if status.success() {
+            Ok(())
+        } else if let Some(code) = status.code() {
+            Err(anyhow!("command exited with code {code}: {cmd}"))
+        } else {
+            #[cfg(unix)]
+            {
+                use std::os::unix::process::ExitStatusExt;
+                if let Some(signal) = status.signal() {
+                    return Err(anyhow!("command killed by signal {signal}: {cmd}"));
+                }
+            }
+            Err(anyhow!("command failed: {cmd}"))
+        }
+    }
+
     /// Run user-provided rebase command.
     pub(crate) fn user_rebase(&self, user_cmd_str: &str, target: gix::ObjectId) -> Result<()> {
         let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
