@@ -998,6 +998,59 @@ impl<'repo> StackTransaction<'repo> {
         })
     }
 
+    /// Push unapplied patches, running exec commands after each successful push.
+    ///
+    /// This is similar to `push_patches`, but after each patch is pushed successfully,
+    /// all provided exec commands are run in sequence. If any exec command fails, the
+    /// entire transaction is rolled back (no patches remain applied).
+    ///
+    /// This supports the `stg rebase --exec` functionality. Note that this differs from
+    /// `git rebase --exec` which leaves you at the failing point; stgit's behavior is
+    /// safer and consistent with how stgit transactions work.
+    pub(crate) fn push_patches_with_exec<P>(
+        &mut self,
+        patchnames: &[P],
+        check_merged: bool,
+        exec_cmds: &[String],
+    ) -> Result<()>
+    where
+        P: AsRef<PatchName>,
+    {
+        let stupid = self.stack.repo.stupid();
+        stupid.with_temp_index(|stupid_temp| {
+            let mut temp_index_tree_id: Option<gix::ObjectId> = None;
+
+            let merged = if check_merged {
+                Some(self.check_merged(patchnames, stupid_temp, &mut temp_index_tree_id)?)
+            } else {
+                None
+            };
+
+            for (i, patchname) in patchnames.iter().enumerate() {
+                let patchname = patchname.as_ref();
+                let is_last = i + 1 == patchnames.len() && exec_cmds.is_empty();
+                let already_merged = merged
+                    .as_ref()
+                    .is_some_and(|merged| merged.contains(&patchname));
+                self.push_patch(
+                    patchname,
+                    already_merged,
+                    is_last,
+                    stupid_temp,
+                    &mut temp_index_tree_id,
+                )?;
+
+                // Run exec commands after each successful push
+                for exec_cmd in exec_cmds {
+                    self.ui.print_exec(exec_cmd)?;
+                    stupid.exec_cmd(exec_cmd)?;
+                }
+            }
+
+            Ok(())
+        })
+    }
+
     fn push_patch(
         &mut self,
         patchname: &PatchName,
