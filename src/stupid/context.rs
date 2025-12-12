@@ -1335,14 +1335,21 @@ impl StupidContext<'_, '_> {
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .status()
-            .with_context(|| format!("could not execute `{cmd}`"))?;
+            .with_context(|| format!("could not execute command: {cmd}"))?;
 
         if status.success() {
             Ok(())
         } else if let Some(code) = status.code() {
-            Err(anyhow!("`{cmd}` exited with code {code}"))
+            Err(anyhow!("command exited with code {code}: {cmd}"))
         } else {
-            Err(anyhow!("`{cmd}` failed"))
+            #[cfg(unix)]
+            {
+                use std::os::unix::process::ExitStatusExt;
+                if let Some(signal) = status.signal() {
+                    return Err(anyhow!("command killed by signal {signal}: {cmd}"));
+                }
+            }
+            Err(anyhow!("command failed: {cmd}"))
         }
     }
 

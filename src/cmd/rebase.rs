@@ -96,12 +96,15 @@ fn make() -> clap::Command {
                 .long_help(
                     "Execute the given shell command after each patch is successfully \
                      applied during the rebase operation. If the command fails (exits with \
-                     non-zero status), the rebase will halt.\n\
+                     non-zero status), the entire transaction is rolled back and no patches \
+                     remain applied.\n\
                      \n\
                      This option may be specified multiple times to run multiple commands \
                      in sequence after each patch.\n\
                      \n\
-                     This is similar to `git rebase --exec`.",
+                     This is similar to `git rebase --exec`, but note that stgit rolls back \
+                     the entire operation on failure rather than leaving you at the failing \
+                     point.",
                 )
                 .action(clap::ArgAction::Append)
                 .value_name("cmd")
@@ -256,9 +259,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else if !matches.get_flag("nopush") {
         stack.check_head_top_mismatch()?;
         let check_merged = matches.get_flag("merged");
-        let exec_cmds: Vec<String> = matches
+        let exec_cmds: Vec<&str> = matches
             .get_many::<String>("exec")
-            .map(|vals| vals.cloned().collect())
+            .map(|vals| vals.map(String::as_str).collect())
             .unwrap_or_default();
 
         stack

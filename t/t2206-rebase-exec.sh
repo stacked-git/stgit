@@ -38,10 +38,10 @@ test_expect_success 'Rebase with multiple --exec options' '
     test $(wc -l <exec2.log) = 3
 '
 
-test_expect_success 'Rebase with --exec halts on command failure and rolls back' '
+test_expect_success 'Rebase with --exec rolls back on command failure' '
     rm -f exec.log out &&
     test_must_fail stg rebase --exec "echo EXEC >>exec.log && false" master >out 2>&1 &&
-    grep -q "exited with code" out &&
+    grep -q "command exited with code" out &&
     test_line_count = 1 exec.log &&
     test "$(stg series --applied -c)" = "0"
 '
