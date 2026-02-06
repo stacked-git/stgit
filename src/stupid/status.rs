@@ -653,7 +653,7 @@ mod tests {
         assert_eq!(iter.next().unwrap().path(), Path::new("file1"));
         assert_eq!(iter.next().unwrap().path(), Path::new("file 3"));
         assert_eq!(iter.next().unwrap().path(), Path::new("file-2"));
-        let copied_entry = iter.next().unwrap();
+        let copied_entry = iter.next().expect("copied entry should be present");
         assert_eq!(copied_entry.path(), Path::new("file1-copy"));
         assert!(matches!(copied_entry.index_status(), Status::Unmodified));
         assert!(matches!(copied_entry.worktree_status(), Status::Copied));
