@@ -122,6 +122,7 @@ pub(crate) enum Status {
     Added,
     Deleted,
     Renamed,
+    Copied,
     Unmerged,
 }
 
@@ -135,7 +136,7 @@ impl Status {
             b'D' => Status::Deleted,
             b'R' => Status::Renamed,
             b'U' => Status::Unmerged,
-            b'C' => panic!("not expecting 'C' copied status with porcelain v2"),
+            b'C' => Status::Copied,
             _ => panic!("unknown status char '{}'", c.escape_ascii()),
         }
     }
@@ -632,6 +633,7 @@ mod tests {
     1 .M N... 100644 100644 100644 0dd9459cbf0147f6171368d443e9ea80115d3ef2 0dd9459cbf0147f6171368d443e9ea80115d3ef2 file1\0\
     1 D. N... 100644 000000 000000 c60f6b3c2d63336f2628574ffe60fbd42102a20f 0000000000000000000000000000000000000000 file 3\0\
     2 R. N... 100644 100644 100644 ce3a04dbdc12ba3260503fa53663c8d9e54a347d ce3a04dbdc12ba3260503fa53663c8d9e54a347d R100 file-2\0file2\0\
+    2 .C N... 100644 100644 100644 0dd9459cbf0147f6171368d443e9ea80115d3ef2 0dd9459cbf0147f6171368d443e9ea80115d3ef2 C100 file1-copy\0file1\0\
     1 D. N... 100644 000000 000000 5f305a8b12953c8f31291b3e31137a56b5adc58b 0000000000000000000000000000000000000000 foo.txt\0\
     1 A. N... 000000 100644 100644 0000000000000000000000000000000000000000 ce013625030ba8dba906f756967f9e9ca394464a hello.txt\0\
     1 .A N... 000000 000000 100644 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000 intent to add.txt\0\
@@ -644,13 +646,17 @@ mod tests {
     #[test]
     fn parse_example_status() {
         let statuses = Statuses::from_data(EXAMPLE.to_vec());
-        assert_eq!(statuses.len(), 11);
+        assert_eq!(statuses.len(), 12);
         assert!(!statuses.is_empty());
         let mut iter = statuses.iter();
 
         assert_eq!(iter.next().unwrap().path(), Path::new("file1"));
         assert_eq!(iter.next().unwrap().path(), Path::new("file 3"));
         assert_eq!(iter.next().unwrap().path(), Path::new("file-2"));
+        let copied_entry = iter.next().unwrap();
+        assert_eq!(copied_entry.path(), Path::new("file1-copy"));
+        assert!(matches!(copied_entry.index_status(), Status::Unmodified));
+        assert!(matches!(copied_entry.worktree_status(), Status::Copied));
         assert_eq!(iter.next().unwrap().path(), Path::new("foo.txt"));
         assert_eq!(iter.next().unwrap().path(), Path::new("hello.txt"));
         assert_eq!(iter.next().unwrap().path(), Path::new("intent to add.txt"));
