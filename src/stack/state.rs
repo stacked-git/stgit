@@ -187,6 +187,23 @@ impl<'repo> StackState<'repo> {
         }
     }
 
+    /// Create updated state with new `head` and `prev` commits and all applied patches marked as unapplied.
+    ///
+    /// This functionality can be used to fully reset stack state without losing any patches.
+    pub(crate) fn reset_branch_state(
+        self,
+        new_head: Rc<gix::Commit<'repo>>,
+        prev_state: Rc<gix::Commit<'repo>>,
+    ) -> Self {
+        Self {
+            prev: Some(prev_state),
+            head: new_head,
+            applied: vec![],
+            unapplied: [self.applied, self.unapplied].concat(),
+            ..self
+        }
+    }
+
     /// Commit stack state to repository.
     ///
     /// The stack state content exists in a tree that is unrelated to the

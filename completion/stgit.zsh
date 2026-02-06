@@ -40,6 +40,7 @@ _stg-branch() {
                 {-D,--delete}':delete branch'
                 '--cleanup:cleanup stg metadata for branch'
                 {-d,--describe}':set branch description'
+                '--reset:soft reset the stack marking all patches as unapplied'
             )
             switch_options=(
                 '--merge:merge worktree changes into other branch'
