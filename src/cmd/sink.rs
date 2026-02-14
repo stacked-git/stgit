@@ -23,22 +23,22 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Move patches deeper in the stack")
+        .about("Reorder patches by moving them toward the bottom of the stack")
         .long_about(
-            "Move the specified patches down the stack.\n\
+            "Reorder patches by moving them toward the bottom of the stack.\n\
              \n\
              If no patch is specified on the command line, the current (topmost) patch \
-             is sunk. By default, patches are sunk to the bottom of the stack, but the \
+             is moved. By default, patches are moved to the bottom of the stack, but the \
              '--above' or '--below' (alias '--to') options may be used to place them \
              above or below any applied patch.\n\
              \n\
-             Internally, sinking involves popping all patches to the bottom (or to the \
-             target patch if '--above' or '--below' is used), then pushing the patches \
-             to sink, and then, unless '--nopush' is specified, pushing back any other \
+             Internally, this operation involves popping all patches to the bottom (or to \
+             the target patch if '--above' or '--below' is used), then pushing the patches \
+             being moved, and then, unless '--nopush' is specified, pushing back any other \
              formerly applied patches.\n\
              \n\
-             Sinking may be useful, for example, to group stable patches at the bottom \
-             of the stack where they less likely to be impacted by the push of another \
+             This may be useful, for example, to group stable patches at the bottom \
+             of the stack where they are less likely to be impacted by the push of another \
              patch, and from where they can be more easily committed or pushed to \
              another repository.\n\
              ",

@@ -31,13 +31,16 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Synchronize patches with a branch or a series")
+        .about("Update patches with changes from another branch or series")
         .long_about(
-            "For each of the specified patches, perform a three-way merge with the \
-             same patch in the specified branch or series. The command can be used for \
-             keeping patches on several branches in sync. Note that the operation may \
-             fail for some patches because of conflicts. The patches in the series \
-             must apply cleanly.",
+            "Update patches with changes from another branch or series.\n\
+             \n\
+             For each specified patch, perform a three-way merge with the same patch \
+             from the specified branch or series file. This allows keeping the same \
+             patches synchronized across multiple branches.\n\
+             \n\
+             The operation may fail for some patches due to merge conflicts. The patches \
+             in the series must apply cleanly.",
         )
         .override_usage(super::make_usage(
             "stg sync",
