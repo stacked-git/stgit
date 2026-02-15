@@ -25,13 +25,12 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Print patch name of a StGit revision")
+        .about("Print the patch name corresponding to a StGit revision")
         .long_about(
-            "Print the patch name of a StGit revision.\n\
+            "Print the patch name corresponding to a StGit revision.\n\
              \n\
-             Try to get the name of the patch in the current \
-             branch as specified by a StGit revision. Revisions \
-             can be specified in the all the forms accepted by \
+             Look up and display the patch name for a given StGit revision in the current \
+             branch. Revisions can be specified in all the forms accepted by the \
              \"stg id\" command.",
         )
         .arg(argset::branch_arg())

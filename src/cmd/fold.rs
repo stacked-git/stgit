@@ -25,10 +25,12 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Fold diff file into the current patch")
+        .about("Integrate a GNU diff file into the current patch")
         .long_about(
-            "Fold diff file into the current patch. The given GNU diff file (or \
-             standard input) is applied onto the current patch.\n\
+            "Integrate a GNU diff file into the current patch.\n\
+             \n\
+             Apply changes from a GNU diff file (or standard input) to the current patch, \
+             updating the patch to include those changes.\n\
              \n\
              With the '--threeway' option, the diff is applied onto the bottom of the \
              current patch and a three-way merge is performed with the current top. \
