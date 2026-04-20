@@ -561,12 +561,17 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let new_commit_id = if patch_commit
             .and_then(|commit| commit.decode().ok())
             .is_some_and(|patch_commit_ref| {
-                patch_commit_ref.committer().name == committer.name
-                && patch_commit_ref.committer().email == committer.email
+                let (Ok(patch_committer), Ok(patch_author)) =
+                    (patch_commit_ref.committer(), patch_commit_ref.author())
+                else {
+                    return false;
+                };
+                patch_committer.name == committer.name
+                && patch_committer.email == committer.email
                 // N.B.: intentionally not comparing commiter.when()
-                && patch_commit_ref.author().name == author.name
-                && patch_commit_ref.author().email == author.email
-                && patch_commit_ref.author().time == author.time.to_string()
+                && patch_author.name == author.name
+                && patch_author.email == author.email
+                && patch_author.time == author.time.to_string()
                 && patch_commit_ref.message == message.raw_bytes()
                 && patch_commit_ref.tree() == tree_id
                 && patch_commit_ref.parents().next() == Some(parent_id)
