@@ -65,6 +65,7 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-deb
+          version: "^3.0"
       - name: Install cargo-generate-rpm
         uses: baptiste0928/cargo-install@v3
         with:
