@@ -409,7 +409,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let is_message_modified = || {
-            patch_commit.map_or(true, |commit| {
+            patch_commit.is_none_or(|commit| {
                 commit.message_raw().expect("commit can be decoded") != message.raw_bytes()
             })
         };
