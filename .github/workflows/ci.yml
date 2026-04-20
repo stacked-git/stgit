@@ -83,22 +83,18 @@ jobs:
       - name: Static Build aarch64
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
         run: |
           make build-static-aarch64
       - name: Static Build riscv64
         env:
           CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: "riscv64-linux-gnu-gcc"
-          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_STRIP: "riscv64-linux-gnu-strip"
         run: |
           make build-static-riscv64
       - name: Build Packages
         env:
           USE_ASCIIDOCTOR: "1"
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: "aarch64-linux-gnu-gcc"
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_STRIP: "aarch64-linux-gnu-strip"
           CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_LINKER: "riscv64-linux-gnu-gcc"
-          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_MUSL_STRIP: "riscv64-linux-gnu-strip"
         run: |
           make packages
       - name: Upload Packages
