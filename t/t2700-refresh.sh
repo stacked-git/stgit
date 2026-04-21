@@ -201,4 +201,16 @@ test_expect_success 'Attempt refresh with open conflict' '
     grep -e "resolve outstanding conflicts first" err
 '
 
+test_expect_success 'Refresh with copied file' '
+    stg undo --hard &&
+    stg pop -a &&
+    stg push p0 &&
+    git config status.renames copies &&
+    stg new p-copy -m "copy test" &&
+    cp foo1.txt foo1-copy.txt &&
+    git add foo1-copy.txt &&
+    stg refresh &&
+    git config --unset status.renames
+'
+
 test_done
