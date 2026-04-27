@@ -50,7 +50,7 @@ gix = { version = "0.81", default-features = false, features = [
 ] }
 indexmap = "2.7"
 is-terminal = "0.4"
-jiff = "0.2.1"
+jiff = "0.2.24"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 strsim = "0.11"
