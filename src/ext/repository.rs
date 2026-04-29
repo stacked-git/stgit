@@ -274,7 +274,7 @@ impl RepositoryExtended for gix::Repository {
     fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>> {
         use gix::{
             refs::file::find::existing::Error as FindError,
-            revision::spec::parse::{single::Error as SingleError, Error as SpecParseError},
+            revision::spec::parse::single::Error as SingleError,
         };
 
         use crate::patch::revspec::Error;
@@ -293,40 +293,17 @@ impl RepositoryExtended for gix::Repository {
             .map_err(|single_err| -> anyhow::Error {
                 match single_err {
                     SingleError::Parse(inner) => {
-                        let mut spec_parse_err = &inner;
-                        loop {
-                            match spec_parse_err {
-                                SpecParseError::FindReference(find_err) => match find_err {
-                                    e @ FindError::Find(_) => {
-                                        break Error::InvalidRevision(
-                                            spec.to_string(),
-                                            e.to_string(),
-                                        )
-                                        .into()
-                                    }
-                                    FindError::NotFound { name: _ } => {
-                                        break Error::RevisionNotFound(spec.to_string()).into()
-                                    }
-                                },
-                                SpecParseError::Multi { current, next } => {
-                                    if let Some(next) = next {
-                                        spec_parse_err = next
-                                            .downcast_ref::<SpecParseError>()
-                                            .expect("next error is SpecParseError");
-                                    } else {
-                                        spec_parse_err = current
-                                            .downcast_ref::<SpecParseError>()
-                                            .expect("current error is SpecParseError");
-                                    }
-                                }
-                                SpecParseError::SingleNotFound => {
-                                    break Error::RevisionNotFound(spec.to_string()).into()
-                                }
-                                e => {
-                                    break Error::InvalidRevision(spec.to_string(), e.to_string())
-                                        .into()
-                                }
-                            }
+                        let not_found = inner.sources().any(|err| {
+                            matches!(
+                                err.downcast_ref::<FindError>(),
+                                Some(FindError::NotFound { name: _ })
+                            )
+                        });
+                        let message = inner.to_string();
+                        if not_found || message.contains("could not be found") {
+                            Error::RevisionNotFound(spec.to_string()).into()
+                        } else {
+                            Error::InvalidRevision(spec.to_string(), message).into()
                         }
                     }
                     e @ SingleError::RangedRev { spec: _ } => {

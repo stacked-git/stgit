@@ -33,7 +33,7 @@ pub(crate) trait CommitExtended<'a> {
 impl<'a> CommitExtended<'a> for gix::Commit<'a> {
     fn author_strict(&self) -> Result<gix::actor::Signature> {
         let commit_ref = self.decode()?;
-        let sig = commit_ref.author();
+        let sig = commit_ref.author()?;
         let encoding = if let Some(encoding_name) = commit_ref.encoding {
             encoding_rs::Encoding::for_label(encoding_name).ok_or_else(|| {
                 anyhow!(

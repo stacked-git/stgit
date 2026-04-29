@@ -627,7 +627,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             if let Ok(author) = commit.author_strict() {
                 write!(stdout, "{:author_width$}", &author.name.to_str().unwrap())?;
             } else {
-                let name = commit_ref.author().name.to_str_lossy();
+                let name = commit_ref.author()?.name.to_str_lossy();
                 write!(stdout, "{name:author_width$}")?;
             }
         }
