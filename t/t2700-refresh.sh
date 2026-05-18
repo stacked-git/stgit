@@ -205,12 +205,12 @@ test_expect_success 'Refresh with copied file' '
     stg undo --hard &&
     stg pop -a &&
     stg push p0 &&
+    test_when_finished "git config --unset status.renames" &&
     git config status.renames copies &&
     stg new p-copy -m "copy test" &&
     cp foo1.txt foo1-copy.txt &&
     git add foo1-copy.txt &&
-    stg refresh &&
-    git config --unset status.renames
+    stg refresh
 '
 
 test_done
