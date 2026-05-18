@@ -547,14 +547,17 @@ fn create_patch<'repo>(
         message.to_str_lossy().to_string()
     };
 
-    let patchname = if patchname.is_some() {
-        patchname.as_deref()
+    let (patchname, is_user_specified) = if let Some(patchname) = patchname.as_deref() {
+        (Some(patchname), false)
     } else if let Some(name) = matches.get_one::<PatchName>("name") {
-        Some(name.as_ref())
+        (Some(name.as_ref()), true)
     } else if let Some(source_path) = source_path {
-        source_path.file_name().and_then(std::ffi::OsStr::to_str)
+        (
+            source_path.file_name().and_then(std::ffi::OsStr::to_str),
+            false,
+        )
     } else {
-        None
+        (None, false)
     };
 
     let patchname = if matches.get_flag("stripname") {
@@ -563,7 +566,12 @@ fn create_patch<'repo>(
         patchname
     };
 
-    let name_len_limit = PatchName::get_length_limit(&config);
+    // User-specified patch names are not subject to the configured length limit.
+    let name_len_limit = if is_user_specified {
+        None
+    } else {
+        PatchName::get_length_limit(&config)
+    };
 
     let patchname = if let Some(patchname) = patchname {
         PatchName::make(patchname, false, name_len_limit)

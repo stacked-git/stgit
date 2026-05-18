@@ -386,4 +386,11 @@ test_expect_success 'Too many arguments' '
     grep -e "unexpected argument .some\.patch." err
 '
 
+test_expect_success '--name is not truncated by stgit.namelength' '
+    long_name=iwl-net-v7-3-3-ice-add-dpll-peer-notification-for-paired-sma-and-u-fl-pins &&
+    stg import --name "$long_name" some.patch &&
+    test "$(echo $(stg top))" = "$long_name" &&
+    stg delete --top
+'
+
 test_done
