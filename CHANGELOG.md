@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.6.0 2026-05-18
+
+### Added
+
+- feat(rebase): add --exec option to run commands after each patch
+- feat: respect core.commentChar setting for escaping comment characters in commit messages
+
+### Fixed
+
+- fix(refresh): handle "copied" status (#615)
+- fix(import): respect --name verbatim, ignoring stgit.namelength (#623)
+
+### Changed
+
+- chore: bump MSRV to 1.85
+- chore: update clap to 4.6
+- chore: update gix to 0.83
+- chore: update winnow to 1.0
+- chore: update dependencies
+- docs: Update copyright year
+
+
 ## 2.5.5 2025-11-10
 
 ### Fixed
