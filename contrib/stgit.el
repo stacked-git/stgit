@@ -573,18 +573,21 @@ been advised to update the stgit status when necessary.")
     (ewoc-invalidate (car stgit-worktree-node) (cdr stgit-worktree-node))))
 
 (defun stgit-run-series-insert-index (ewoc)
-  (setq stgit-index-node    (cons ewoc (ewoc-enter-last ewoc
-                                                        (make-stgit-patch
-                                                         :status 'index
-                                                         :name :index
-                                                         :desc nil
-                                                         :empty nil)))
-        stgit-worktree-node (cons ewoc (ewoc-enter-last ewoc
-                                                        (make-stgit-patch
-                                                         :status 'work
-                                                         :name :work
-                                                         :desc nil
-                                                         :empty nil)))))
+  (let ((index-node (ewoc-enter-last ewoc
+                                     (make-stgit-patch
+                                      :status 'index
+                                      :name :index
+                                      :desc nil
+                                      :empty nil)))
+        (worktree-node (ewoc-enter-last ewoc
+                                        (make-stgit-patch
+                                         :status 'work
+                                         :name :work
+                                         :desc nil
+                                         :empty nil))))
+    (with-current-buffer (ewoc--buffer ewoc)
+      (setq stgit-index-node (cons ewoc index-node)
+            stgit-worktree-node (cons ewoc worktree-node)))))
 
 (defun stgit-get-position (&optional position)
   "Return position information at POSITION or point that can be restored later.
