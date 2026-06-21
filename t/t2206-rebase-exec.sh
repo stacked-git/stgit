@@ -30,6 +30,13 @@ test_expect_success 'Rebase with --exec runs command after each patch' '
     test $(wc -l <exec.log) = 3
 '
 
+test_expect_success 'Rebase on {base} with --exec runs command after each patch' '
+    rm -f exec.log &&
+    stg rebase --exec "echo EXEC >>exec.log" {base} &&
+    test $(stg series --applied -c) = 3 &&
+    test $(wc -l <exec.log) = 3
+'
+
 test_expect_success 'Rebase with multiple --exec options' '
     rm -f exec.log exec2.log &&
     stg rebase --exec "echo EXEC1 >>exec.log" --exec "echo EXEC2 >>exec2.log" master~1 &&
