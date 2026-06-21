@@ -121,6 +121,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
     let interactive = matches.get_flag("interactive");
+    let exec_cmds: Vec<&str> = matches
+        .get_many::<String>("exec")
+        .map(|vals| vals.map(String::as_str).collect())
+        .unwrap_or_default();
 
     let target_commit = if let Some(target_rev_spec) =
         matches.get_one::<SingleRevisionSpec>("committish")
@@ -149,7 +153,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         ));
     };
 
-    if !interactive && target_commit.id == stack.base().id {
+    if !interactive && exec_cmds.is_empty() && target_commit.id == stack.base().id {
         print_info_message(
             matches,
             &format!(
@@ -259,10 +263,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else if !matches.get_flag("nopush") {
         stack.check_head_top_mismatch()?;
         let check_merged = matches.get_flag("merged");
-        let exec_cmds: Vec<&str> = matches
-            .get_many::<String>("exec")
-            .map(|vals| vals.map(String::as_str).collect())
-            .unwrap_or_default();
 
         stack
             .setup_transaction()
