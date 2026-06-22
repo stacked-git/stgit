@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.1 2026-06-22
+
+### Fixed
+
+- fix(rebase): run --exec commands even when the stack base is unchanged (#638)
+- stgit.el: Fix Index/Work Tree incremental refresh (#633)
+
+### Changed
+
+- chore: update gix to 0.84
+- chore: update dependencies
+
+
 ## 2.6.0 2026-05-18
 
 ### Added
