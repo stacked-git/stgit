@@ -24,12 +24,14 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Show a diff")
+        .about("Show diff between revisions, a patch, or the working tree")
         .long_about(
-            "Show the diff (default) or diffstat between the current working copy \
-             or a tree-ish object and another tree-ish object (defaulting to HEAD). \
-             File names can also be given to restrict the diff output. The \
-             tree-ish object has the format accepted by the 'stg id' command.",
+            "Show diff between revisions, a patch, or the working tree.\n\
+             \n\
+             Display the diff (default) or diffstat comparing the current working \
+             directory or a tree-ish object against another tree-ish object (defaulting \
+             to HEAD). File paths can be specified to limit the diff output to the \
+             specified files. Tree-ish objects use the format accepted by 'stg id'.",
         )
         .arg(
             Arg::new("pathspecs")
