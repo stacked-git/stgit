@@ -482,7 +482,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let description_flag = matches.get_flag("description");
     let author_flag = matches.get_flag("author");
 
-    let branch_prefix = format!("{}:", &stack.get_branch_name());
+    let branch_prefix = format!("{}:", stack.get_branch_name());
     let branch_prefix = if matches.get_flag("show-branch") {
         branch_prefix.as_str()
     } else {
@@ -625,7 +625,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             write!(stdout, " # ")?;
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
             if let Ok(author) = commit.author_strict() {
-                write!(stdout, "{:author_width$}", &author.name.to_str().unwrap())?;
+                write!(stdout, "{:author_width$}", author.name.to_str().unwrap())?;
             } else {
                 let name = commit_ref.author()?.name.to_str_lossy();
                 write!(stdout, "{name:author_width$}")?;

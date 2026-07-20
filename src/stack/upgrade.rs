@@ -250,7 +250,7 @@ fn stack_upgrade_from_3(repo: &gix::Repository, branch_name: &str) -> Result<()>
             {
                 let commit_id: gix::ObjectId = reference.peel_to_id()?.into();
                 let patchname = PatchName::from_str(&pn)
-                    .with_context(|| format!("converting `{}` to patchname", &pn))?;
+                    .with_context(|| format!("converting `{}` to patchname", pn))?;
                 patch_list.push(patchname.clone());
                 cleanup.push(format!("refs/patches/{branch_name}/{pn}.log"));
                 patches.insert(patchname, RawPatchState { oid: commit_id });

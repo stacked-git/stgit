@@ -49,8 +49,8 @@ impl Alias {
     /// Make [`clap::Command`] for the alias.
     pub(crate) fn make(&self) -> clap::Command {
         let about = match self.kind {
-            AliasKind::StGit => format!("Alias for `stg {}`", &self.command),
-            AliasKind::Shell => format!("Alias for shell command `{}`", &self.command),
+            AliasKind::StGit => format!("Alias for `stg {}`", self.command),
+            AliasKind::Shell => format!("Alias for shell command `{}`", self.command),
         };
         clap::Command::new(self.name.clone())
             .about(about)

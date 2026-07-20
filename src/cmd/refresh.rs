@@ -332,7 +332,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         println!(
             "The new changes did not apply cleanly to {}. \
              They were saved in {}.",
-            &patchname, &temp_patchname,
+            patchname, temp_patchname,
         );
     }
 

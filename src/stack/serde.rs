@@ -80,14 +80,14 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
         };
 
         let head = gix::ObjectId::from_hex(ds.head.as_bytes())
-            .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", &ds.head)))?;
+            .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", ds.head)))?;
 
         let mut patches = BTreeMap::new();
         for (patchname, raw_patch) in ds.patches {
             let oid = gix::ObjectId::from_hex(raw_patch.oid.as_bytes()).map_err(|_| {
                 D::Error::custom(format!(
                     "invalid oid for patch `{}`: '{}'",
-                    patchname, &raw_patch.oid
+                    patchname, raw_patch.oid
                 ))
             })?;
             patches.insert(patchname, RawPatchState { oid });

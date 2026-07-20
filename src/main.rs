@@ -424,7 +424,7 @@ fn execute_shell_alias(
 ) -> ! {
     if let Some(first_arg) = user_args.first() {
         if [OsString::from("-h"), OsString::from("--help")].contains(first_arg) {
-            eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
+            eprintln!("'{}' is aliased to '!{}'", alias.name, alias.command);
         }
     }
 
@@ -439,7 +439,7 @@ fn execute_shell_alias(
         if user_args.is_empty() {
             command.arg(&alias.command);
         } else {
-            command.arg(format!("{} \"$@\"", &alias.command));
+            command.arg(format!("{} \"$@\"", alias.command));
             command.arg(&alias.command);
         }
         command
@@ -486,7 +486,7 @@ fn execute_stgit_alias(
         Ok(alias_args) => {
             if let Some(first_user_arg) = user_args.first() {
                 if [OsString::from("-h"), OsString::from("--help")].contains(first_user_arg) {
-                    eprintln!("'{}' is aliased to '{}'", &alias.name, &alias.command);
+                    eprintln!("'{}' is aliased to '{}'", alias.name, alias.command);
                 }
             }
 
