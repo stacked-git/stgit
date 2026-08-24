@@ -3,7 +3,6 @@
 //! Support for using git repository hooks.
 
 use std::{
-    borrow::Cow,
     io::Write,
     path::{Path, PathBuf},
 };
@@ -18,22 +17,21 @@ use crate::wrap::Message;
 /// Returns None if the hook script is not found or is not executable.
 fn get_hook_path(repo: &gix::Repository, hook_name: &str) -> Result<Option<PathBuf>> {
     let config = repo.config_snapshot();
-    let hooks_path =
-        if let Some(core_hooks_path) = config.trusted_path("core.hookspath").transpose()? {
-            if core_hooks_path.is_absolute() {
-                core_hooks_path
-            } else if repo.is_bare() {
-                // The hooks path is relative to GIT_DIR in the case of a bare repo
-                Cow::Owned(repo.common_dir().join(core_hooks_path))
-            } else {
-                // The hooks path is relative to the root of the working tree otherwise
-                let work_dir = repo.workdir().expect("non-bare repo must have work dir");
-                Cow::Owned(work_dir.join(core_hooks_path))
-            }
+    let hooks_path = if let Some(core_hooks_path) = config.trusted_path("core.hookspath")? {
+        if core_hooks_path.is_absolute() {
+            core_hooks_path
+        } else if repo.is_bare() {
+            // The hooks path is relative to GIT_DIR in the case of a bare repo
+            repo.common_dir().join(core_hooks_path)
         } else {
-            // No core.hookspath, use default .git/hooks location
-            Cow::Owned(repo.common_dir().join("hooks"))
-        };
+            // The hooks path is relative to the root of the working tree otherwise
+            let work_dir = repo.workdir().expect("non-bare repo must have work dir");
+            work_dir.join(core_hooks_path)
+        }
+    } else {
+        // No core.hookspath, use default .git/hooks location
+        repo.common_dir().join("hooks")
+    };
     let hook_path = hooks_path.join(hook_name);
 
     let hook_meta = match std::fs::metadata(&hook_path) {

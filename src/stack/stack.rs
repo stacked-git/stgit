@@ -238,12 +238,7 @@ impl<'repo> Stack<'repo> {
     /// Check whether the stack is marked as protected in the config.
     pub(crate) fn is_protected(&self, config: &gix::config::Snapshot) -> bool {
         config
-            .boolean_by(
-                "branch",
-                Some(format!("{}.stgit", self.branch_name).as_str().into()),
-                "protect",
-            )
-            .unwrap_or(Ok(false))
+            .boolean(format!("branch.{}.stgit.protect", self.branch_name).as_str())
             .unwrap_or(false)
     }
 
@@ -271,7 +266,7 @@ impl<'repo> Stack<'repo> {
             if let Ok(section) = local_config_file
                 .section_by_key(format!("{section}.{subsection}").as_bytes().as_bstr())
             {
-                if section.num_values() == 0 {
+                if section.body().num_values() == 0 {
                     local_config_file.remove_section_by_id(section.id());
                 }
             }

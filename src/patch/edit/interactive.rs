@@ -135,15 +135,13 @@ fn get_editor(config: &gix::config::Snapshot) -> Result<OsString> {
     let editor = if let Some(editor) = std::env::var_os("GIT_EDITOR") {
         editor
     } else if let Some(editor) = config
-        .trusted_path("stgit.editor")
-        .transpose()?
-        .map(|p| p.as_os_str().to_os_string())
+        .trusted_path("stgit.editor")?
+        .map(|p| p.into_os_string())
     {
         editor
     } else if let Some(editor) = config
-        .trusted_path("core.editor")
-        .transpose()?
-        .map(|p| p.as_os_str().to_os_string())
+        .trusted_path("core.editor")?
+        .map(|p| p.into_os_string())
     {
         editor
     } else if let Some(editor) = std::env::var_os("VISUAL") {

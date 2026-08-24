@@ -101,11 +101,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let config = repo.config_snapshot();
     let policy = PullPolicy::from_str(
         &config
-            .string_by(
-                "branch",
-                Some(format!("{branch_name}.stgit").as_str().into()),
-                "pull-policy",
-            )
+            .string(format!("branch.{branch_name}.stgit.pull-policy").as_str())
             .or_else(|| config.string("stgit.pull-policy"))
             .map(|bs| bs.to_str_lossy().to_string())
             .unwrap_or_else(|| "pull".to_string()),
@@ -125,7 +121,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
         PullPolicy::Pull | PullPolicy::FetchRebase => {
             parent_remote = config
-                .string_by("branch", Some(branch_name.as_str().into()), "remote")
+                .string(format!("branch.{branch_name}.remote").as_str())
                 .and_then(|bs| bs.to_str().map(str::to_string).ok());
             let remote_name = matches
                 .get_one::<String>("repository")
@@ -163,11 +159,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let rebase_target = match policy {
         PullPolicy::Pull => {
             let pull_cmd = config
-                .string_by(
-                    "branch",
-                    Some(format!("{branch_name}.stgit").as_str().into()),
-                    "pullcmd",
-                )
+                .string(format!("branch.{branch_name}.stgit.pullcmd").as_str())
                 .or_else(|| config.string("stgit.pullcmd"))
                 .and_then(|bs| bs.to_str().map(str::to_string).ok())
                 .unwrap_or_else(|| "git pull".to_string());
@@ -183,11 +175,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
         PullPolicy::FetchRebase => {
             let fetch_cmd = config
-                .string_by(
-                    "branch",
-                    Some(format!("{branch_name}.stgit").as_str().into()),
-                    "fetchcmd",
-                )
+                .string(format!("branch.{branch_name}.stgit.fetchcmd").as_str())
                 .or_else(|| config.string("stgit.fetchcmd"))
                 .and_then(|bs| bs.to_str().map(str::to_string).ok())
                 .unwrap_or_else(|| "git fetch".to_string());
@@ -203,11 +191,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             Some(target_id)
         }
         PullPolicy::Rebase => {
-            let parent_branch_name = config.string_by(
-                "branch",
-                Some(format!("{branch_name}.stgit").as_str().into()),
-                "parentbranch",
-            );
+            let parent_branch_name =
+                config.string(format!("branch.{branch_name}.stgit.parentbranch").as_str());
             let parent_branch_name = parent_branch_name.as_ref().and_then(|bs| bs.to_str().ok());
 
             let parent_object = if let Some(name) = parent_branch_name {
@@ -227,11 +212,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     if let Some(rebase_target) = rebase_target {
         let rebase_cmd = config
-            .string_by(
-                "branch",
-                Some(format!("{branch_name}.stgit").as_str().into()),
-                "rebasecmd",
-            )
+            .string(format!("branch.{branch_name}.stgit.rebasecmd").as_str())
             .or_else(|| config.string("stgit.rebasecmd"))
             .and_then(|bs| bs.to_str().map(str::to_string).ok())
             .unwrap_or_else(|| "git reset --hard".to_string());

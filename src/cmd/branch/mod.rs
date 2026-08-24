@@ -151,7 +151,7 @@ fn set_description(
             value.delete();
         }
         if let Ok(section) = local_config_file.section("branch", Some(branchname.into())) {
-            if section.num_values() == 0 {
+            if section.body().num_values() == 0 {
                 local_config_file.remove_section_by_id(section.id());
             }
         }
@@ -171,11 +171,7 @@ fn set_description(
 
 fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &PartialRefName) -> Option<String> {
     config
-        .string_by(
-            "branch",
-            Some(format!("{branchname}.stgit").as_str().into()),
-            "parentbranch",
-        )
+        .string(format!("branch.{branchname}.stgit.parentbranch").as_str())
         .and_then(|bs| bs.to_str().ok().map(str::to_string))
 }
 
@@ -202,7 +198,7 @@ fn set_stgit_parent(
             value.delete();
         }
         if let Ok(section) = local_config_file.section("branch", Some(subsection.as_str().into())) {
-            if section.num_values() == 0 {
+            if section.body().num_values() == 0 {
                 local_config_file.remove_section_by_id(section.id());
             }
         }

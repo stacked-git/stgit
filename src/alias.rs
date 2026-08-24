@@ -100,15 +100,9 @@ where
                 .filter(|section| section.header().subsection_name() == Some("alias".into()))
             {
                 for value_name in section.value_names() {
-                    let name = value_name.to_str().map_err(|_| {
-                        anyhow!(
-                            "alias name `{}` in {} is not valid UTF-8",
-                            value_name.to_str_lossy(),
-                            config_source_str(section.meta().source),
-                        )
-                    })?;
+                    let name = value_name.as_str();
                     if let Some(value) = section
-                        .value(value_name)
+                        .value(name)
                         .and_then(|v| (!v.is_empty()).then_some(v))
                     {
                         if !exclude(name) {

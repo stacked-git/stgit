@@ -84,8 +84,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
             .section("branch", Some(old_section_name))
             .is_ok()
         {
-            let new_section_name =
-                std::borrow::Cow::Owned(BString::from(format!("{new_branchname}.stgit")));
+            let new_section_name = BString::from(format!("{new_branchname}.stgit"));
             local_config_file
                 .rename_section(
                     "branch",

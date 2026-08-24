@@ -175,12 +175,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         true
     } else {
         config
-            .boolean_by(
-                "branch",
-                Some(format!("{branch_name}.stgit").as_str().into()),
-                "autostash",
-            )
-            .transpose()
+            .try_boolean(format!("branch.{branch_name}.stgit.autostash").as_str())
             .unwrap_or_else(|e| {
                 crate::print_warning_message(
                     matches,
@@ -189,16 +184,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 Some(false)
             })
             .or_else(|| {
-                config
-                    .try_boolean("stgit.autostash")
-                    .transpose()
-                    .unwrap_or_else(|e| {
-                        crate::print_warning_message(
-                            matches,
-                            &format!("Invalid config value `stgit.autostash`: {e}"),
-                        );
-                        Some(false)
-                    })
+                config.try_boolean("stgit.autostash").unwrap_or_else(|e| {
+                    crate::print_warning_message(
+                        matches,
+                        &format!("Invalid config value `stgit.autostash`: {e}"),
+                    );
+                    Some(false)
+                })
             })
             .unwrap_or(false)
     };
@@ -225,11 +217,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .execute("rebase (pop)")?;
 
     let rebase_cmd = config
-        .string_by(
-            "branch",
-            Some(format!("{branch_name}.stgit").as_str().into()),
-            "rebasecmd",
-        )
+        .string(format!("branch.{branch_name}.stgit.rebasecmd").as_str())
         .or_else(|| config.string("stgit.rebasecmd"))
         .and_then(|bs| bs.to_str().map(str::to_string).ok())
         .unwrap_or_else(|| "git reset --hard".to_string());

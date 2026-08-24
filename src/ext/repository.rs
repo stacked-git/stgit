@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use std::borrow::Cow;
-
 use anyhow::{anyhow, Result};
-use bstr::{BStr, ByteSlice};
+use bstr::{BString, ByteSlice};
 
 use crate::{
     stupid::Stupid,
@@ -42,7 +40,7 @@ pub(crate) trait RepositoryExtended {
 
     /// Get repository-local config file which can be used to change local
     /// configuration.
-    fn local_config_file(&self) -> Result<gix::config::File<'static>>;
+    fn local_config_file(&self) -> Result<gix::config::File>;
 
     /// Write repository-local config file.
     fn write_local_config(&self, file: gix::config::File) -> Result<()>;
@@ -73,7 +71,7 @@ pub(crate) trait RepositoryExtended {
         message: &Message,
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
-        options: &CommitOptions<'_>,
+        options: &CommitOptions,
     ) -> Result<gix::ObjectId>;
 
     /// [`gix::Repository::rev_parse_single()`] with StGit-specific error mapping.
@@ -88,9 +86,9 @@ pub(crate) trait RepositoryExtended {
 }
 
 /// Options for creating a git commit object.
-pub(crate) struct CommitOptions<'a> {
+pub(crate) struct CommitOptions {
     /// The target encoding for the commit message.
-    pub(crate) commit_encoding: Option<Cow<'a, BStr>>,
+    pub(crate) commit_encoding: Option<BString>,
 
     /// Determine whether the commit object should be signed with GPG.
     pub(crate) gpgsign: bool,
@@ -171,7 +169,7 @@ impl RepositoryExtended for gix::Repository {
         }
     }
 
-    fn local_config_file(&self) -> Result<gix::config::File<'static>> {
+    fn local_config_file(&self) -> Result<gix::config::File> {
         let source = gix::config::Source::Local;
 
         let local_config_path = self.common_dir().join(
@@ -233,11 +231,11 @@ impl RepositoryExtended for gix::Repository {
         message: &Message,
         tree_id: gix::ObjectId,
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
-        options: &CommitOptions<'_>,
+        options: &CommitOptions,
     ) -> Result<gix::ObjectId> {
         let commit_encoding = match &options.commit_encoding {
             Some(s) => {
-                let encoding = encoding_rs::Encoding::for_label(s)
+                let encoding = encoding_rs::Encoding::for_label(s.as_ref())
                     .ok_or_else(|| anyhow!("unhandled i18n.commitEncoding `{s}`"))?;
                 Some(encoding)
             }
