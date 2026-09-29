@@ -11,7 +11,9 @@ test_expect_success 'Check that email command requires subcommand' '
 
 test_expect_success 'Check email subcommand help' '
     stg email help format &&
-    stg email help send
+    stg email help send &&
+    stg em f -h &&
+    stg em s --help
 '
 
 test_done

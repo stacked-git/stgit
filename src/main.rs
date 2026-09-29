@@ -62,6 +62,7 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
             ],
         ))
         .help_expected(true)
+        .infer_subcommands(true)
         .max_term_width(88)
         .disable_version_flag(true)
         .arg(
@@ -140,6 +141,44 @@ pub(crate) fn get_full_command(
         .subcommands(aliases.values().map(alias::Alias::make))
 }
 
+enum Subcommand<'a> {
+    Command(&'static cmd::StGitCommand),
+    Alias(&'a alias::Alias),
+    Help,
+}
+
+/// Find a command, alias, or `"help"` matching `sub_name` exactly or as an
+/// unambiguous prefix.
+fn find_subcommand<'a>(sub_name: &str, aliases: &'a alias::Aliases) -> Option<Subcommand<'a>> {
+    if let Some(command) = STGIT_COMMANDS
+        .iter()
+        .find(|command| command.name == sub_name)
+    {
+        return Some(Subcommand::Command(command));
+    } else if sub_name == "help" {
+        return Some(Subcommand::Help);
+    } else if let Some(alias) = aliases.get(sub_name) {
+        return Some(Subcommand::Alias(alias));
+    }
+
+    let mut candidates = STGIT_COMMANDS
+        .iter()
+        .filter(|command| command.name.starts_with(sub_name))
+        .map(Subcommand::Command)
+        .chain(
+            aliases
+                .values()
+                .filter(|alias| alias.name.starts_with(sub_name))
+                .map(Subcommand::Alias),
+        )
+        .chain("help".starts_with(sub_name).then_some(Subcommand::Help));
+
+    match (candidates.next(), candidates.next()) {
+        (Some(subcommand), None) => Some(subcommand),
+        _ => None,
+    }
+}
+
 /// Main entry point for `stg` executable.
 ///
 /// The name of the game is to dispatch to the appropriate subcommand or alias as
@@ -187,16 +226,19 @@ fn main() -> ! {
                 // If the subcommand name does not match a builtin subcommand, the
                 // aliases are located, which involves finding the Git repo and parsing
                 // the various levels of config files. If the subcommand name matches an
-                // alias, it is executed and the cost of constructing all subcommands'
-                // Command instances is still avoided.
+                // alias or an unambiguous prefix of a subcommand or alias, it is
+                // executed and the cost of constructing all subcommands' Command
+                // instances is still avoided.
                 match get_aliases() {
                     Err(e) => exit_with_result(Err(e), color_choice),
-                    Ok((aliases, maybe_repo)) => {
-                        if let Some(alias) = aliases.get(sub_name) {
+                    Ok((aliases, maybe_repo)) => match find_subcommand(sub_name, &aliases) {
+                        Some(Subcommand::Command(command)) => {
+                            execute_command(command, argv, color_choice)
+                        }
+                        Some(Subcommand::Alias(alias)) => {
                             let user_args: Vec<OsString> = sub_matches
                                 .get_many::<OsString>("")
                                 .map_or_else(Vec::new, |vals| vals.cloned().collect());
-
                             match alias.kind {
                                 alias::AliasKind::Shell => execute_shell_alias(
                                     alias,
@@ -212,7 +254,8 @@ fn main() -> ! {
                                     &aliases,
                                 ),
                             }
-                        } else {
+                        }
+                        Some(Subcommand::Help) | None => {
                             // If no command or alias matches can be determined from the
                             // above process, then a complete clap::Command instance is
                             // constructed with all subcommand Command instances for
@@ -221,7 +264,7 @@ fn main() -> ! {
                             // expected to terminate with an appropriate help message.
                             full_app_help(argv, Some(aliases), color_choice)
                         }
-                    }
+                    },
                 }
             }
         } else {
@@ -502,18 +545,13 @@ fn execute_stgit_alias(
                 .expect("empty aliases are filtered in get_aliases()")
                 .as_str();
 
-            if let Some(command) = STGIT_COMMANDS
-                .iter()
-                .find(|command| command.name == resolved_cmd_name)
-            {
-                execute_command(command, argv, color_choice)
-            } else if aliases.contains_key(resolved_cmd_name) {
-                Err(anyhow!("recursive alias `{}`", alias.name))
-            } else {
-                Err(anyhow!(
+            match find_subcommand(resolved_cmd_name, aliases) {
+                Some(Subcommand::Command(command)) => execute_command(command, argv, color_choice),
+                Some(Subcommand::Alias(_)) => Err(anyhow!("recursive alias `{}`", alias.name)),
+                Some(Subcommand::Help) | None => Err(anyhow!(
                     "bad alias for `{}`: `{resolved_cmd_name}` is not a stg command",
                     alias.name,
-                ))
+                )),
             }
         }
         Err(reason) => Err(anyhow!("bad alias for `{}`: {reason}", alias.name)),
@@ -642,4 +680,64 @@ fn print_merge_conflicts() {
         pathspecs
     };
     stupid.status_short(Some(pathspecs)).unwrap_or_default();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn subcommand_shorthand_resolution() {
+        let mut aliases = alias::get_default_aliases();
+        assert!(matches!(
+            find_subcommand("del", &aliases),
+            Some(Subcommand::Command(cmd)) if cmd.name == "delete"
+        ));
+        assert!(matches!(
+            find_subcommand("de", &aliases),
+            Some(Subcommand::Command(cmd)) if cmd.name == "delete"
+        ));
+        assert!(matches!(
+            find_subcommand("di", &aliases),
+            Some(Subcommand::Command(cmd)) if cmd.name == "diff"
+        ));
+        assert!(find_subcommand("d", &aliases).is_none());
+        assert!(find_subcommand("pu", &aliases).is_none());
+        assert!(find_subcommand("res", &aliases).is_none());
+        assert!(matches!(
+            find_subcommand("rese", &aliases),
+            Some(Subcommand::Command(cmd)) if cmd.name == "reset"
+        ));
+        assert!(matches!(
+            find_subcommand("reso", &aliases),
+            Some(Subcommand::Alias(alias)) if alias.name == "resolved"
+        ));
+        assert!(matches!(
+            find_subcommand("st", &aliases),
+            Some(Subcommand::Alias(alias)) if alias.name == "status"
+        ));
+        assert!(find_subcommand("h", &aliases).is_none());
+        assert!(matches!(
+            find_subcommand("he", &aliases),
+            Some(Subcommand::Help)
+        ));
+        assert!(matches!(
+            find_subcommand("hi", &aliases),
+            Some(Subcommand::Command(cmd)) if cmd.name == "hide"
+        ));
+
+        aliases.insert(
+            "show-stat".to_string(),
+            alias::Alias::new("show-stat", "!git show --stat"),
+        );
+        assert!(find_subcommand("sho", &aliases).is_none());
+        assert!(matches!(
+            find_subcommand("show", &aliases),
+            Some(Subcommand::Command(cmd)) if cmd.name == "show"
+        ));
+        assert!(matches!(
+            find_subcommand("show-", &aliases),
+            Some(Subcommand::Alias(alias)) if alias.name == "show-stat"
+        ));
+    }
 }

@@ -12,10 +12,13 @@ test_expect_success 'Test help on builtin alias command' '
 test_expect_success 'Test ambiguous alias' '
     test_config stgit.alias.show-stat "!git show --stat" &&
     stg show-stat &&
+    stg show-s &&
     stg init &&
     stg show &&
     general_error stg sho 2>err &&
-    grep -e "tip: some similar subcommands exist: .show-stat., .show." err
+    grep -e "tip: some similar subcommands exist: .show-stat., .show." err &&
+    general_error stg res 2>err &&
+    grep -e "unrecognized subcommand .res." err
 '
 
 test_expect_success 'Setup top-level and nested aliases' '

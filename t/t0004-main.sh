@@ -24,12 +24,39 @@ test_expect_success 'Test help on regular command' '
     stg help init | grep -e "stg init"
 '
 
+test_expect_success 'Test help on command shorthand' '
+    stg in -h >h-in.txt &&
+    stg init -h >h-init.txt &&
+    test_cmp h-init.txt h-in.txt &&
+    stg he delete >h-del.txt &&
+    stg delete --help >h-delete.txt &&
+    test_cmp h-delete.txt h-del.txt
+'
+
+test_expect_success 'Test unambiguous command shorthand' '
+    stg ver >v0.txt &&
+    stg version >v1.txt &&
+    test_cmp v1.txt v0.txt &&
+    stg in &&
+    stg new -m p0 &&
+    stg ser --noprefix >s.txt &&
+    echo p0 >expected.txt &&
+    test_cmp expected.txt s.txt &&
+    stg del p0 &&
+    stg ser --noprefix >s.txt &&
+    test_must_be_empty s.txt
+'
+
 test_expect_success 'Test help on ambiguous command' '
     general_error stg pu 2>err &&
     grep -e "unrecognized subcommand .pu." err &&
     grep -e "some similar subcommands exist: .pull., .push." err &&
     general_error stg help pu 2>err &&
-    grep -e "unrecognized subcommand .pu." err
+    grep -e "unrecognized subcommand .pu." err &&
+    general_error stg d 2>err &&
+    grep -e "unrecognized subcommand .d." err &&
+    general_error stg h 2>err &&
+    grep -e "unrecognized subcommand .h." err
 '
 
 test_expect_success 'Test version/--version equivalence' '
