@@ -62,7 +62,6 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
             ],
         ))
         .help_expected(true)
-        .infer_subcommands(true)
         .max_term_width(88)
         .disable_version_flag(true)
         .arg(
@@ -147,9 +146,13 @@ enum Subcommand<'a> {
     Help,
 }
 
-/// Find a command, alias, or `"help"` matching `sub_name` exactly or as an
-/// unambiguous prefix.
-fn find_subcommand<'a>(sub_name: &str, aliases: &'a alias::Aliases) -> Option<Subcommand<'a>> {
+/// Find a command, alias, or `"help"` matching `sub_name` exactly or, when
+/// `infer_commands` is enabled, as an unambiguous prefix.
+fn find_subcommand<'a>(
+    sub_name: &str,
+    aliases: &'a alias::Aliases,
+    infer_commands: bool,
+) -> Option<Subcommand<'a>> {
     if let Some(command) = STGIT_COMMANDS
         .iter()
         .find(|command| command.name == sub_name)
@@ -159,6 +162,8 @@ fn find_subcommand<'a>(sub_name: &str, aliases: &'a alias::Aliases) -> Option<Su
         return Some(Subcommand::Help);
     } else if let Some(alias) = aliases.get(sub_name) {
         return Some(Subcommand::Alias(alias));
+    } else if !infer_commands {
+        return None;
     }
 
     let mut candidates = STGIT_COMMANDS
@@ -208,11 +213,12 @@ fn main() -> ! {
                 &self::cmd::version::STGIT_COMMAND,
                 vec![argv[0].clone(), OsString::from("version")],
                 color_choice,
+                Some(false),
             )
         } else if let Err(e) = change_directories(&matches) {
             exit_with_result(Err(e), color_choice)
         } else if matches.get_flag("help-option") {
-            full_app_help(argv, None, color_choice)
+            full_app_help(argv, None, false, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known subcommands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
@@ -221,19 +227,23 @@ fn main() -> ! {
                 .iter()
                 .find(|command| command.name == sub_name)
             {
-                execute_command(command, argv, color_choice)
+                execute_command(command, argv, color_choice, None)
             } else {
                 // If the subcommand name does not match a builtin subcommand, the
                 // aliases are located, which involves finding the Git repo and parsing
                 // the various levels of config files. If the subcommand name matches an
-                // alias or an unambiguous prefix of a subcommand or alias, it is
-                // executed and the cost of constructing all subcommands' Command
-                // instances is still avoided.
-                match get_aliases() {
+                // alias, or an unambiguous prefix of a subcommand or alias when
+                // stgit.infer-commands is enabled, it is executed and the cost of
+                // constructing all subcommands' Command instances is still avoided.
+                match get_dispatch_config() {
                     Err(e) => exit_with_result(Err(e), color_choice),
-                    Ok((aliases, maybe_repo)) => match find_subcommand(sub_name, &aliases) {
+                    Ok(DispatchConfig {
+                        aliases,
+                        infer_commands,
+                        repo: maybe_repo,
+                    }) => match find_subcommand(sub_name, &aliases, infer_commands) {
                         Some(Subcommand::Command(command)) => {
-                            execute_command(command, argv, color_choice)
+                            execute_command(command, argv, color_choice, Some(infer_commands))
                         }
                         Some(Subcommand::Alias(alias)) => {
                             let user_args: Vec<OsString> = sub_matches
@@ -252,6 +262,7 @@ fn main() -> ! {
                                     user_args,
                                     color_choice,
                                     &aliases,
+                                    infer_commands,
                                 ),
                             }
                         }
@@ -262,18 +273,18 @@ fn main() -> ! {
                             // each subcommand and alias. The command line is then
                             // re-processed by this full-blown Command instance which is
                             // expected to terminate with an appropriate help message.
-                            full_app_help(argv, Some(aliases), color_choice)
+                            full_app_help(argv, Some(aliases), infer_commands, color_choice)
                         }
                     },
                 }
             }
         } else {
-            full_app_help(argv, None, color_choice)
+            full_app_help(argv, None, false, color_choice)
         }
     } else {
         // -C options are not processed in this branch. This is okay because clap's
         // error message will not include aliases (which depend on -C).
-        full_app_help(argv, None, color_choice)
+        full_app_help(argv, None, false, color_choice)
     }
 }
 
@@ -341,9 +352,13 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
 /// that `argv` was previously determined to be invalid. The full command can then
 /// output a help message with a complete view of all subcommands and aliases, and then
 /// terminate to process.
+///
+/// `infer_commands` must agree with how `argv` was previously evaluated so that clap
+/// does not find a viable match where [`find_subcommand()`] did not.
 fn full_app_help(
     argv: Vec<OsString>,
     aliases: Option<alias::Aliases>,
+    infer_commands: bool,
     color_choice: Option<termcolor::ColorChoice>,
 ) -> ! {
     let aliases = if let Some(aliases) = aliases {
@@ -359,7 +374,7 @@ fn full_app_help(
     // of existing subcommands. We group the commands by their categories and create several
     // shorter lists which are easier to read.
     let command = {
-        let command = get_full_command(&aliases, color_choice);
+        let command = get_full_command(&aliases, color_choice).infer_subcommands(infer_commands);
         let heading_style = command.get_styles().get_header().render();
         let heading_style_reset = command.get_styles().get_header().render_reset();
         let mut subcommands_by_category = String::new();
@@ -432,13 +447,29 @@ fn full_app_help(
 ///
 /// N.B. a new top-level app instance is created to ensure that help messages are
 /// formatted using the correct executable path (from `argv[0]`).
+///
+/// `infer_commands` determines whether the subcommand and any nested subcommands may be
+/// abbreviated. When `None`, the configuration is only consulted if the subcommand has
+/// nested subcommands of its own.
 fn execute_command(
     command: &cmd::StGitCommand,
     argv: Vec<OsString>,
     color_choice: Option<termcolor::ColorChoice>,
+    infer_commands: Option<bool>,
 ) -> ! {
+    let subcommand = (command.make)();
+    let infer_commands = match infer_commands {
+        Some(infer_commands) => infer_commands,
+        None if subcommand.has_subcommands() => match get_dispatch_config() {
+            Ok(config) => config.infer_commands,
+            Err(e) => exit_with_result(Err(e), color_choice),
+        },
+        None => false,
+    };
+
     match get_base_command(color_choice)
-        .subcommand((command.make)())
+        .infer_subcommands(infer_commands)
+        .subcommand(subcommand)
         .try_get_matches_from(argv)
     {
         Ok(top_matches) => {
@@ -524,6 +555,7 @@ fn execute_stgit_alias(
     user_args: Vec<OsString>,
     color_choice: Option<termcolor::ColorChoice>,
     aliases: &alias::Aliases,
+    infer_commands: bool,
 ) -> ! {
     let result = match alias.split() {
         Ok(alias_args) => {
@@ -545,8 +577,10 @@ fn execute_stgit_alias(
                 .expect("empty aliases are filtered in get_aliases()")
                 .as_str();
 
-            match find_subcommand(resolved_cmd_name, aliases) {
-                Some(Subcommand::Command(command)) => execute_command(command, argv, color_choice),
+            match find_subcommand(resolved_cmd_name, aliases, infer_commands) {
+                Some(Subcommand::Command(command)) => {
+                    execute_command(command, argv, color_choice, Some(infer_commands))
+                }
                 Some(Subcommand::Alias(_)) => Err(anyhow!("recursive alias `{}`", alias.name)),
                 Some(Subcommand::Help) | None => Err(anyhow!(
                     "bad alias for `{}`: `{resolved_cmd_name}` is not a stg command",
@@ -560,6 +594,15 @@ fn execute_stgit_alias(
     exit_with_result(result, color_choice)
 }
 
+/// Configuration affecting how subcommands and aliases are dispatched.
+struct DispatchConfig {
+    aliases: alias::Aliases,
+    /// Whether unambiguous prefixes of subcommand and alias names are accepted
+    /// (`stgit.infer-commands`).
+    infer_commands: bool,
+    repo: Option<gix::Repository>,
+}
+
 /// Get aliases mapping.
 ///
 /// Since aliases are defined in git config files, an attempt is made to open a repo so
@@ -569,6 +612,14 @@ fn execute_stgit_alias(
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options having been previously processed.
 pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<gix::Repository>)> {
+    let DispatchConfig { aliases, repo, .. } = get_dispatch_config()?;
+    Ok((aliases, repo))
+}
+
+/// Get aliases and other dispatch-related configuration.
+///
+/// See [`get_aliases()`] regarding how the configuration is located.
+fn get_dispatch_config() -> Result<DispatchConfig> {
     let maybe_repo = gix::Repository::open().ok();
     let maybe_config = maybe_repo.as_ref().map(|repo| repo.config_snapshot());
     let config_file = maybe_config.as_ref().map(|snapshot| snapshot.plumbing());
@@ -582,7 +633,17 @@ pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<gix::Repository>)>
     let aliases = alias::get_aliases(config_file, |name| {
         STGIT_COMMANDS.iter().any(|command| command.name == name) || name == "help"
     })?;
-    Ok((aliases, maybe_repo))
+    let infer_commands = config_file
+        .map_or(Ok(None), |config_file| {
+            config_file.boolean("stgit.infer-commands")
+        })
+        .map_err(|e| anyhow!("invalid config value `stgit.infer-commands`: {e}"))?
+        .unwrap_or(false);
+    Ok(DispatchConfig {
+        aliases,
+        infer_commands,
+        repo: maybe_repo,
+    })
 }
 
 /// Print user-facing message to stderr.
@@ -689,40 +750,56 @@ mod tests {
     #[test]
     fn subcommand_shorthand_resolution() {
         let mut aliases = alias::get_default_aliases();
+        assert!(find_subcommand("del", &aliases, false).is_none());
+        assert!(find_subcommand("st", &aliases, false).is_none());
+        assert!(find_subcommand("he", &aliases, false).is_none());
         assert!(matches!(
-            find_subcommand("del", &aliases),
+            find_subcommand("delete", &aliases, false),
             Some(Subcommand::Command(cmd)) if cmd.name == "delete"
         ));
         assert!(matches!(
-            find_subcommand("de", &aliases),
+            find_subcommand("status", &aliases, false),
+            Some(Subcommand::Alias(alias)) if alias.name == "status"
+        ));
+        assert!(matches!(
+            find_subcommand("help", &aliases, false),
+            Some(Subcommand::Help)
+        ));
+
+        assert!(matches!(
+            find_subcommand("del", &aliases, true),
             Some(Subcommand::Command(cmd)) if cmd.name == "delete"
         ));
         assert!(matches!(
-            find_subcommand("di", &aliases),
+            find_subcommand("de", &aliases, true),
+            Some(Subcommand::Command(cmd)) if cmd.name == "delete"
+        ));
+        assert!(matches!(
+            find_subcommand("di", &aliases, true),
             Some(Subcommand::Command(cmd)) if cmd.name == "diff"
         ));
-        assert!(find_subcommand("d", &aliases).is_none());
-        assert!(find_subcommand("pu", &aliases).is_none());
-        assert!(find_subcommand("res", &aliases).is_none());
+        assert!(find_subcommand("d", &aliases, true).is_none());
+        assert!(find_subcommand("pu", &aliases, true).is_none());
+        assert!(find_subcommand("res", &aliases, true).is_none());
         assert!(matches!(
-            find_subcommand("rese", &aliases),
+            find_subcommand("rese", &aliases, true),
             Some(Subcommand::Command(cmd)) if cmd.name == "reset"
         ));
         assert!(matches!(
-            find_subcommand("reso", &aliases),
+            find_subcommand("reso", &aliases, true),
             Some(Subcommand::Alias(alias)) if alias.name == "resolved"
         ));
         assert!(matches!(
-            find_subcommand("st", &aliases),
+            find_subcommand("st", &aliases, true),
             Some(Subcommand::Alias(alias)) if alias.name == "status"
         ));
-        assert!(find_subcommand("h", &aliases).is_none());
+        assert!(find_subcommand("h", &aliases, true).is_none());
         assert!(matches!(
-            find_subcommand("he", &aliases),
+            find_subcommand("he", &aliases, true),
             Some(Subcommand::Help)
         ));
         assert!(matches!(
-            find_subcommand("hi", &aliases),
+            find_subcommand("hi", &aliases, true),
             Some(Subcommand::Command(cmd)) if cmd.name == "hide"
         ));
 
@@ -730,13 +807,13 @@ mod tests {
             "show-stat".to_string(),
             alias::Alias::new("show-stat", "!git show --stat"),
         );
-        assert!(find_subcommand("sho", &aliases).is_none());
+        assert!(find_subcommand("sho", &aliases, true).is_none());
         assert!(matches!(
-            find_subcommand("show", &aliases),
+            find_subcommand("show", &aliases, true),
             Some(Subcommand::Command(cmd)) if cmd.name == "show"
         ));
         assert!(matches!(
-            find_subcommand("show-", &aliases),
+            find_subcommand("show-", &aliases, true),
             Some(Subcommand::Alias(alias)) if alias.name == "show-stat"
         ));
     }
