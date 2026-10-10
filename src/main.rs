@@ -218,7 +218,7 @@ fn main() -> ! {
         } else if let Err(e) = change_directories(&matches) {
             exit_with_result(Err(e), color_choice)
         } else if matches.get_flag("help-option") {
-            full_app_help(argv, None, false, color_choice)
+            full_app_help(argv, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known subcommands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
@@ -243,6 +243,11 @@ fn main() -> ! {
                         repo: maybe_repo,
                     }) => match find_subcommand(sub_name, &aliases, infer_commands) {
                         Some(Subcommand::Command(command)) => {
+                            // An inferred command name is spelled out so that clap
+                            // need not infer it. Clap's inference would otherwise also
+                            // apply to all nested subcommands.
+                            let mut argv = argv;
+                            spell_out_subcommand(&mut argv, sub_matches, command.name);
                             execute_command(command, argv, color_choice, Some(infer_commands))
                         }
                         Some(Subcommand::Alias(alias)) => {
@@ -266,26 +271,45 @@ fn main() -> ! {
                                 ),
                             }
                         }
-                        Some(Subcommand::Help) | None => {
+                        Some(Subcommand::Help) => {
+                            // An inferred "help" is spelled out since the full Command
+                            // does not infer subcommand names.
+                            let mut argv = argv;
+                            spell_out_subcommand(&mut argv, sub_matches, "help");
+                            full_app_help(argv, Some(aliases), color_choice)
+                        }
+                        None => {
                             // If no command or alias matches can be determined from the
                             // above process, then a complete clap::Command instance is
                             // constructed with all subcommand Command instances for
                             // each subcommand and alias. The command line is then
                             // re-processed by this full-blown Command instance which is
                             // expected to terminate with an appropriate help message.
-                            full_app_help(argv, Some(aliases), infer_commands, color_choice)
+                            full_app_help(argv, Some(aliases), color_choice)
                         }
                     },
                 }
             }
         } else {
-            full_app_help(argv, None, false, color_choice)
+            full_app_help(argv, None, color_choice)
         }
     } else {
         // -C options are not processed in this branch. This is okay because clap's
         // error message will not include aliases (which depend on -C).
-        full_app_help(argv, None, false, color_choice)
+        full_app_help(argv, None, color_choice)
     }
+}
+
+/// Replace the (possibly abbreviated) external subcommand name in `argv` with `name`.
+///
+/// The bootstrap Command treats everything after the subcommand name as the external
+/// subcommand's arguments, so the name immediately precedes those arguments.
+fn spell_out_subcommand(argv: &mut [OsString], sub_matches: &ArgMatches, name: &str) {
+    let num_args = sub_matches
+        .get_many::<OsString>("")
+        .map_or(0, |vals| vals.len());
+    let index = argv.len() - 1 - num_args;
+    argv[index] = OsString::from(name);
 }
 
 /// Exit the program based on the provided [`Result`].
@@ -353,12 +377,12 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
 /// output a help message with a complete view of all subcommands and aliases, and then
 /// terminate to process.
 ///
-/// `infer_commands` must agree with how `argv` was previously evaluated so that clap
-/// does not find a viable match where [`find_subcommand()`] did not.
+/// Subcommand names are not inferred; any inferred name must already be spelled out in
+/// `argv`. This ensures clap does not find a viable match where [`find_subcommand()`]
+/// did not.
 fn full_app_help(
     argv: Vec<OsString>,
     aliases: Option<alias::Aliases>,
-    infer_commands: bool,
     color_choice: Option<termcolor::ColorChoice>,
 ) -> ! {
     let aliases = if let Some(aliases) = aliases {
@@ -374,7 +398,7 @@ fn full_app_help(
     // of existing subcommands. We group the commands by their categories and create several
     // shorter lists which are easier to read.
     let command = {
-        let command = get_full_command(&aliases, color_choice).infer_subcommands(infer_commands);
+        let command = get_full_command(&aliases, color_choice);
         let heading_style = command.get_styles().get_header().render();
         let heading_style_reset = command.get_styles().get_header().render_reset();
         let mut subcommands_by_category = String::new();
@@ -448,9 +472,12 @@ fn full_app_help(
 /// N.B. a new top-level app instance is created to ensure that help messages are
 /// formatted using the correct executable path (from `argv[0]`).
 ///
-/// `infer_commands` determines whether the subcommand and any nested subcommands may be
-/// abbreviated. When `None`, the configuration is only consulted if the subcommand has
-/// nested subcommands of its own.
+/// `infer_commands` determines whether nested subcommands may be abbreviated; the
+/// subcommand name in `argv` must be exact. When `None`, the configuration is only
+/// consulted if the subcommand has nested subcommands that may be abbreviated.
+///
+/// Nested subcommands spelled like long options, e.g. `stg branch --list`, are never
+/// abbreviated.
 fn execute_command(
     command: &cmd::StGitCommand,
     argv: Vec<OsString>,
@@ -458,14 +485,18 @@ fn execute_command(
     infer_commands: Option<bool>,
 ) -> ! {
     let subcommand = (command.make)();
-    let infer_commands = match infer_commands {
-        Some(infer_commands) => infer_commands,
-        None if subcommand.has_subcommands() => match get_dispatch_config() {
-            Ok(config) => config.infer_commands,
-            Err(e) => exit_with_result(Err(e), color_choice),
-        },
-        None => false,
-    };
+    let has_inferable_subcommands = subcommand.has_subcommands()
+        && !subcommand
+            .get_subcommands()
+            .any(|nested| nested.get_name().starts_with('-'));
+    let infer_commands = has_inferable_subcommands
+        && match infer_commands {
+            Some(infer_commands) => infer_commands,
+            None => match get_dispatch_config() {
+                Ok(config) => config.infer_commands,
+                Err(e) => exit_with_result(Err(e), color_choice),
+            },
+        };
 
     match get_base_command(color_choice)
         .infer_subcommands(infer_commands)

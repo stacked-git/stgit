@@ -67,6 +67,17 @@ test_expect_success 'Test unambiguous command shorthand' '
     test_must_be_empty s.txt
 '
 
+test_expect_success 'Test long-option-like subcommands are not abbreviated' '
+    test_config stgit.infer-commands true &&
+    general_error stg branch --l 2>err &&
+    grep -e "unexpected argument .--l. found" err &&
+    general_error stg bra --l 2>err &&
+    grep -e "unexpected argument .--l. found" err &&
+    stg bra --list >b0.txt &&
+    stg branch --list >b1.txt &&
+    test_cmp b1.txt b0.txt
+'
+
 test_expect_success 'Test help on ambiguous command' '
     general_error stg pu 2>err &&
     grep -e "unrecognized subcommand .pu." err &&
