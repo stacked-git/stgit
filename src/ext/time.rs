@@ -70,7 +70,16 @@ mod tests {
 
     #[test]
     fn test_parse_raw_notz() {
-        let time = Time::parse_time("123456").unwrap();
+        let time = Time::parse_time("1641479527").unwrap();
+        assert_eq!(time.seconds, 1641479527);
+        assert_eq!(time.offset, 0);
+    }
+
+    #[test]
+    fn test_parse_short_epoch() {
+        // Like git, a bare number needs at least 9 digits to be read as epoch seconds.
+        assert!(Time::parse_time("123456").is_err());
+        let time = Time::parse_time("@123456").unwrap();
         assert_eq!(time.seconds, 123456);
         assert_eq!(time.offset, 0);
     }
