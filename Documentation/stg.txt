@@ -310,7 +310,8 @@ stgit.import.message-id::
 stgit.infer-commands::
   When set to 'true', StGit commands and aliases may be invoked using any unambiguous
   prefix of their names. For example, `stg ser` runs `stg series`. Exact command and
-  alias names always take precedence over prefixes. Defaults to 'false'.
+  alias names always take precedence over prefixes. Prefixes are not accepted in alias
+  definitions; aliases must name their StGit command exactly. Defaults to 'false'.
 +
 N.B. whether a prefix is unambiguous depends on the set of defined aliases as well as
 the set of StGit commands. Defining a new alias, or upgrading to a version of StGit with

@@ -26,6 +26,15 @@ test_expect_success 'Test ambiguous alias' '
     grep -e "unrecognized subcommand .res." err
 '
 
+test_expect_success 'Test alias definition requires exact command name' '
+    test_config stgit.infer-commands true &&
+    test_config stgit.alias.ls "ser" &&
+    command_error stg ls 2>err &&
+    grep -e "bad alias for .ls.: .ser. is not a stg command" err &&
+    test_config stgit.alias.ls "series" &&
+    stg ls
+'
+
 test_expect_success 'Setup top-level and nested aliases' '
     test_create_repo foo/bar/baz &&
     git config --local stgit.alias.top-level-alias "!echo TOP-LEVEL-ALIAS" &&

@@ -549,6 +549,11 @@ fn execute_shell_alias(
 /// Execute alias to StGit command.
 ///
 /// Recursive aliases are detected.
+///
+/// The alias must name its StGit command exactly, regardless of `infer_commands`, so
+/// that the meaning of a configured alias cannot change as commands or other aliases
+/// are added. `infer_commands` still applies to any nested subcommand since it may come
+/// from the user's arguments.
 fn execute_stgit_alias(
     alias: &alias::Alias,
     exec_path: &OsString,
@@ -577,7 +582,7 @@ fn execute_stgit_alias(
                 .expect("empty aliases are filtered in get_aliases()")
                 .as_str();
 
-            match find_subcommand(resolved_cmd_name, aliases, infer_commands) {
+            match find_subcommand(resolved_cmd_name, aliases, false) {
                 Some(Subcommand::Command(command)) => {
                     execute_command(command, argv, color_choice, Some(infer_commands))
                 }
