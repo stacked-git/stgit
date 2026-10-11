@@ -101,7 +101,7 @@ pub(in super::super) fn oid_prefix_offsets(
 
 fn oid_prefix(input: &mut &str) -> ModalResult<gix::hash::Prefix> {
     hex_digit1
-        .try_map(gix::hash::Prefix::from_hex)
+        .try_map(|hex| gix::hash::Prefix::from_hex(hex).map_err(gix::Error::from))
         .parse_next(input)
 }
 

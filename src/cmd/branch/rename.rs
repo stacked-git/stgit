@@ -92,6 +92,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
                     "branch",
                     Some(new_section_name),
                 )
+                .map_err(gix::Error::from)
                 .with_context(|| {
                     format!(
                         "renaming config section `branch.{old_branchname}.stgit` \

@@ -132,12 +132,11 @@ impl RepositoryExtended for gix::Repository {
         use gix::refs::Category;
 
         let gix_name: gix::refs::PartialName = branch_name.into();
-        let reference = self.find_reference(&gix_name).map_err(|e| match e {
-            gix::reference::find::existing::Error::Find(inner) => {
-                anyhow!("invalid branch name `{branch_name}`: {inner}")
-            }
-            gix::reference::find::existing::Error::NotFound { name } => {
-                anyhow!("branch `{}` not found", name.as_ref().as_bstr())
+        let reference = self.find_reference(&gix_name).map_err(|err| {
+            if err.classify().is_not_found() {
+                anyhow!("branch `{branch_name}` not found")
+            } else {
+                anyhow!("invalid branch name `{branch_name}`: {err}")
             }
         })?;
 
@@ -270,12 +269,6 @@ impl RepositoryExtended for gix::Repository {
     }
 
     fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>> {
-        use gix::{
-            object::find::existing::Error as ObjectFindError,
-            reference::find::existing::Error as RefFindError,
-            revision::spec::parse::single::Error as SingleError,
-        };
-
         use crate::patch::revspec::Error;
 
         // Catch revspec ranges early because gitoxide will only flag this as an error if
@@ -289,25 +282,14 @@ impl RepositoryExtended for gix::Repository {
         }
 
         self.rev_parse_single(spec)
-            .map_err(|single_err| -> anyhow::Error {
-                // Distinguish "the spec parsed but resolved to nothing" from "the spec
-                // is malformed" by looking for a typed NotFound frame anywhere in the
-                // error tree underlying SingleError::Parse.
-                if let SingleError::Parse(ref gix_err) = single_err {
-                    let not_found = gix_err.iter_errors().any(|src| {
-                        matches!(
-                            src.downcast_ref::<RefFindError>(),
-                            Some(RefFindError::NotFound { .. })
-                        ) || matches!(
-                            src.downcast_ref::<ObjectFindError>(),
-                            Some(ObjectFindError::NotFound { .. })
-                        )
-                    });
-                    if not_found {
-                        return Error::RevisionNotFound(spec.to_string()).into();
-                    }
+            .map_err(|err| -> anyhow::Error {
+                // gix 0.89 reports a missing object or ref as Class::NotFound
+                // instead of the old find::existing and parse::single error enums.
+                if err.classify().is_not_found() {
+                    Error::RevisionNotFound(spec.to_string()).into()
+                } else {
+                    Error::InvalidRevision(spec.to_string(), err.to_string()).into()
                 }
-                Error::InvalidRevision(spec.to_string(), single_err.to_string()).into()
             })
     }
 

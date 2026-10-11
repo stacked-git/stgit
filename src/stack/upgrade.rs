@@ -61,6 +61,7 @@ fn get_format_version(repo: &gix::Repository, branch_name: &str) -> Result<i64> 
                 .object()
                 .context("finding old stack `meta` blob")?
                 .try_into_blob()
+                .map_err(gix::Error::from)
                 .context("interpret `meta` object `{meta_obj.id}` as blob")?
                 .take_data()
                 .into_string()
@@ -101,6 +102,7 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
                 .object()
                 .context("finding old stack `meta` blob")?
                 .try_into_blob()
+                .map_err(gix::Error::from)
                 .context("interpret `meta` object `{meta_obj.id}` as blob")?
                 .take_data()
                 .into_string()
@@ -133,6 +135,7 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
                             let patchname = PatchName::from_str(name_str)
                                 .with_context(|| format!("converting `{name_str}` to patchname"))?;
                             let commit_id = gix::ObjectId::from_hex(oid_str.as_bytes())
+                                .map_err(gix::Error::from)
                                 .with_context(|| {
                                     format!("converting `{oid_str}` for `{patchname}`")
                                 })?;
@@ -148,15 +151,18 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
                         "Previous" => {
                             prev = match value {
                                 "None" | "none" => None,
-                                _ => Some(Some(gix::ObjectId::from_str(value).with_context(
-                                    || format!("converting `{value}` for `Prev`"),
-                                )?)),
+                                _ => Some(Some(
+                                    gix::ObjectId::from_str(value)
+                                        .map_err(gix::Error::from)
+                                        .with_context(|| format!("converting `{value}` for `Prev`"))?,
+                                )),
                             };
                             None
                         }
                         "Head" => {
                             head = Some(
                                 gix::ObjectId::from_str(value)
+                                    .map_err(gix::Error::from)
                                     .with_context(|| format!("converting `{value}` for `Head`"))?,
                             );
                             None
