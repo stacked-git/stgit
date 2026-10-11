@@ -860,7 +860,7 @@ impl StupidContext<'_, '_> {
     }
 
     /// Perform three-way merge, with optional auto-resolution of conflicts with
-    /// `git merge-tool`.
+    /// `git mergetool`.
     pub(crate) fn merge_recursive_or_mergetool(
         &self,
         base_tree_id: gix::ObjectId,
@@ -877,15 +877,25 @@ impl StupidContext<'_, '_> {
         }
     }
 
-    /// Attempt to resolve outstanding merge conflicts with `git merge-tool`.
+    /// Attempt to resolve outstanding merge conflicts with `git mergetool`.
+    ///
+    /// The merge tool may be interactive, so it is run with the terminal's standard
+    /// streams. Returns true if no unmerged paths remain afterwards.
     pub(crate) fn mergetool(&self) -> Result<bool> {
-        let output = self.git().arg("merge-tool").output_git()?;
-        if output.status.success() {
-            Ok(true)
-        } else if output.status.code() == Some(1) {
-            Ok(false)
+        let status = self
+            .git()
+            .arg("mergetool")
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .context("could not execute `git mergetool`")?;
+        if status.success() || status.code() == Some(1) {
+            Ok(self.diff_unmerged_names()?.is_empty())
+        } else if let Some(code) = status.code() {
+            Err(anyhow!("`git mergetool` exited with code {code}"))
         } else {
-            Err(git_command_error("mergetool", &output.stderr))
+            Err(anyhow!("`git mergetool` failed"))
         }
     }
 

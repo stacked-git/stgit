@@ -773,36 +773,4 @@ test_expect_success 'Conflict report with sparse index' '
     )
 '
 
-# When the conflicts flag is set but the index has no unmerged entries, no
-# pathspecs are passed to `git status` and the full short status, including
-# untracked files, is reported. This is reachable with stgit.autoimerge when
-# the merge tool (stg runs `git merge-tool`) resolves all conflicts but exits
-# with status 1.
-test_expect_success 'Conflict report with no unmerged index entries' '
-    make_repo no-unmerged &&
-    mkdir bin &&
-    write_script bin/git-merge-tool <<-\EOF &&
-	git checkout -q --theirs -- :/a.txt :/d/b.txt :/d/e/c.txt &&
-	git add -u -- :/a.txt :/d/b.txt :/d/e/c.txt &&
-	exit 1
-	EOF
-    (
-        PATH="$(pwd)/bin:$PATH" &&
-        cd no-unmerged/d &&
-        git config stgit.autoimerge true &&
-        conflict stg push --keep p1 >../actual &&
-        cat >../expected <<-\EOF &&
-	> p1 (conflict)
-	M  ../a.txt
-	M  b.txt
-	M  e/c.txt
-	 M e/x.txt
-	 M ../y.txt
-	?? e/untracked.txt
-	?? ../untracked.txt
-	EOF
-        test_cmp ../expected ../actual
-    )
-'
-
 test_done
