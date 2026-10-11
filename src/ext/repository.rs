@@ -83,6 +83,15 @@ pub(crate) trait RepositoryExtended {
     /// Git's default is '#' and it also supports 'auto' which we treat as '#'.
     /// Note: git allows this to be a string, not just a single character.
     fn get_comment_symbol(&self) -> String;
+
+    /// Determine whether `git notes copy` might find a note to copy from `commit_id`.
+    ///
+    /// Returns `false` only when git would certainly copy nothing: the notes ref git
+    /// would use is outside `refs/notes/`, does not exist (or is a dangling symbolic
+    /// ref), or its tree has no entry that could be the note for `commit_id`. Any
+    /// doubt (lookup errors, unsupported configuration sources, etc.) yields `true` so
+    /// the caller defers to git.
+    fn may_have_note(&self, commit_id: gix::ObjectId) -> bool;
 }
 
 /// Options for creating a git commit object.
@@ -304,4 +313,105 @@ impl RepositoryExtended for gix::Repository {
             // if no value is found, return "#"
             .unwrap_or("#".to_string())
     }
+
+    fn may_have_note(&self, commit_id: gix::ObjectId) -> bool {
+        // gix does not apply `git -c` config passed via GIT_CONFIG_PARAMETERS, which
+        // git would honor when selecting the notes ref.
+        if std::env::var_os("GIT_CONFIG_PARAMETERS").is_some_and(|v| !v.is_empty()) {
+            return true;
+        }
+
+        // Select the notes ref the same way as git: GIT_NOTES_REF, even if empty, takes
+        // precedence over core.notesRef. Neither is expanded if not fully qualified.
+        let notes_ref: BString = if let Some(value) = std::env::var_os("GIT_NOTES_REF") {
+            match gix::path::os_string_into_bstring(value) {
+                Ok(value) => value,
+                Err(_) => return true,
+            }
+        } else if let Some(value) = self.config_snapshot().string("core.notesRef") {
+            value
+        } else {
+            BString::from("refs/notes/commits")
+        };
+
+        // git refuses to copy notes in refs outside of refs/notes/.
+        if !notes_ref.starts_with(b"refs/notes/") {
+            return false;
+        }
+
+        notes_ref_may_have_note(self, notes_ref.as_bstr(), commit_id).unwrap_or(true)
+    }
+}
+
+/// Determine whether the tree of `notes_ref` might contain a note for `commit_id`.
+fn notes_ref_may_have_note(
+    repo: &gix::Repository,
+    notes_ref: &bstr::BStr,
+    commit_id: gix::ObjectId,
+) -> Result<bool> {
+    // Git's SYMREF_MAXDEPTH (5 ref reads) follows at most 4 symbolic hops. Following
+    // up to 5 hops before deferring to git errs toward finding a note.
+    const MAX_SYMREF_DEPTH: usize = 5;
+
+    let name: &gix::refs::FullNameRef = notes_ref.try_into()?;
+    let Some(mut reference) = repo.try_find_reference(name)? else {
+        return Ok(false);
+    };
+
+    let mut depth = 0;
+    let target_id = loop {
+        match reference.target() {
+            gix::refs::TargetRef::Object(id) => break id.to_owned(),
+            gix::refs::TargetRef::Symbolic(target_name) => {
+                depth += 1;
+                if depth > MAX_SYMREF_DEPTH {
+                    return Ok(true);
+                }
+                let target_name = target_name.to_owned();
+                match repo.try_find_reference(target_name.as_ref())? {
+                    Some(target) => reference = target,
+                    // Dangling symbolic ref; git finds no notes.
+                    None => return Ok(false),
+                }
+            }
+        }
+    };
+
+    let tree_id = repo
+        .find_object(target_id)?
+        .peel_to_kind(gix::object::Kind::Tree)?
+        .id;
+    let hex = commit_id.to_hex().to_string();
+    notes_tree_may_have_note(repo, tree_id, hex.as_bytes())
+}
+
+/// Search a notes tree for any entry that could be the note for the object whose
+/// (remaining) hex name is `hex`.
+///
+/// Notes trees may be fanned out, i.e. the note for `abcdef...` may be at `abcdef...`,
+/// `ab/cdef...`, `ab/cd/ef...`, etc. Matching is case-insensitive, like git's hex
+/// parsing. Any full-length match is treated as a possible note regardless of mode, so
+/// this errs toward `true`.
+fn notes_tree_may_have_note(
+    repo: &gix::Repository,
+    tree_id: gix::ObjectId,
+    hex: &[u8],
+) -> Result<bool> {
+    let tree = repo.find_tree(tree_id)?;
+    for entry in tree.decode()?.entries {
+        let name = entry.filename.as_bytes();
+        if name.is_empty()
+            || name.len() > hex.len()
+            || !name.eq_ignore_ascii_case(&hex[..name.len()])
+        {
+            continue;
+        }
+        if name.len() == hex.len()
+            || (entry.mode.is_tree()
+                && notes_tree_may_have_note(repo, entry.oid.to_owned(), &hex[name.len()..])?)
+        {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }

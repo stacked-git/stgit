@@ -473,12 +473,7 @@ impl<'repo> StackTransaction<'repo> {
     ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
-        // Failure to copy is okay. The old commit may not have a note to copy.
-        self.stack
-            .repo
-            .stupid()
-            .notes_copy(old_commit.id, commit_id)
-            .ok();
+        self.copy_notes(old_commit.id, commit_id);
         self.updated_patches.insert(
             patchname.clone(),
             Some(PatchState {
@@ -487,6 +482,17 @@ impl<'repo> StackTransaction<'repo> {
         );
         self.ui.print_updated(patchname, self.applied())?;
         Ok(())
+    }
+
+    /// Copy any notes from one commit to another.
+    ///
+    /// Failure to copy is okay; the source commit may not have a note to copy. Spawning
+    /// `git notes copy` is avoided when it would certainly copy nothing.
+    fn copy_notes(&self, from_id: gix::ObjectId, to_id: gix::ObjectId) {
+        let repo = self.stack.repo;
+        if repo.may_have_note(from_id) {
+            repo.stupid().notes_copy(from_id, to_id).ok();
+        }
     }
 
     /// Add new patch to the top of the stack.
@@ -575,9 +581,7 @@ impl<'repo> StackTransaction<'repo> {
             )?;
 
             let commit = repo.find_commit(new_commit_id)?;
-            repo.stupid()
-                .notes_copy(patch_commit.id, new_commit_id)
-                .ok();
+            self.copy_notes(patch_commit.id, new_commit_id);
             self.updated_patches.insert(
                 patchname.clone(),
                 Some(PatchState {
@@ -1169,7 +1173,7 @@ impl<'repo> StackTransaction<'repo> {
                 [new_parent.id],
             )?;
             let commit = Rc::new(repo.find_commit(commit_id)?);
-            stupid.notes_copy(patch_commit.id, commit_id).ok();
+            self.copy_notes(patch_commit.id, commit_id);
             if push_status == PushStatus::Conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
