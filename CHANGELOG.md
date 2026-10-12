@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.7.0 2026-10-11
+
+### Added
+
+- feat: allow unambiguous command shorthands, opt-in with `stgit.infer-commands` (#649)
+- feat: accept git approxidate spellings for dates, e.g. "2 days 3 hours ago",
+  "last week", "3.days.ago", and "@<epoch>"
+
+### Fixed
+
+- fix(push): run `git mergetool` for `stgit.autoimerge`
+- fix: anchor relative dates in the local time zone rather than UTC
+
+### Changed
+
+- fix: reject "@" as a branch name for `stg branch --create`; it names the top patch
+- perf: avoid spawning `git notes copy` when there is no note to copy
+- chore: bump MSRV to 1.88
+- chore: update gix to 0.89
+- chore: update clap to 4.6.7
+- chore: update dependencies
+
+
 ## 2.6.1 2026-06-22
 
 ### Fixed
