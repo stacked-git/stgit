@@ -22,15 +22,15 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Print git hash of a StGit revision")
+        .about("Print the git hash of a StGit revision")
         .long_about(
-            "Print the hash (object id) of a StGit revision.\n\
+            "Print the git hash of a StGit revision.\n\
              \n\
-             In addition to standard Git revision specifiers (revspecs), \
-             patches may be specified in the form '[<branch>:]<patch>' or \
-             '[<branch>:]{base}' for the base of a stack. If no branch is \
-             specified, the current branch is used by default. The parent \
-             of a patch may be specified with '[<branch>:]<patch>^'.",
+             Convert a StGit revision specifier to its corresponding git commit hash. \
+             In addition to standard Git revision specifiers (revspecs), patches may \
+             be specified in the form '[<branch>:]<patch>' or '[<branch>:]{base}' for \
+             the base of a stack. If no branch is specified, the current branch is used \
+             by default. The parent of a patch may be specified with '[<branch>:]<patch>^'.",
         )
         .arg(argset::branch_arg())
         .arg(

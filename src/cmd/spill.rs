@@ -24,12 +24,14 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Spill changes from the topmost patch")
+        .about("Remove changes from the topmost patch, keeping them in the index/worktree")
         .long_about(
-            "Spill changes from the topmost patch. Changes are removed from the patch, \
-             but remain in the index and worktree.\n\
+            "Remove changes from the topmost patch, keeping them in the index/worktree.\n\
              \n\
-             Spilling a patch may be useful for reselecting the files/hunks to be \
+             The patch is updated to be empty, but its changes remain in the index and \
+             worktree for further editing or selective staging.\n\
+             \n\
+             This operation may be useful for reselecting which files or hunks should be \
              included in the patch.",
         )
         .arg(

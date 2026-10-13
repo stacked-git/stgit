@@ -28,15 +28,15 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
-        .about("Push patches to the top, even if applied")
+        .about("Reorder patches by moving them to the top of the stack")
         .long_about(
-            "Push patches to the top, even if applied.\n\
+            "Reorder patches by moving them to the top of the stack.\n\
              \n\
-             Float one or more patches to be the topmost applied patches. The patches \
-             to be floated may currently be either applied or unapplied. The necessary \
-             pop and push operations will be performed to float the named patches. \
-             Patches not specified will remain applied or unapplied as they were prior \
-             to the float operation.",
+             Move one or more patches to become the topmost applied patches. The patches \
+             may currently be either applied or unapplied. The necessary pop and push \
+             operations will be performed to reorder the named patches. Patches not \
+             specified will remain applied or unapplied as they were prior to the \
+             operation.",
         )
         .override_usage(super::make_usage(
             "stg float",
